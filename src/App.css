@@ -1,0 +1,40 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-primary-100: #dbe9fd;
+  --color-primary-200: #bedcfb;
+  --color-primary-300: #a1caf9;
+  --color-primary-400: #75b3f6;
+  --color-primary-500: #4e92f4;
+  --color-primary-600: #3278de;
+  --color-primary-700: #2661bb;
+  --color-primary-800: #1d4b92;
+  --color-primary-900: #16396f;
+  --color-dark-gray: #232323;
+  --color-dark-gray-200: #454545;
+  --color-normal-gray: #3d3d3d;
+  --color-dark-blue-normal: #141b34;
+  --color-bg-gray: #fafafa;
+  --font-monts: "Montserrat", sans-serif;
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+}
+
+input:-moz-autofill {
+  box-shadow: 0 0 0 1000px white inset !important;
+}
+
+@keyframes on-autofill-start {
+  from {
+  }
+  to {
+  }
+}
+
+.floating-label-input:-webkit-autofill {
+  animation-name: on-autofill-start;
+  animation-fill-mode: both;
+}
