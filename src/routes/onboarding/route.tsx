@@ -5,7 +5,7 @@ import { Step1Interests } from "./-components/step-1";
 import { Step2Goal } from "./-components/step-2";
 import { Step3ProfileImage } from "./-components/step-3";
 import { ProgressBar } from "./-components/progress";
-import { DASHBOARD } from "@/constants/page-path";
+import { useOnboarding } from "./-components/useOnboarding";
 
 interface OnboardingData {
   interests: string[];
@@ -20,6 +20,9 @@ export const Route = createFileRoute("/onboarding")({
 function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+
+  const { mutate: submitOnboarding, isPending } = useOnboarding();
+
   const [formData, setFormData] = useState<OnboardingData>({
     interests: [],
     goal: "",
@@ -37,10 +40,16 @@ function OnboardingPage() {
   };
 
   const handleStep3Finish = (profileImage: File | null) => {
-    const finalData = { ...formData, profileImage };
+    // const finalData = { ...formData, profileImage };
 
-    console.log("Submitting Onboarding Data:", finalData);
-    router.navigate({ to: DASHBOARD });
+    const finalPayload = {
+      experience: formData.goal, // Mapping 'goal' -> 'experience'
+      interests: formData.interests,
+      avatar: profileImage,
+    };
+
+    // 3. Trigger Mutation
+    submitOnboarding(finalPayload);
   };
 
   const renderStep = () => {
@@ -50,7 +59,12 @@ function OnboardingPage() {
       case 2:
         return <Step1Interests onContinue={handleStep1Continue} />;
       case 3:
-        return <Step3ProfileImage onFinish={handleStep3Finish} />;
+        return (
+          <Step3ProfileImage
+            onFinish={handleStep3Finish}
+            isPending={isPending}
+          />
+        );
       default:
         return <Step2Goal onContinue={handleStep2Continue} />;
     }

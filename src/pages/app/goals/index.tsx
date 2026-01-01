@@ -72,7 +72,7 @@ export const GoalsPage = () => {
 
   return (
     <div className="w-full">
-      <div className="w-full mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8">
+      <div className="w-full mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8 mb-16 sm:mb-0 ">
         {/* LEFT SIDE: BOARD */}
         <div className="xl:col-span-3 flex flex-col h-full">
           <div className="bg-white pt-6 px-5 pb-5 rounded-lg mb-5">
@@ -87,7 +87,7 @@ export const GoalsPage = () => {
           </div>
 
           <div className="mb-6">
-            <h1 className="font-monts text-xl font-semibold text-[#636363] ">
+            <h1 className="font-monts text-lg sm:text-xl font-semibold text-[#636363] ">
               Today's goals
             </h1>
           </div>
@@ -96,7 +96,7 @@ export const GoalsPage = () => {
           <DragDropContext onDragEnd={onDragEnd}>
             <div
               className={cn(
-                "grid gap-6 h-full transition-all",
+                "grid gap-6 w-full h-full transition-all",
                 // 4. Dynamic grid: 3 cols if 'All', otherwise 1 col (taking partial width)
                 activeTab === "All"
                   ? "grid-cols-1 md:grid-cols-3"

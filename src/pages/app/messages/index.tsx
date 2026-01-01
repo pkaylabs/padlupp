@@ -14,7 +14,6 @@ import {
   CheckCircle,
   FileText,
   Mic,
-  Phone,
   Plus,
   Search,
   Send,
@@ -38,6 +37,10 @@ export const MessagesPage = () => {
   const [activeTab, setActiveTab] = useState<"Activities" | "Shared">(
     "Activities"
   );
+
+  // Mobile specific state to toggle between list and chat view
+  const [showMobileChat, setShowMobileChat] = useState(false);
+
   const [sideView, setSideView] = useState<SideView>("none");
   const [activeModal, setActiveModal] = useState<ActiveModal>("none");
   const [inputPopoverOpen, setInputPopoverOpen] = useState(false);
@@ -57,11 +60,21 @@ export const MessagesPage = () => {
 
   return (
     <>
-      <div className="font-monts w-full flex h-[92vh] bg-white overflow-hidden">
+      <div className="font-monts w-full flex h-[92vh] bg-white overflow-hidden relative">
         {/* --- LEFT SIDEBAR --- */}
-        <div className="w-96 border-r overflow-y-auto border-gray-200 flex flex-col">
+        {/* Responsive Logic:
+            - w-full on mobile, w-96 on desktop (md)
+            - If showMobileChat is true: Hidden on mobile, Visible on desktop
+            - If showMobileChat is false: Visible on mobile, Visible on desktop
+        */}
+        <div
+          className={cn(
+            "w-full md:w-96 border-r overflow-y-auto border-gray-200 flex-col bg-white",
+            showMobileChat ? "hidden md:flex" : "flex"
+          )}
+        >
           {/* Header / Breadcrumb mock */}
-          <div className="h-16 flex items-center px- text-gray-500 text-sm font-medium">
+          <div className="h-16 flex items-center px-4 text-gray-500 text-sm font-medium">
             <ArrowLeft2 size="16" color="#636363" />
             <ArrowRight2 size="16" color="#636363" className="mx-2" />
             <span className="cursor-pointer hover:text-gray-900">
@@ -76,7 +89,7 @@ export const MessagesPage = () => {
           </div>
 
           {/* Search */}
-          <div className="pr-2 mb-4">
+          <div className="px-4 mb-4">
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -98,6 +111,7 @@ export const MessagesPage = () => {
                 onClick={() => {
                   setActiveConvId(conv.id);
                   setSideView("none");
+                  setShowMobileChat(true); // Switch to chat view on mobile
                 }}
                 className={cn(
                   "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative",
@@ -153,50 +167,72 @@ export const MessagesPage = () => {
         </div>
 
         {/* --- MAIN CHAT AREA --- */}
-        <div className="flex-1 relative flex flex-col ">
+        {/* Responsive Logic:
+            - Hidden on mobile by default.
+            - If showMobileChat is true: Fixed full screen (z-50) on mobile.
+            - Always static and flex-1 on desktop.
+        */}
+        <div
+          className={cn(
+            "flex-col bg-white",
+            showMobileChat
+              ? "fixed inset-0 z-50 flex w-full h-full md:static md:flex-1"
+              : "hidden md:flex md:flex-1 md:relative"
+          )}
+        >
           {/* Chat Header */}
-          <div className="border-b border-gray-200 flex items-center justify-between py-2.5 px-6">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={handleOpenProfile}
-            >
-              {activeConv?.type === "group" ? (
-                <div className="flex -space-x-2 mr-3">
-                  {activeConv.members?.slice(0, 4).map((m, i) => (
-                    <img
-                      key={i}
-                      className="h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                      src={m.avatarUrl}
-                      alt=""
-                    />
-                  ))}
-                </div>
-              ) : (
-                <img
-                  src={activeConv?.avatarUrl}
-                  alt=""
-                  className="w-10 h-10 rounded-full mr-3 object-cover"
-                />
-              )}
+          <div className="border-b border-gray-200 flex items-center justify-between py-2.5 px-4 md:px-6">
+            <div className="flex items-center">
+              {/* Mobile Back Button */}
+              <button
+                onClick={() => setShowMobileChat(false)}
+                className="mr-3 md:hidden p-1 -ml-2"
+              >
+                <ArrowLeft2 size="24" color="#636363" />
+              </button>
+
+              <div
+                className="flex items-center cursor-pointer"
+                onClick={handleOpenProfile}
+              >
+                {activeConv?.type === "group" ? (
+                  <div className="flex -space-x-2 mr-3">
+                    {activeConv.members?.slice(0, 4).map((m, i) => (
+                      <img
+                        key={i}
+                        className="h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                        src={m.avatarUrl}
+                        alt=""
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <img
+                    src={activeConv?.avatarUrl}
+                    alt=""
+                    className="w-10 h-10 rounded-full mr-3 object-cover"
+                  />
+                )}
+              </div>
+
+              <div>
+                <h2 className="font-semibold text-[#666668] text-sm">
+                  {activeConv?.name}
+                </h2>
+                <p className="text-xs text-green-500 flex items-center">
+                  {activeConv?.type === "personal"
+                    ? activeConv.isOnline
+                      ? "Online"
+                      : "Offline"
+                    : "2 online"}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h2 className="font-semibold text-[#666668] text-sm">
-                {activeConv?.name}
-              </h2>
-              <p className="text-xs text-green-500 flex items-center">
-                {activeConv?.type === "personal"
-                  ? activeConv.isOnline
-                    ? "Online"
-                    : "Offline"
-                  : "2 online"}
-              </p>
-            </div>
-
-            <div className="flex items-center text-gray-400">
+            <div className="flex items-center text-gray-400 gap-1 md:gap-0">
               <div
                 onClick={() => setVidCall(true)}
-                className="size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md "
+                className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md "
               >
                 <CallCalling
                   size={20}
@@ -205,7 +241,7 @@ export const MessagesPage = () => {
               </div>
               <div
                 onClick={() => setVidCall(true)}
-                className="size-12 flex justify-center  items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md "
+                className="size-10 md:size-12 flex justify-center  items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md "
               >
                 <Video
                   size={24}
@@ -213,7 +249,7 @@ export const MessagesPage = () => {
                   className="hover:text-gray-600 text-[#130F26] cursor-pointer"
                 />
               </div>
-              <div className="size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md ">
+              <div className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md ">
                 <Search
                   size={20}
                   className="hover:text-gray-600 text-[#130F26] cursor-pointer"
@@ -243,13 +279,13 @@ export const MessagesPage = () => {
           </div>
 
           {/* Messages Area or Side View Overlay */}
-          <div className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray">
+          <div className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray relative">
             {activeTab === "Shared" ? (
               <div className=" text-center text-gray-500">
                 <SharedFilesView />
               </div>
             ) : (
-              <div className="h-full p-6 space-y-6">
+              <div className="h-full p-4 md:p-6 space-y-6">
                 {/* Group Welcome Banner */}
                 {activeConv?.type === "group" ? (
                   <div className="text-center mb-4">
@@ -287,6 +323,9 @@ export const MessagesPage = () => {
             )}
 
             {/* --- SIDE VIEW OVERLAY (Profile/Progress) --- */}
+            {/* This will overlay perfectly on mobile because the parent container 
+                is 'fixed inset-0' when active.
+            */}
             <AnimatePresence>
               {sideView !== "none" && (
                 <motion.div
@@ -350,7 +389,7 @@ export const MessagesPage = () => {
               >
                 <Plus size={20} />
               </button>
-              <button className="text-[#3D3D3D] hover:text-gray-600">
+              <button className="text-[#3D3D3D] hover:text-gray-600 hidden md:block">
                 <Mic strokeWidth={1.5} size={20} />
               </button>
               <input

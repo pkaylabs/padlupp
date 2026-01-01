@@ -39,3 +39,5 @@ export const userNavigation = [
   { name: "Your profile", href: "#" },
   { name: "Sign out", href: "#" },
 ];
+
+export const BASE_URL = 'https://api.padlupp.com/api-v1'

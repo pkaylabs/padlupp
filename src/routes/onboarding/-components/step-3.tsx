@@ -5,12 +5,17 @@ import { motion } from "framer-motion";
 import Button from "@/components/core/buttons";
 import { useNavigate } from "@tanstack/react-router";
 import { DASHBOARD } from "@/constants/page-path";
+import ButtonLoader from "@/components/loaders/button";
 
 interface Step3Props {
   onFinish: (file: File | null) => void;
+  isPending: boolean;
 }
 
-export const Step3ProfileImage: React.FC<Step3Props> = ({ onFinish }) => {
+export const Step3ProfileImage: React.FC<Step3Props> = ({
+  onFinish,
+  isPending,
+}) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,8 +96,9 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({ onFinish }) => {
         variant="primary"
         onClick={() => onFinish(file)}
         className="w-full"
+        disabled={isPending}
       >
-        Finish up
+        {isPending ? <ButtonLoader title="Finishing up..." /> : "Finish up"}
       </Button>
       <button
         onClick={() => {

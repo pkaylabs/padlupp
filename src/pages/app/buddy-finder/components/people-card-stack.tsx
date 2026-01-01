@@ -26,7 +26,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
   };
 
   return (
-    <div className="relative w-full mx-auto h-[720px] ">
+    <div className="relative w-full mx-auto h-[720px]">
       <AnimatePresence>
         <motion.div
           key={index}
@@ -36,9 +36,9 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
           exit={{ x: -300, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          <div className=" rounded-xl p-6 pt-0 flex flex-col gap-3 items-center h-full">
-            <div className="w-full flex gap-1.5 items-center bg-white shadow p-6 rounded-lg">
-              <span className="font-semibold text-[#3D3D3D] ">
+          <div className=" rounded-xl p-4 sm:p-6 pt-0 flex flex-col gap-3 items-center h-full">
+            <div className="w-full flex gap-1.5 items-center bg-white shadow p-4 sm:p-6 rounded-lg">
+              <span className="font-semibold text-[#3D3D3D]">
                 {person.name}
               </span>
               <span className="size-1 rounded-full bg-primary-600" />
@@ -75,7 +75,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
               ))}
             </div>
 
-            <div className="w-full p-6 py-8 bg-white rounded-lg shadow text-sm text-gray-700 my-4">
+            <div className="w-full p-4 sm:p-6 py-8 bg-white rounded-lg shadow text-sm text-gray-700 my-4">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="bg-primary-100/50 p-1 rounded-full ">
                   <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
@@ -89,14 +89,14 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
               </span>
             </div>
 
-            <div className=" w-full bg-white rounded-xl px-6 py-8 ">
+            <div className=" w-full bg-white rounded-xl px-4 sm:px-6 py-8 ">
               <div className="flex items-center gap-1.5">
                 <PiTagSimpleDuotone size={18} color="#A3CBFA" />
                 <span className="font-semibold text-base text-dark-gray ">
                   Interest
                 </span>
               </div>
-              <div className="flex flex-wrap justify-center   gap-2 my-4">
+              <div className="flex flex-wrap justify-center gap-2 my-4">
                 {person.interests.map((interest) => (
                   <div className="flex items-center bg-[#4E92F426] gap-1.5 px-2.5 py-1 rounded-sm">
                     <interest.icon
@@ -116,8 +116,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
 
               <Button
                 variant="primary"
-                className="absolute bottom-12 left-1/2 -translate-x-1/2 w-60 -mt-8 text-white text-base font-semibold border-none bg-linear-to-r 
-        from-[#4E92F4] to-[#7938BE] hover:opacity-90 rounded-full "
+                className="absolute bottom-2 sm:bottom-12 left-1/2 -translate-x-1/2 w-60 -mt-8 text-white text-base font-semibold border-none bg-linear-to-r from-[#4E92F4] to-[#7938BE] hover:opacity-90 rounded-full "
                 size="md"
                 onClick={() => onInvite(person)}
               >
@@ -131,13 +130,13 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
       {/* Navigation Arrows */}
       <button
         onClick={() => paginate(-1)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 p-2 rounded-full hover:bg-gray-100"
+        className="absolute left-6 sm:left-0 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
       >
         <ArrowLeft2 variant="Bold" size={30} />
       </button>
       <button
         onClick={() => paginate(1)}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 p-2 rounded-full hover:bg-gray-100"
+        className="absolute right-6 sm:right-0 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
       >
         <ArrowRight2 variant="Bold" size={30} />
       </button>

@@ -1,4 +1,3 @@
-// src/components/videocall/VideoCallOverlay.tsx
 import React, { useState } from "react";
 import {
   Mic,
@@ -11,14 +10,13 @@ import {
   PhoneOff,
   Send,
   Headphones,
-  X,
   Minimize2,
   ChevronRight,
   Copy,
   MessageSquare,
   Captions,
   Globe,
-  Check,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/utils/cs";
@@ -39,13 +37,16 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
     "settings" | "screenshare" | null
   >(null);
 
+  // Mobile specific state for chat overlay
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 bg-gray-50 flex flex-col">
+    <div className="fixed inset-0 z-100 bg-gray-50 flex flex-col h-dvh">
       {/* --- HEADER --- */}
-      <div className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2 text-blue-600 font-medium">
+      <div className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-2 text-blue-600 font-medium text-sm md:text-base">
           <span>Ongoing video call</span>
           <Headphones size={16} />
         </div>
@@ -58,11 +59,12 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
       </div>
 
       {/* --- MAIN CONTENT --- */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* LEFT: VIDEO AREA */}
-        <div className="flex-1 p-4 flex flex-col relative">
+        {/* On mobile: takes full width. On desktop: takes remaining space next to sidebar */}
+        <div className="flex-1 p-2 md:p-4 flex flex-col relative min-w-0 bg-gray-900 md:bg-transparent">
           {/* Main Video Container */}
-          <div className="flex-1 bg-black rounded-2xl overflow-hidden relative group">
+          <div className="flex-1 bg-black rounded-xl md:rounded-2xl overflow-hidden relative group">
             {/* Main Participant Image */}
             <img
               src="https://placehold.co/1200x800/222/999?text=Video+Feed"
@@ -71,26 +73,28 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
             />
 
             {/* Floating Participant Stack */}
-            <div className="absolute top-4 right-4 flex flex-col gap-3">
+            <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col gap-2 md:gap-3">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="w-24 h-24 rounded-xl overflow-hidden border-2 border-white shadow-lg relative bg-gray-800"
+                  // Responsive sizing: Smaller on mobile (w-16), larger on desktop (w-24)
+                  className="w-16 h-16 md:w-24 md:h-24 rounded-lg md:rounded-xl overflow-hidden border-2 border-white shadow-lg relative bg-gray-800"
                 >
                   <img
                     src={`https://placehold.co/100x100/33${i}333/FFF?text=P${i}`}
                     className="w-full h-full object-cover"
+                    alt={`Participant ${i}`}
                   />
                   <div
                     className={cn(
-                      "absolute bottom-1 right-1 p-1 rounded-full",
+                      "absolute bottom-1 right-1 p-0.5 md:p-1 rounded-full",
                       i % 2 === 0 ? "bg-red-500" : "bg-green-500"
                     )}
                   >
                     {i % 2 === 0 ? (
-                      <MicOff size={10} className="text-white" />
+                      <MicOff className="w-2 h-2 md:w-3 md:h-3 text-white" />
                     ) : (
-                      <Mic size={10} className="text-white" />
+                      <Mic className="w-2 h-2 md:w-3 md:h-3 text-white" />
                     )}
                   </div>
                 </div>
@@ -98,54 +102,97 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
             </div>
 
             {/* Bottom Controls (Floating) */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
-              <ControlBtn
-                icon={MonitorUp}
-                active={activePopup === "screenshare"}
-                onClick={() => setActivePopup("screenshare")}
-              />
-              <ControlBtn
-                icon={cameraOn ? Video : VideoOff}
-                onClick={() => setCameraOn(!cameraOn)}
-              />
-              <ControlBtn
-                icon={micOn ? Mic : MicOff}
-                onClick={() => setMicOn(!micOn)}
-              />
+            <div className="absolute bottom-4 md:bottom-6 left-0 right-0 flex justify-center">
+              <div className="flex items-center gap-2 md:gap-3 px-4 overflow-x-auto max-w-full pb-2 md:pb-0 scrollbar-hide">
+                {/* Mobile Only: Chat Toggle */}
+                <div className="md:hidden shrink-0">
+                  <ControlBtn
+                    icon={MessageSquare}
+                    active={isMobileChatOpen}
+                    onClick={() => setIsMobileChatOpen(true)}
+                  />
+                </div>
 
-              <div className="relative">
+                <div className="hidden md:block shrink-0">
+                  <ControlBtn
+                    icon={MonitorUp}
+                    active={activePopup === "screenshare"}
+                    onClick={() => setActivePopup("screenshare")}
+                  />
+                </div>
+
                 <ControlBtn
-                  icon={Settings}
-                  active={activePopup === "settings"}
-                  onClick={() =>
-                    setActivePopup(
-                      activePopup === "settings" ? null : "settings"
-                    )
-                  }
+                  icon={cameraOn ? Video : VideoOff}
+                  onClick={() => setCameraOn(!cameraOn)}
                 />
-                {/* Settings Menu Popover */}
-                <AnimatePresence>
-                  {activePopup === "settings" && (
-                    <SettingsMenu onClose={() => setActivePopup(null)} />
-                  )}
-                </AnimatePresence>
+                <ControlBtn
+                  icon={micOn ? Mic : MicOff}
+                  onClick={() => setMicOn(!micOn)}
+                />
+
+                <div className="relative shrink-0">
+                  <ControlBtn
+                    icon={Settings}
+                    active={activePopup === "settings"}
+                    onClick={() =>
+                      setActivePopup(
+                        activePopup === "settings" ? null : "settings"
+                      )
+                    }
+                  />
+                  {/* Settings Menu Popover */}
+                  <AnimatePresence>
+                    {activePopup === "settings" && (
+                      <SettingsMenu onClose={() => setActivePopup(null)} />
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <ControlBtn icon={Users} />
+
+                <button
+                  className="w-10 h-10 md:w-12 md:h-12 shrink-0 flex items-center justify-center rounded-xl bg-red-600 text-white hover:bg-red-700 shadow-lg transition-transform active:scale-95"
+                  onClick={onMinimize}
+                >
+                  <PhoneOff
+                    className="w-5 h-5 md:w-6 md:h-6"
+                    fill="currentColor"
+                  />
+                </button>
               </div>
-
-              <ControlBtn icon={Users} />
-
-              <button
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-600 text-white hover:bg-red-700 shadow-lg transition-transform active:scale-95"
-                onClick={onMinimize} // Or end call logic
-              >
-                <PhoneOff size={24} fill="currentColor" />
-              </button>
             </div>
           </div>
         </div>
 
         {/* RIGHT: CHAT SIDEBAR */}
-        <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-100 font-semibold text-gray-800">
+        {/* Responsive Logic:
+            - Desktop: w-96, static position, always flex.
+            - Mobile: fixed inset-0 (full screen), z-50, toggled via isMobileChatOpen.
+        */}
+        <div
+          className={cn(
+            "bg-white border-l border-gray-200 flex-col transition-all duration-300",
+            // Mobile Styles
+            "fixed inset-0 z-50 w-full h-full",
+            isMobileChatOpen ? "flex" : "hidden",
+            // Desktop Styles (overrides mobile)
+            "md:static md:w-96 md:flex md:h-auto md:z-auto"
+          )}
+        >
+          {/* Mobile Chat Header (Close Button) */}
+          <div className="flex md:hidden items-center justify-between p-4 border-b border-gray-100">
+            <span className="font-semibold text-gray-800">
+              In-call messages
+            </span>
+            <button
+              onClick={() => setIsMobileChatOpen(false)}
+              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
+            >
+              <X size={20} className="text-gray-600" />
+            </button>
+          </div>
+
+          <div className="hidden md:block p-4 border-b border-gray-100 font-semibold text-gray-800">
             Thread
           </div>
 
@@ -169,10 +216,17 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
               isMe={false}
               text="Thanks, Paul! I tried to keep it user-friendly."
             />
+            {/* Added extra dummy messages to test scrolling */}
+            <ChatMessage
+              sender="Me"
+              time="11:20am"
+              isMe={true}
+              text="Should we sync up later today to discuss the details?"
+            />
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-4 border-t border-gray-100 bg-white pb-safe">
             <div className="relative">
               <input
                 type="text"
@@ -204,7 +258,7 @@ const ControlBtn = ({ icon: Icon, active, onClick }: any) => (
   <button
     onClick={onClick}
     className={cn(
-      "w-10 h-10 flex items-center justify-center rounded-full shadow-lg backdrop-blur-md transition-all active:scale-95",
+      "w-10 h-10 md:w-10 md:h-10 shrink-0 flex items-center justify-center rounded-full shadow-lg backdrop-blur-md transition-all active:scale-95",
       active
         ? "bg-blue-100 text-blue-600"
         : "bg-gray-600/80 text-white hover:bg-gray-500/90"
@@ -218,7 +272,8 @@ const ChatMessage = ({ sender, time, text, isMe }: any) => (
   <div className="flex gap-3">
     <img
       src={`https://placehold.co/40x40/${isMe ? "336699" : "EEDDAA"}/FFF?text=${sender[0]}`}
-      className="w-8 h-8 rounded-full mt-1"
+      className="w-8 h-8 rounded-full mt-1 shrink-0"
+      alt={sender}
     />
     <div>
       <div className="flex items-baseline gap-2 mb-1">
@@ -236,7 +291,7 @@ const SettingsMenu = ({ onClose }: { onClose: () => void }) => (
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 10 }}
-    className="absolute bottom-14 left-1/2 -translate-x-1/2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden text-sm font-medium text-gray-700"
+    className="absolute bottom-14 left-1/2 -translate-x-1/2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden text-sm font-medium text-gray-700 z-60"
   >
     <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center gap-3">
       <Users size={16} /> Invite people
@@ -244,12 +299,9 @@ const SettingsMenu = ({ onClose }: { onClose: () => void }) => (
     <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center gap-3">
       <Copy size={16} /> Copy call link
     </button>
-    <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center gap-3 border-b border-gray-100">
-      <MessageSquare size={16} /> Go to direct message
-    </button>
 
     {/* Section 2 */}
-    <div className="py-1 border-b border-gray-100">
+    <div className="py-1 border-b border-gray-100 border-t mt-1">
       <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center justify-between">
         <span className="flex items-center gap-3">
           <Captions size={16} /> Show captions
@@ -330,7 +382,7 @@ const ScreenShareModal = ({
         Share your screen
       </h2>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <ScreenOption id={1} label="Entire screen" color="bg-gray-200" />
         <ScreenOption
           id={2}
@@ -339,11 +391,6 @@ const ScreenShareModal = ({
         />
         <ScreenOption id={3} label="Paddlupp -Figma" color="bg-pink-100" />
       </div>
-
-      {/* Only needed if you want to confirm, otherwise clicking usually starts it */}
-      {/* <div className="flex justify-end">
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg">Share</button>
-      </div> */}
     </Modal>
   );
 };

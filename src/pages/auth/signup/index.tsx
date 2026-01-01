@@ -6,6 +6,8 @@ import { Divider } from "@/components/system/divider";
 import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useRegister } from "../hooks/useRegister";
+import ButtonLoader from "@/components/loaders/button";
 
 // Google G logo SVG
 export const GoogleIcon = () => (
@@ -40,6 +42,9 @@ const validationSchema = Yup.object({
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
+
+  const { mutate: register, isPending, error } = useRegister();
+
   const formik = useFormik({
     initialValues: {
       fullName: "",
@@ -49,17 +54,20 @@ export const SignUp: React.FC = () => {
     validationSchema,
     onSubmit: (values) => {
       console.log("Form Submitted", values);
-      navigate({ to: "/onboarding" });
-      // alert(JSON.stringify(values, null, 2));
+      register({
+        email: values.email,
+        password: values.password,
+        name: values.fullName,
+      });
     },
   });
 
   return (
     <div className="w-full max-w-lg mx-auto py-12 px-4">
-      <h1 className="text-3xl font-semibold text-gray-900">
+      <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900">
         Welcome to Padlupp 👋
       </h1>
-      <p className="text-gray-600 mt-2 mb-8">
+      <p className="text-gray-600 text-center sm:text-left mt-2 mb-8">
         Find your community. Achieve goals. Stay inspired.
       </p>
 
@@ -101,7 +109,7 @@ export const SignUp: React.FC = () => {
         />
 
         <Button type="submit" variant="primary">
-          Sign up
+          {isPending ? <ButtonLoader title="Signing up..." /> : "Sign up "}
         </Button>
       </form>
 

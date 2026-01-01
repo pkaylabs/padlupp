@@ -22,7 +22,7 @@ export const InvitationsView: React.FC<InvitationsViewProps> = ({
       {invitations.map((invite) => (
         <div
           key={invite.id}
-          className="flex items-center justify-between p-6 bg-white "
+          className="flex items-center justify-between p-4 sm:p-6 bg-white "
         >
           <div className="flex items-center gap-3">
             <img

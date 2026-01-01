@@ -3,6 +3,7 @@ import {
   Link,
   Outlet,
   createFileRoute,
+  redirect,
   useMatchRoute,
 } from "@tanstack/react-router";
 import { useState } from "react";
@@ -24,6 +25,17 @@ import { MESSAGES, SETTINGS } from "@/constants/page-path";
 import { TopNav } from "./-components/top-nav";
 
 export const Route = createFileRoute("/_app")({
+  beforeLoad: ({ context, location }) => {
+    // Access auth state directly from the context injected in main.tsx
+    if (!context.auth.isAuthenticated) {
+      throw redirect({
+        to: '/signin',
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+  },
   component: AppLayout,
 });
 
@@ -40,7 +52,7 @@ function AppLayout() {
         >
           <DialogBackdrop
             transition
-            className="fixed inset-0 bg-white transition-opacity duration-300 ease-linear data-closed:opacity-0"
+            className="fixed inset-0 bg-black/50 transition-opacity duration-300 ease-linear data-closed:opacity-0"
           />
 
           <div className="fixed inset-0 flex">
@@ -74,15 +86,18 @@ function AppLayout() {
                       <ul role="list" className="-mx-2 space-y-1">
                         {navigation.map((item, index) => (
                           <li key={index}>
-                            <Link to={item.href}>
+                            <Link
+                              to={item.href}
+                              onClick={() => setSidebarOpen(false)}
+                            >
                               {({ isActive }) => {
                                 return (
                                   <div
                                     className={classNames(
                                       isActive
-                                        ? "g-primary-50 text-primary font-semibold"
-                                        : "text-gray-800 hover:bg-primary-100 hover:text-primary-600 font-medium",
-                                      "group flex gap-x-3 rounded-xl px-5 py-1 text-sm  leading-6 capitalize"
+                                        ? "bg-primary-500 text-white font-semibold"
+                                        : "text-dark-blue-normal hover:bg-primary-100  font-medium",
+                                      "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out"
                                     )}
                                   >
                                     <item.icon
@@ -90,7 +105,7 @@ function AppLayout() {
                                       className={classNames(
                                         isActive
                                           ? "text-white"
-                                          : "text-dark-blue-normal group-hover:text-primary-100",
+                                          : "text-dark-blue-normal",
                                         "h-5 w-5 shrink-0"
                                       )}
                                     />
@@ -105,15 +120,30 @@ function AppLayout() {
                     </li>
 
                     <li className="mt-auto">
-                      <Link
-                        to={SETTINGS}
-                        className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary-600"
-                      >
-                        <Cog6ToothIcon
-                          aria-hidden="true"
-                          className="size-6 shrink-0 text-gray-400 group-hover:text-primary-600"
-                        />
-                        Settings
+                      <Link to={SETTINGS} onClick={() => setSidebarOpen(false)}>
+                        {({ isActive }) => {
+                          return (
+                            <div
+                              className={classNames(
+                                isActive
+                                  ? "bg-primary-500 text-white font-semibold"
+                                  : "text-dark-blue-normal hover:bg-primary-200  font-medium",
+                                "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out"
+                              )}
+                            >
+                              <Cog6ToothIcon
+                                aria-hidden="true"
+                                className={classNames(
+                                  isActive
+                                    ? "text-white"
+                                    : "text-dark-blue-normal",
+                                  "h-5 w-5 shrink-0"
+                                )}
+                              />
+                              Settings
+                            </div>
+                          );
+                        }}
                       </Link>
                     </li>
                   </ul>
@@ -208,7 +238,7 @@ function AppLayout() {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="-m-2.5 p-2.5 text-dark-blue-normal lg:hidden"
+              className=" p-2 text-dark-blue-normal lg:hidden"
             >
               <span className="sr-only">Open sidebar</span>
               <Bars3Icon aria-hidden="true" className="size-6" />
@@ -217,9 +247,9 @@ function AppLayout() {
             <TopNav />
           </div>
 
-          <main className={` flex-1 h-full  bg-bg-gray`}>
+          <main className={`flex-1 h-full  bg-bg-gray`}>
             <div
-              className={`h-full ${matchRoute({ to: MESSAGES }) || (matchRoute({ to: SETTINGS }) ? "p-0" : "p-6")} `}
+              className={`h-full ${matchRoute({ to: MESSAGES }) || (matchRoute({ to: SETTINGS }) ? "p-0" : "p-4 sm:p-6")} `}
             >
               <Outlet />
             </div>

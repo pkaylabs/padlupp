@@ -33,7 +33,7 @@ export const CategoryGridView: React.FC<CategoryGridViewProps> = ({
         Categories
       </p>
       <motion.div
-        className="grid grid-cols-3 gap-1 px-14"
+        className="grid grid-cols-3 gap-1 sm:px-14"
         variants={gridVariants}
         initial="hidden"
         animate="visible"
@@ -43,7 +43,7 @@ export const CategoryGridView: React.FC<CategoryGridViewProps> = ({
           <motion.button
             key={item.label}
             onClick={() => onSelectCategory(item.label)}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl hover:shadow transition-shadow"
+            className="flex flex-col items-center gap-2 py-4 sm:p-4 rounded-xl hover:shadow transition-shadow"
             variants={itemVariants}
             whileTap={{ scale: 0.95 }}
           >

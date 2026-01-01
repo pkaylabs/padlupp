@@ -1,5 +1,10 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import { AuthState } from "@/features/auth/authStore";
+import { createRootRoute, createRootRouteWithContext, Link, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+
+interface RouterContext {
+  auth: AuthState;
+}
 
 const RootLayout = () => (
   <div>
@@ -8,4 +13,4 @@ const RootLayout = () => (
   </div>
 );
 
-export const Route = createRootRoute({ component: RootLayout });
+export const Route = createRootRouteWithContext<RouterContext>()({ component: RootLayout });

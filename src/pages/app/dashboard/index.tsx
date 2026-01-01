@@ -13,8 +13,6 @@ import { StreaksView } from "./components/streaks-view";
 import { AwardsView } from "./components/awards-view";
 import { SegmentedControl } from "@/components/system/segment-control";
 
-// --- New, Expanded Dummy Data ---
-// We use real Date objects now
 const today = startOfToday();
 const ALL_GOALS = [
   // Today's Goals (Nov 8, 2025)
@@ -143,7 +141,7 @@ export const DashboardComponent = () => {
 
   return (
     <div className="">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16 sm:mb-0">
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-white p-5 rounded-sm">
             <TodayProgress goals={filteredGoals} selectedDate={selectedDate} />
@@ -152,7 +150,7 @@ export const DashboardComponent = () => {
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold text-[#636363] mb-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#636363] mb-4">
               Today's goals
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

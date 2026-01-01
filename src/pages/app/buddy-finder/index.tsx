@@ -85,15 +85,16 @@ export const BuddyFinderPage = () => {
     }
     return path;
   }, [mainTab, selectedCategory]);
+
   return (
     <>
-      <div className="font-monts w-full flex flex-col ">
+      <div className="font-monts w-full flex flex-col">
         {/* Header: Breadcrumb & Back */}
-        <header className="sticky top-22 w-full flex items-center justify-between mb-6">
+        <header className="sm:sticky sm:top-22 w-full flex items-center justify-between mb-6">
           <Breadcrumb path={breadcrumbPath} />
         </header>
 
-        <main className="w-full max-w-2xl mx-auto">
+        <main className="w-full sm:max-w-2xl mx-auto ">
           {/* Top Controls: Tabs, Search, Filter */}
           <SegmentedControl
             tabs={["Explore", "Invitations"]}
@@ -103,7 +104,7 @@ export const BuddyFinderPage = () => {
             className="w-fit mx-auto"
           />
 
-          <div className="flex items-center gap-4 my-6">
+          <div className="flex items-center gap-4 my-6 ">
             <div className="relative flex-1">
               <Search
                 size={20}

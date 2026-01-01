@@ -66,7 +66,7 @@ export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center w-full h-[542px] p-6 transition-colors duration-300",
+        "relative flex flex-col items-center w-full h-screen sm:h-[542px] p-4 sm:p-6 transition-colors duration-300",
         theme.bg
       )}
     >
@@ -74,7 +74,7 @@ export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         onClick={onClose}
         className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-20"
       >
-        <X size={20} />
+        <X size={24} />
       </button>
 
       {/* This tag is shared between views */}

@@ -129,7 +129,7 @@ export const GoalDetailsPage = () => {
             >
               <ArrowLeft size={22} />
             </Link>
-            <h1 className="text-xl font-semibold text-[#636363] ">
+            <h1 className="text-lg sm:text-xl font-semibold text-[#636363] ">
               {goal.title}
             </h1>
           </div>
@@ -159,7 +159,7 @@ export const GoalDetailsPage = () => {
           </div>
         </header>
 
-        <div className="p-8 max-w-4xl mx-auto w-full pb-20">
+        <div className="px-2 py-8 sm:p-8 max-w-4xl mx-auto w-full pb-20">
           {/* Progress Bar (Top) */}
           <div className="mb-8">
             {/* Reuse your TodayProgress logic here if needed, simplified for now */}

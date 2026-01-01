@@ -25,7 +25,7 @@ export const TopNav: React.FC = () => {
 
   return (
     <>
-      <nav className="w-full h-full flex items-center justify-between px-6 bg-white ">
+      <nav className="w-full h-full flex items-center justify-between px-4 sm:px-6 bg-white ">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             {/* User Avatar */}
@@ -42,7 +42,7 @@ export const TopNav: React.FC = () => {
           {/* Theme Toggle */}
           <ThemeToggle theme={theme} onToggle={handleToggleTheme} />
 
-          <button className="relative w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100">
+          <button className="relative w-10 h-10 hidden sm:flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100">
             <div className="absolute size-2 rounded-full bg-primary-500 top-2 right-3"></div>
             <Bell className="text-gray-300" size={24} />
           </button>
@@ -67,7 +67,7 @@ export const TopNav: React.FC = () => {
         isOpen={isTimerOpen}
         onClose={() => setIsTimerOpen(false)}
         // This className is key for positioning
-        className="fixed top-15 right-5 w-xl"
+        className="fixed sm:top-15 sm:right-5 w-full sm:w-xl"
       >
         <TimerModal onClose={() => setIsTimerOpen(false)} />
       </Modal>

@@ -16,7 +16,7 @@ export const GoalColumn: React.FC<GoalColumnProps> = ({
   onAddTask,
 }) => {
   return (
-    <div className="flex flex-col h-fit w-[300px] bg-[#F5F5F5] rounded-xl p-3 ">
+    <div className="flex flex-col h-fit sm:w-[300px] bg-[#F5F5F5] rounded-xl p-3 ">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">

@@ -33,8 +33,8 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
           exit={{ x: -300, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          <div className="rounded-xl p-6 pt-0 flex flex-col gap-3 items-center h-full">
-            <div className="w-full flex gap-1.5 items-center bg-white shadow-md p-6 rounded-lg">
+          <div className="rounded-xl p-4 sm:p-6 pt-0 flex flex-col gap-3 items-center h-full">
+            <div className="w-full flex gap-1.5 items-center bg-white shadow-md p-4 sm:p-6 rounded-lg">
               <span className="font-semibold text-[#3D3D3D]">{goal.title}</span>
             </div>
 
@@ -60,7 +60,7 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
               </span>
             </span>
 
-            <div className="relative w-full p-6 py-8 bg-white rounded-lg shadow-md text-sm text-gray-700 my-4">
+            <div className="relative w-full p-4 sm:p-6 py-8 bg-white rounded-lg shadow-md text-sm text-gray-700 my-4">
               <h4 className="font-semibold text-dark-gray mb-5">Overview</h4>
 
               <div className="flex flex-col gap-5">
@@ -108,13 +108,13 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
       {/* Navigation Arrows */}
       <button
         onClick={() => paginate(-1)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 p-2 rounded-full hover:bg-gray-100"
+        className="absolute left-6 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
       >
         <ArrowLeft2 variant="Bold" size={30} />
       </button>
       <button
         onClick={() => paginate(1)}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 p-2 rounded-full hover:bg-gray-100"
+        className="absolute right-6 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
       >
         <ArrowRight2 variant="Bold" size={30} />
       </button>

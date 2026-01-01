@@ -7,6 +7,8 @@ import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GoogleIcon } from "../signup";
+import { useLogin } from "../hooks/useLogin";
+import ButtonLoader from "@/components/loaders/button";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
@@ -16,7 +18,10 @@ const validationSchema = Yup.object({
 });
 
 export const SignIn: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
+
+  const { mutate: login, isPending, error } = useLogin();
+
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -25,15 +30,19 @@ export const SignIn: React.FC = () => {
     validationSchema,
     onSubmit: (values) => {
       console.log("Form Submitted", values);
-      navigate({ to: "/onboarding" });
+      login(values);
+
+      // navigate({ to: "/onboarding" });
       // alert(JSON.stringify(values, null, 2));
     },
   });
 
   return (
     <div className="w-full max-w-lg mx-auto py-12 px-4">
-      <h1 className="text-3xl font-semibold text-gray-900">Welcome Back 👋</h1>
-      <p className="text-gray-600 mt-2 mb-8">
+      <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900">
+        Welcome Back 👋
+      </h1>
+      <p className="text-gray-600 text-center sm:text-left mt-2 mb-8">
         Find your community. Achieve goals. Stay inspired.
       </p>
 
@@ -61,7 +70,7 @@ export const SignIn: React.FC = () => {
         />
 
         <Button type="submit" variant="primary">
-          Sign in
+          {isPending ? <ButtonLoader title="Signing in..." /> : "Sign in"}
         </Button>
       </form>
 

@@ -101,7 +101,7 @@ export const UserProfileView = ({
   onRate: () => void;
 }) => {
   return (
-    <div className="h-full flex flex-col bg-bg-gray px-20 pt-8">
+    <div className="h-full flex flex-col bg-bg-gray px-4 sm:px-20 pt-8">
       <div className=" flex justify-between items-center bg-white shadow rounded-lg p-6">
         <button
           onClick={onBack}
@@ -184,7 +184,7 @@ export const UserProfileView = ({
           </div>
         </div>
 
-        <div className="mt-auto">
+        <div className="mt-auto pt-3 sm:pt-0">
           <Button variant="primary" className="w-48" onClick={onRate}>
             Rate
           </Button>
@@ -240,7 +240,7 @@ export const GoalProgressView = ({
         </div>
       </div>
 
-      <div className="px-20 mt-6 overflow-y-auto">
+      <div className="px-4 sm:px-20 mt-6 overflow-y-auto">
         <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
           <span>📅</span> 30th March, 2025 - 30th May, 2025
         </div>

@@ -98,7 +98,9 @@ const InfoItem: React.FC<{ icon: React.ReactNode; text: string }> = ({
       {icon}
     </div>
 
-    <span className="text-sm font-medium text-[#44424C] ">{text}</span>
+    <span className="text-xs sm:text-sm font-medium text-[#44424C] ">
+      {text}
+    </span>
   </div>
 );
 
@@ -134,7 +136,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
         {/* Title and Subtitle */}
         <div className="font-monts space-y-1">
-          <h3 className="text-lg font-medium text-[#3D3D3D] ">{title}</h3>
+          <h3 className=" sm:text-lg font-medium text-[#3D3D3D] ">{title}</h3>
           <p className="text-sm text-[#838181] ">{subtitle}</p>
         </div>
 
