@@ -4,3 +4,5 @@ export function getProperty<Type, Key extends keyof Type>(
 ): Type[Key] {
   return obj[key];
 }
+
+export { API_BASE_URL } from "./api";

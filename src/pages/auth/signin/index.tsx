@@ -7,6 +7,8 @@ import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GoogleIcon } from "../signup";
+import { login, ApiError } from "@/utils/api";
+import { tryCatch } from "@/utils/try-catch";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
@@ -17,16 +19,26 @@ const validationSchema = Yup.object({
 
 export const SignIn: React.FC = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
   const formik = useFormik({
     initialValues: {
       email: "",
       password: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      console.log("Form Submitted", values);
+    onSubmit: async (values) => {
+      setLoading(true);
+      setError(null);
+      const [data, err] = await tryCatch(login(values));
+      setLoading(false);
+      if (err) {
+        setError((err as ApiError).detail || "Login failed");
+        return;
+      }
+      // Optionally store token/user info here
       navigate({ to: "/onboarding" });
-      // alert(JSON.stringify(values, null, 2));
     },
   });
 
@@ -38,6 +50,9 @@ export const SignIn: React.FC = () => {
       </p>
 
       <form onSubmit={formik.handleSubmit} className="space-y-5">
+        {error && (
+          <div className="text-red-500 text-sm mb-2">{error}</div>
+        )}
         <TextInput
           id="email"
           label="Email"
@@ -60,8 +75,8 @@ export const SignIn: React.FC = () => {
           handleBlur={formik.handleBlur}
         />
 
-        <Button type="submit" variant="primary">
-          Sign in
+        <Button type="submit" variant="primary" disabled={loading}>
+          {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 
