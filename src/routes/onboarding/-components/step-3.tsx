@@ -8,9 +8,12 @@ import { DASHBOARD } from "@/constants/page-path";
 
 interface Step3Props {
   onFinish: (file: File | null) => void;
+  isLoading?: boolean;
 }
 
-export const Step3ProfileImage: React.FC<Step3Props> = ({ onFinish }) => {
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+
+export const Step3ProfileImage: React.FC<Step3Props> = ({ onFinish, isLoading }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,12 +93,21 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({ onFinish }) => {
       <Button
         variant="primary"
         onClick={() => onFinish(file)}
+        disabled={isLoading}
         className="w-full"
       >
-        Finish up
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            Uploading...
+            <ArrowPathIcon className="h-5 w-5 animate-spin text-white" />
+          </span>
+        ) : (
+          "Finish up"
+        )}
       </Button>
       <button
         onClick={() => {
+          if (isLoading) return;
           onFinish(null);
           navigate({ to: DASHBOARD });
         }}

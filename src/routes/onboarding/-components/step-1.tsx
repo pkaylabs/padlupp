@@ -19,6 +19,7 @@ import { DASHBOARD } from "@/constants/page-path";
 
 interface Step1Props {
   onContinue: (interests: string[]) => void;
+  isLoading?: boolean;
 }
 
 const interestOptions = [
@@ -34,7 +35,9 @@ const interestOptions = [
   { icon: <Projector size={18} />, label: "Project tracking" },
 ];
 
-export const Step1Interests: React.FC<Step1Props> = ({ onContinue }) => {
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+
+export const Step1Interests: React.FC<Step1Props> = ({ onContinue, isLoading }) => {
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggleInterest = (label: string) => {
@@ -70,10 +73,17 @@ export const Step1Interests: React.FC<Step1Props> = ({ onContinue }) => {
       <Button
         variant="primary"
         onClick={() => onContinue(selected)}
-        disabled={selected.length === 0}
+        disabled={selected.length === 0 || isLoading}
         className="w-full"
       >
-        Continue
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            Saving...
+            <ArrowPathIcon className="h-5 w-5 animate-spin text-white" />
+          </span>
+        ) : (
+          "Continue"
+        )}
       </Button>
       <Link
         to={DASHBOARD}

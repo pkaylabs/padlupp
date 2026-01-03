@@ -4,6 +4,7 @@ import {
   Outlet,
   createFileRoute,
   useMatchRoute,
+  redirect,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import {
@@ -24,6 +25,14 @@ import { MESSAGES, SETTINGS } from "@/constants/page-path";
 import { TopNav } from "./-components/top-nav";
 
 export const Route = createFileRoute("/_app")({
+  beforeLoad: () => {
+    const token = typeof window !== "undefined"
+      ? window.localStorage.getItem("auth_token")
+      : null;
+    if (!token) {
+      throw redirect({ to: "/signin" });
+    }
+  },
   component: AppLayout,
 });
 

@@ -5,6 +5,7 @@ import Button from "@/components/core/buttons";
 
 interface Step2Props {
   onContinue: (goal: string) => void;
+  isLoading?: boolean;
 }
 
 const goalOptions = [
@@ -25,7 +26,9 @@ const goalOptions = [
   },
 ];
 
-export const Step2Goal: React.FC<Step2Props> = ({ onContinue }) => {
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+
+export const Step2Goal: React.FC<Step2Props> = ({ onContinue, isLoading }) => {
   const [selected, setSelected] = useState("");
 
   return (
@@ -50,10 +53,17 @@ export const Step2Goal: React.FC<Step2Props> = ({ onContinue }) => {
       <Button
         variant="primary"
         onClick={() => onContinue(selected)}
-        disabled={!selected}
+        disabled={!selected || isLoading}
         className="w-full"
       >
-        Continue
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            Saving...
+            <ArrowPathIcon className="h-5 w-5 animate-spin text-white" />
+          </span>
+        ) : (
+          "Continue"
+        )}
       </Button>
     </div>
   );
