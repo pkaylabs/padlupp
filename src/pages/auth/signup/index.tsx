@@ -6,6 +6,12 @@ import { Divider } from "@/components/system/divider";
 import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { register, ApiError, RegisterRequest, RegisterResponse } from "@/utils/api";
+import { tryCatch } from "@/utils/try-catch";
+import { useAuth } from "@/components/core/auth-context";
+import { notifyLoading, notifyError, notifySuccess } from "@/notifications";
+import toast from "react-hot-toast";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 // Google G logo SVG
 export const GoogleIcon = () => (
@@ -40,6 +46,9 @@ const validationSchema = Yup.object({
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
+  const { setUser, setToken } = useAuth();
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const formik = useFormik({
     initialValues: {
       fullName: "",
@@ -47,10 +56,30 @@ export const SignUp: React.FC = () => {
       password: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      console.log("Form Submitted", values);
+    onSubmit: async (values) => {
+      setLoading(true);
+      setError(null);
+      const payload: RegisterRequest = {
+        name: values.fullName,
+        email: values.email,
+        password: values.password,
+      };
+      const toastId = notifyLoading("Creating your account...");
+      const [data, err] = await tryCatch(register(payload));
+      setLoading(false);
+      if (err) {
+        const detail = (err as ApiError).detail || "Signup failed";
+        setError(detail);
+        toast.dismiss(toastId);
+        notifyError("Signup failed", detail);
+        return;
+      }
+      const { user, token } = data as RegisterResponse;
+      setUser(user);
+      setToken(token);
+      toast.dismiss(toastId);
+      notifySuccess("Welcome to Padlupp!", `Hi ${user.name || user.email}`);
       navigate({ to: "/onboarding" });
-      // alert(JSON.stringify(values, null, 2));
     },
   });
 
@@ -100,8 +129,18 @@ export const SignUp: React.FC = () => {
           handleBlur={formik.handleBlur}
         />
 
-        <Button type="submit" variant="primary">
-          Sign up
+        {error && (
+          <div className="text-red-500 text-sm mb-2">{error}</div>
+        )}
+        <Button type="submit" variant="primary" disabled={loading}>
+          {loading ? (
+            <span className="flex items-center gap-2">
+              Signing up...
+              <ArrowPathIcon className="h-5 w-5 animate-spin text-white" />
+            </span>
+          ) : (
+            "Sign up"
+          )}
         </Button>
       </form>
 

@@ -7,8 +7,13 @@ import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GoogleIcon } from "../signup";
-import { login, ApiError } from "@/utils/api";
+import { login, ApiError, LoginResponse } from "@/utils/api";
 import { tryCatch } from "@/utils/try-catch";
+import { useAuth } from "@/components/core/auth-context";
+import { notifyLoading, notifyError, notifySuccess } from "@/notifications";
+import toast from "react-hot-toast";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { DASHBOARD } from "@/constants/page-path";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
@@ -21,6 +26,7 @@ export const SignIn: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const { setUser, setToken } = useAuth();
 
   const formik = useFormik({
     initialValues: {
@@ -31,14 +37,23 @@ export const SignIn: React.FC = () => {
     onSubmit: async (values) => {
       setLoading(true);
       setError(null);
+      const toastId = notifyLoading("Signing in...");
       const [data, err] = await tryCatch(login(values));
       setLoading(false);
       if (err) {
-        setError((err as ApiError).detail || "Login failed");
+        const detail = (err as ApiError).detail || "Login failed";
+        setError(detail);
+        toast.dismiss(toastId);
+        notifyError("Login failed", detail);
         return;
       }
-      // Optionally store token/user info here
-      navigate({ to: "/onboarding" });
+      // Store token and user in context
+      const { user, token } = data as LoginResponse;
+      setUser(user);
+      setToken(token);
+      toast.dismiss(toastId);
+      notifySuccess("Welcome back!", `Signed in as ${user.name || user.email}`);
+      navigate({ to: DASHBOARD });
     },
   });
 
@@ -65,7 +80,7 @@ export const SignIn: React.FC = () => {
         />
         <TextInput
           id="password"
-          label="Create password"
+          label="Enter password"
           type="password"
           placeholder="Password"
           values={formik.values}
@@ -76,7 +91,14 @@ export const SignIn: React.FC = () => {
         />
 
         <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              Signing in...
+              <ArrowPathIcon className="h-5 w-5 animate-spin text-white" />
+            </span>
+          ) : (
+            "Sign in"
+          )}
         </Button>
       </form>
 
