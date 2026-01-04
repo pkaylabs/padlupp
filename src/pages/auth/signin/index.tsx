@@ -51,6 +51,11 @@ export const SignIn: React.FC = () => {
       const { user, token } = data as LoginResponse;
       setUser(user);
       setToken(token);
+      // Ensure route guard sees token immediately
+      try {
+        localStorage.setItem("auth_token", token);
+        localStorage.setItem("auth_user", JSON.stringify(user));
+      } catch {}
       toast.dismiss(toastId);
       notifySuccess("Welcome back!", `Signed in as ${user.name || user.email}`);
       navigate({ to: DASHBOARD });

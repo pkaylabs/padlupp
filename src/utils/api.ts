@@ -6,7 +6,8 @@ function getAuthToken(): string | null {
 // Helper to add Authorization header if token exists
 export function authHeaders(headers: Record<string, string> = {}): Record<string, string> {
 	const token = getAuthToken();
-	return token ? { ...headers, Authorization: `Bearer ${token}` } : headers;
+	// Backend expects "Authorization: Token <token>"
+	return token ? { ...headers, Authorization: `Token ${token}` } : headers;
 }
 // Global unauthorized handler
 function handleUnauthorized() {
@@ -20,7 +21,7 @@ function handleUnauthorized() {
 	}
 }
 // const API_BASE_URL = "https://api.padlupp.com/api-v1/";
-const API_BASE_URL = "http://10.107.168.119:8000/api-v1/";
+const API_BASE_URL = "http://10.231.244.118:8000/api-v1/";
 
 export interface LoginRequest {
 	email: string;
@@ -96,8 +97,16 @@ export async function register(payload: RegisterRequest): Promise<RegisterRespon
 	if (response.ok) {
 		return response.json();
 	} else {
-		const error: ApiError = await response.json();
-		throw error;
+		let detail = "Signup failed";
+		try {
+			const data = await response.json();
+			detail = (data?.detail as string) ?? JSON.stringify(data);
+		} catch {
+			try {
+				detail = await response.text();
+			} catch {}
+		}
+		throw { detail } as ApiError;
 	}
 }
 
@@ -142,6 +151,29 @@ export async function uploadAvatar(file: File): Promise<User> {
 		method: "PATCH",
 		headers: authHeaders(), // don't set Content-Type for FormData
 		body: form,
+	});
+
+	if (response.ok) {
+		return response.json();
+	} else {
+		if (response.status === 401) {
+			handleUnauthorized();
+			throw { detail: "Unauthorized" } as ApiError;
+		}
+		const error: ApiError = await response.json();
+		throw error;
+	}
+}
+
+// Logout (authenticated)
+export interface LogoutResponse { detail: string }
+
+export async function logout(): Promise<LogoutResponse> {
+	const response = await fetch(`${API_BASE_URL}auth/logout/`, {
+		method: "POST",
+		headers: authHeaders({
+			"Content-Type": "application/json",
+		}),
 	});
 
 	if (response.ok) {

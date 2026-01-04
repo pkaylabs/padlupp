@@ -19,6 +19,11 @@ import { DualRangeSlider } from "./dual-range-slider";
 import { LANGUAGES } from "@/constants/data";
 import { Check } from "iconsax-reactjs";
 import { StyledSwitch } from "@/routes/_app/-components/toggle";
+import { logout as apiLogout, ApiError } from "@/utils/api";
+import { useAuth } from "@/components/core/auth-context";
+import { notifyLoading, notifyError, notifySuccess } from "@/notifications";
+import toast from "react-hot-toast";
+import { useNavigate } from "@tanstack/react-router";
 
 type SettingsView =
   | "menu"
@@ -518,9 +523,7 @@ export const SettingsSidebar: React.FC = () => {
 
             {/* Footer Actions */}
             <div className="mt-12 border-t border-gray-100 pt-4 space-y-1">
-              <button className="w-full flex items-center bg-white justify-center py-3 text-gray-900 font-medium text-sm rounded-lg">
-                Log out
-              </button>
+              <LogoutButton />
               <div className="flex justify-center">
                 <ChevronsUp className="text-blue-500 animate-bounce" />
               </div>
@@ -540,5 +543,40 @@ export const SettingsSidebar: React.FC = () => {
       </div>
       {renderContent()}
     </div>
+  );
+};
+
+const LogoutButton: React.FC = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const onLogout = async () => {
+    if (loading) return;
+    setLoading(true);
+    const toastId = notifyLoading("Signing you out...");
+    try {
+      const res = await apiLogout();
+      toast.dismiss(toastId);
+      notifySuccess("Signed out", res.detail || "Goodbye for now");
+    } catch (e) {
+      const detail = (e as ApiError).detail || "Logout failed";
+      toast.dismiss(toastId);
+      notifyError("Logout failed", detail);
+    } finally {
+      logout();
+      setLoading(false);
+      navigate({ to: "/signin" });
+    }
+  };
+
+  return (
+    <button
+      onClick={onLogout}
+      className="w-full flex items-center bg-white justify-center py-3 text-gray-900 font-medium text-sm rounded-lg"
+      disabled={loading}
+    >
+      {loading ? "Signing out..." : "Log out"}
+    </button>
   );
 };
