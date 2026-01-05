@@ -1,31 +1,39 @@
 import { api } from "@/lib/api";
 
 export interface OnboardingPayload {
-  experience: string; // Mapped from 'goal'
-  interests: string[];
-  avatar: File | null;
+  experience?: string;
+  interests?: any[];
+  avatar?: File | null;
 }
 
 export const setOnboardingExperience = async (data: OnboardingPayload) => {
   const formData = new FormData();
 
-  // 1. Append simple text fields
-  formData.append("experience", data.experience);
+  if (data.experience) {
+    formData.append("experience", data.experience);
+  }
 
-  // 2. Append Array (Interests)
-  // Note: Check your backend!
-  // Standard method: append 'interests' multiple times
-  data.interests.forEach((interest) => {
-    formData.append("interests", interest);
-  });
+  if (data.interests) {
+    const cleanInterests = data.interests.flat(Infinity);
 
-  // 3. Append File if it exists
+    cleanInterests.forEach((interest) => {
+      if (typeof interest === "string" && interest.trim() !== "") {
+        formData.append("interests", interest);
+      }
+    });
+  }
+
+  const response = await api.post("/onboarding/set-experience/", formData);
+  return response.data;
+};
+
+export const setOnboardingAvatar = async (data: OnboardingPayload) => {
+  const formData = new FormData();
+
   if (data.avatar) {
     formData.append("avatar", data.avatar);
   }
 
-  // Axios automatically sets 'Content-Type': 'multipart/form-data'
-  // when it detects a FormData instance.
-  const response = await api.post("/onboarding/set-experience/", formData);
+  const response = await api.post("/onboarding/user-avatar/", formData);
   return response.data;
 };

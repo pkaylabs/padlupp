@@ -18,6 +18,7 @@ import { format, startOfToday } from "date-fns";
 import { ArrowLeft } from "iconsax-reactjs";
 import { CalendarView } from "@/components/system/date-picker/calendar-view";
 import { CalendarWidget } from "../dashboard/components/calendar-widget";
+import { useGoal } from "./hooks/useGoal";
 
 // --- Types ---
 interface Subtask {
@@ -101,6 +102,16 @@ export const GoalDetailsPage = () => {
   const [sharePopoverOpen, setSharePopoverOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(startOfToday());
+
+  // const { data: goal, isPending, isError } = useGoal(goalId);
+
+  // if (isPending) {
+  //   return <div className="p-8 text-center text-gray-500">Loading goal details...</div>;
+  // }
+
+  // if (isError || !goal) {
+  //   return <div className="p-8 text-center text-red-500">Goal not found.</div>;
+  // }
 
   const toggleSubtask = (id: string) => {
     setGoal((prev) => ({

@@ -35,6 +35,9 @@ import {
 import { Modal } from "@/components/core/modal";
 import { StyledSwitch } from "@/routes/_app/-components/toggle";
 import Button from "@/components/core/buttons";
+import { useCreateGoal } from "../hooks/useCreateGoal";
+import ButtonLoader from "@/components/loaders/button";
+import { useCreateTask } from "../hooks/useTasks";
 
 interface CreateGoalModalProps {
   isOpen: boolean;
@@ -74,6 +77,13 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { mutateAsync: createGoal, isPending: isCreatingGoal } =
+    useCreateGoal();
+  const { mutateAsync: createTask, isPending: isCreatingTask } =
+    useCreateTask();
+
+  const isPending = isCreatingGoal || isCreatingTask;
+
   const [activePopover, setActivePopover] = useState<PopoverType>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -92,17 +102,64 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   const [newSubtask, setNewSubtask] = useState("");
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
 
-  const handleCreate = () => {
-    // Logic to save goal would go here
-    setIsSuccess(true);
-    setTimeout(() => {
-      setIsSuccess(false);
-      onClose();
-      // Reset state
-      setTitle("");
-      setDescription("");
-      setSubtasks([]);
-    }, 2000);
+  const handleCreate = async () => {
+    // Validation
+    // if (!title.trim()) return toast.error("Title required");
+    // if (!dateRange.start) return toast.error("Start date required");
+    if (!title.trim()) return;
+    if (!dateRange.start) return;
+
+    try {
+      // Step A: Create the Goal
+      const goalPayload = {
+        title,
+        description,
+        start_date: format(dateRange.start, "yyyy-MM-dd"),
+        target_date: dateRange.end
+          ? format(dateRange.end, "yyyy-MM-dd")
+          : format(dateRange.start, "yyyy-MM-dd"),
+        status,
+        is_active: true,
+      };
+
+      // We await the result to get the new Goal's ID
+      const newGoal = await createGoal(goalPayload);
+
+      // Step B: Create Subtasks (if any)
+      if (subtasks.length > 0 && newGoal?.id) {
+        // We use Promise.all to send them in parallel for speed
+        await Promise.all(
+          subtasks.map((taskTitle) =>
+            createTask({
+              goal: newGoal.id, // Link to the new goal
+              title: taskTitle,
+              partnership: 0, // Default as per requirements
+              description: "", // Default
+              status: "planned",
+              is_shared: isShared,
+              // Defaulting due date to Goal's target date since subtask doesn't have its own picker
+              due_at: newGoal.target_date
+                ? new Date(newGoal.target_date).toISOString()
+                : new Date().toISOString(),
+            })
+          )
+        );
+      }
+
+      // Step C: Success UI
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+        onClose();
+        // Reset Form
+        setTitle("");
+        setDescription("");
+        setSubtasks([]);
+      }, 2000);
+    } catch (error) {
+      console.error("Creation flow failed", error);
+      // Toast is handled in the hooks, but you can add a generic fallback here
+    }
   };
 
   const addSubtask = () => {
@@ -181,6 +238,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             <input
               type="text"
               value={title}
+              disabled={isPending}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full border-b border-gray-200 pb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
               placeholder="e.g. Learn React Hooks"
@@ -190,6 +248,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             <input
               type="text"
               value={description}
+              disabled={isPending}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full border-none p-2 text-sm text-gray-600 placeholder:text-gray-400  outline-none focus:outline-none"
               placeholder="Description"
@@ -201,6 +260,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             {/* Date Trigger */}
             <div className="relative">
               <button
+                disabled={isPending}
                 onClick={() =>
                   setActivePopover(activePopover === "date" ? null : "date")
                 }
@@ -215,6 +275,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               <AnimatePresence>
                 {activePopover === "date" && (
                   <DatePickerView
+                    disabled={isPending}
                     range={dateRange}
                     onChange={(r: any) => {
                       setDateRange(
@@ -230,6 +291,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             {/* Time Trigger */}
             <div className="relative">
               <button
+                disabled={isPending}
                 onClick={() =>
                   setActivePopover(activePopover === "time" ? null : "time")
                 }
@@ -261,6 +323,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
                 <span className="flex-1">{task}</span>
                 <button
+                  disabled={isPending}
                   onClick={() =>
                     setSubtasks(subtasks.filter((_, i) => i !== idx))
                   }
@@ -278,11 +341,13 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                   type="text"
                   className="flex-1 text-sm border-b border-blue-500 focus:outline-none py-1"
                   placeholder="Enter subtask..."
+                  disabled={isPending}
                   value={newSubtask}
                   onChange={(e) => setNewSubtask(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addSubtask()}
                 />
                 <button
+                  disabled={isPending}
                   onClick={addSubtask}
                   className="text-blue-600 text-xs font-medium"
                 >
@@ -291,6 +356,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               </div>
             ) : (
               <button
+                disabled={isPending}
                 onClick={() => setIsAddingSubtask(true)}
                 className="flex items-center gap-2 text-gray-400 hover:text-gray-600 text-sm"
               >
@@ -393,11 +459,18 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
 
           {/* Action Button */}
           <Button
+            disabled={isPending}
             variant="primary"
             className="w-full py-3 mt-4"
             onClick={handleCreate}
           >
-            {isShared ? "Find me a partner" : "Create"}
+            {isPending ? (
+              <ButtonLoader title="Creating Goal..." />
+            ) : isShared ? (
+              "Find me a partner"
+            ) : (
+              "Create"
+            )}
           </Button>
         </div>
       </div>

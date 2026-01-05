@@ -22,6 +22,8 @@ function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
   const { mutate: submitOnboarding, isPending } = useOnboarding();
+  const { mutate: submitOnboardingAvatar, isPending: avatarLoading } =
+    useOnboarding();
 
   const [formData, setFormData] = useState<OnboardingData>({
     interests: [],
@@ -31,6 +33,14 @@ function OnboardingPage() {
 
   const handleStep1Continue = (interests: string[]) => {
     setFormData((prev) => ({ ...prev, interests }));
+
+    const payload = {
+      experience: formData.goal,
+      interests: formData.interests,
+    };
+
+    submitOnboarding(payload);
+
     setCurrentStep(3);
   };
 
@@ -42,14 +52,11 @@ function OnboardingPage() {
   const handleStep3Finish = (profileImage: File | null) => {
     // const finalData = { ...formData, profileImage };
 
-    const finalPayload = {
-      experience: formData.goal, // Mapping 'goal' -> 'experience'
-      interests: formData.interests,
+    const payload = {
       avatar: profileImage,
     };
 
-    // 3. Trigger Mutation
-    submitOnboarding(finalPayload);
+    submitOnboardingAvatar(payload);
   };
 
   const renderStep = () => {
@@ -57,12 +64,17 @@ function OnboardingPage() {
       case 1:
         return <Step2Goal onContinue={handleStep2Continue} />;
       case 2:
-        return <Step1Interests onContinue={handleStep1Continue} />;
+        return (
+          <Step1Interests
+            isPending={isPending}
+            onContinue={handleStep1Continue}
+          />
+        );
       case 3:
         return (
           <Step3ProfileImage
             onFinish={handleStep3Finish}
-            isPending={isPending}
+            isPending={avatarLoading}
           />
         );
       default:

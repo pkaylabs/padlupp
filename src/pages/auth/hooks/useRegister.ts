@@ -11,14 +11,10 @@ export function useRegister() {
     mutationFn: (credentials: RegisterCredentials) => registerUser(credentials),
 
     onSuccess: (data) => {
-      // 1. Auto-login the user immediately after registration
-      // (Assumes API returns token. If not, remove this line)
       login(data.token, data.user);
 
-      // 2. Invalidate router state
       router.invalidate();
 
-      // 3. Navigate to Onboarding
       router.navigate({ to: "/onboarding" });
     },
 

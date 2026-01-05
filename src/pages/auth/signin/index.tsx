@@ -7,8 +7,8 @@ import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { GoogleIcon } from "../signup";
-import { useLogin } from "../hooks/useLogin";
 import ButtonLoader from "@/components/loaders/button";
+import { useLogin } from "../hooks/useLogin";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),

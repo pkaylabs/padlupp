@@ -6,8 +6,8 @@ import { Divider } from "@/components/system/divider";
 import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useRegister } from "../hooks/useRegister";
 import ButtonLoader from "@/components/loaders/button";
+import { useRegister } from "../hooks/useRegister";
 
 // Google G logo SVG
 export const GoogleIcon = () => (

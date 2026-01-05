@@ -16,9 +16,11 @@ import { SelectableTag } from "./select-tag";
 import Button from "@/components/core/buttons";
 import { Link } from "@tanstack/react-router";
 import { DASHBOARD } from "@/constants/page-path";
+import ButtonLoader from "@/components/loaders/button";
 
 interface Step1Props {
   onContinue: (interests: string[]) => void;
+  isPending: boolean;
 }
 
 const interestOptions = [
@@ -34,7 +36,10 @@ const interestOptions = [
   { icon: <Projector size={18} />, label: "Project tracking" },
 ];
 
-export const Step1Interests: React.FC<Step1Props> = ({ onContinue }) => {
+export const Step1Interests: React.FC<Step1Props> = ({
+  onContinue,
+  isPending,
+}) => {
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggleInterest = (label: string) => {
@@ -70,10 +75,10 @@ export const Step1Interests: React.FC<Step1Props> = ({ onContinue }) => {
       <Button
         variant="primary"
         onClick={() => onContinue(selected)}
-        disabled={selected.length === 0}
+        disabled={selected.length === 0 || isPending}
         className="w-full"
       >
-        Continue
+        {isPending ? <ButtonLoader title="Setting up..." /> : "Continue"}
       </Button>
       <Link
         to={DASHBOARD}
