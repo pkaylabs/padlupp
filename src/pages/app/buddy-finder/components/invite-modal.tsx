@@ -1,8 +1,9 @@
 // src/components/goals/modals/InviteModal.tsx
+import React, { useState } from "react";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import { type Person } from "@/constants/goals-data";
-import React, { useState } from "react";
+import { useSendRequest } from "../hooks/useBuddies";
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -16,7 +17,19 @@ export const InviteModal: React.FC<InviteModalProps> = ({
   person,
 }) => {
   const [note, setNote] = useState("");
+  const { mutate: sendRequest, isPending } = useSendRequest();
   const maxLength = 300;
+
+  const handleSend = () => {
+    if (person?.id) {
+      sendRequest(Number(person.id), {
+        onSuccess: () => {
+          setNote(""); // Reset note
+          onClose();
+        },
+      });
+    }
+  };
 
   return (
     <Modal
@@ -31,14 +44,23 @@ export const InviteModal: React.FC<InviteModalProps> = ({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={maxLength}
-          placeholder={`Send a note to ${person?.name || "them"}...`}
+          placeholder={`Send a note to ${person?.name || "them"}... (Optional)`}
           className="w-full h-32 p-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
         />
         <div className="text-right text-sm text-gray-500 mt-1">
           {note.length}/{maxLength}
         </div>
-        <Button variant="primary" className="w-full mt-4" onClick={onClose}>
-          Send
+        <div className="mt-4 text-xs text-gray-400 italic">
+          * Note: Messages are currently disabled in this version. Request will
+          be sent immediately.
+        </div>
+        <Button
+          variant="primary"
+          className="w-full mt-4"
+          onClick={handleSend}
+          disabled={isPending}
+        >
+          {isPending ? "Sending Invitation..." : "Send"}
         </Button>
       </div>
     </Modal>

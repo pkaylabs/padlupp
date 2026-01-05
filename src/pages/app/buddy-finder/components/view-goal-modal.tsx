@@ -1,23 +1,19 @@
 // src/components/goals/modals/ViewGoalModal.tsx
 import React from "react";
-import {
-  Calendar,
-  CheckCircle,
-  Circle,
-  Briefcase,
-  Sparkles,
-} from "lucide-react";
+import { Calendar, Circle, Briefcase, Sparkles } from "lucide-react";
 import { GoalDetails } from "@/constants/goals-data";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
+import { BuddyInvitation } from "../api";
+import { useAcceptInvitation, useRejectInvitation } from "../hooks/useBuddies";
 
 interface ViewGoalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  goal: GoalDetails;
+  goalDetails: GoalDetails; // Visual data only
+  invitation: BuddyInvitation | null; // Real data for API ID
 }
 
-// A simple tag component for the modal
 const GoalTag: React.FC<{ tag: GoalDetails["tags"][0] }> = ({ tag }) => {
   const Icon =
     tag.type === "inProgress"
@@ -43,8 +39,26 @@ const GoalTag: React.FC<{ tag: GoalDetails["tags"][0] }> = ({ tag }) => {
 export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
   isOpen,
   onClose,
-  goal,
+  goalDetails,
+  invitation,
 }) => {
+  const { mutate: accept, isPending: isAccepting } = useAcceptInvitation();
+  const { mutate: reject, isPending: isRejecting } = useRejectInvitation();
+
+  const isLoading = isAccepting || isRejecting;
+
+  const handleAccept = () => {
+    if (invitation) {
+      accept(invitation.id, { onSuccess: onClose });
+    }
+  };
+
+  const handleReject = () => {
+    if (invitation) {
+      reject(invitation.id, { onSuccess: onClose });
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -53,19 +67,35 @@ export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
       className="font-monts top-1/2 -translate-y-1/2"
     >
       <div className="p-6 w-full max-w-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Description
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">{goal.description}</p>
+        <div className="flex items-center gap-3 mb-4">
+          <img
+            src={invitation?.from_user.avatar || "/default-avatar.png"}
+            className="w-10 h-10 rounded-full"
+          />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Invitation from {invitation?.from_user.name}
+            </h3>
+            <p className="text-xs text-gray-500">
+              Sent{" "}
+              {invitation
+                ? new Date(invitation.created_at).toLocaleDateString()
+                : ""}
+            </p>
+          </div>
+        </div>
+
+        <h4 className="font-semibold text-gray-800 mb-2">Description</h4>
+        <p className="text-sm text-gray-600 mb-4">{goalDetails.description}</p>
 
         <div className="flex items-center gap-2 text-sm text-gray-700 mb-4">
           <Calendar size={16} />
-          <span>{goal.dateRange}</span>
+          <span>{goalDetails.dateRange}</span>
         </div>
 
         <h4 className="font-semibold text-gray-800 mb-2">Subtasks</h4>
         <div className="space-y-2 mb-4">
-          {goal.subtasks.map((task, i) => (
+          {goalDetails.subtasks.map((task, i) => (
             <div key={i} className="flex items-center gap-2">
               <Circle size={16} className="text-gray-400" />
               <span className="text-sm text-gray-600">{task.text}</span>
@@ -74,17 +104,27 @@ export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
         </div>
 
         <div className="flex items-center gap-2 mb-6">
-          {goal.tags.map((tag) => (
+          {goalDetails.tags.map((tag) => (
             <GoalTag key={tag.label} tag={tag} />
           ))}
         </div>
 
         <div className="flex gap-4">
-          <Button variant="outline" className="w-full" onClick={onClose}>
-            Reject
+          <Button
+            variant="outline"
+            className="w-full text-red-600 border-red-200 hover:bg-red-50"
+            onClick={handleReject}
+            disabled={isLoading}
+          >
+            {isRejecting ? "Rejecting..." : "Reject"}
           </Button>
-          <Button variant="primary" className="w-full" onClick={onClose}>
-            Commit
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={handleAccept}
+            disabled={isLoading}
+          >
+            {isAccepting ? "Connecting..." : "Commit"}
           </Button>
         </div>
       </div>

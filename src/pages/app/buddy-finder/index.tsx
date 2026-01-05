@@ -1,3 +1,4 @@
+// src/pages/BuddyFinderPage.tsx
 import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -5,16 +6,9 @@ import {
   SlidersHorizontal,
   User,
   Users,
-  ChevronLeft,
+  ArrowLeft,
+  Check,
 } from "lucide-react";
-import {
-  CATEGORIES_MOCK,
-  COMMUNITY_MOCK,
-  GOAL_MOCK,
-  INVITATIONS_MOCK,
-  PEOPLE_MOCK,
-  type Person,
-} from "@/constants/goals-data";
 import { useClickAway } from "react-use";
 import { Breadcrumb } from "@/components/core/breadcrump";
 import { SegmentedControl } from "@/components/system/segment-control";
@@ -24,7 +18,13 @@ import { InvitationsView } from "./components/invitations-view";
 import { InviteModal } from "./components/invite-modal";
 import { ViewGoalModal } from "./components/view-goal-modal";
 import { cn } from "@/utils/cs";
-import { ArrowLeft, Check } from "iconsax-reactjs";
+import {
+  CATEGORIES_MOCK,
+  COMMUNITY_MOCK,
+  GOAL_MOCK,
+  type Person,
+} from "@/constants/goals-data";
+import { BuddyInvitation } from "./api";
 
 type MainTab = "explore" | "invitations";
 type ExploreView = "categories" | "details";
@@ -34,14 +34,17 @@ export const BuddyFinderPage = () => {
   const [mainTab, setMainTab] = useState<MainTab>("explore");
   const [exploreView, setExploreView] = useState<ExploreView>("categories");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
   const [detailsTab, setDetailsTab] = useState<DetailsTab>("People");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Modal states
+  // --- Modal States ---
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [viewGoalModalOpen, setViewGoalModalOpen] = useState(false);
+
+  // Data to pass to modals
   const [personToInvite, setPersonToInvite] = useState<Person | null>(null);
+  const [selectedInvitation, setSelectedInvitation] =
+    useState<BuddyInvitation | null>(null);
 
   const handleSelectCategory = (category: string) => {
     setSelectedCategory(category);
@@ -53,13 +56,15 @@ export const BuddyFinderPage = () => {
     setExploreView("categories");
   };
 
+  // Open Invite Modal (Explore Tab)
   const handleOpenInviteModal = (person: Person | null) => {
     setPersonToInvite(person);
     setInviteModalOpen(true);
   };
 
-  const handleOpenViewGoalModal = () => {
-    // In a real app, you'd pass a goal ID here
+  // Open Goal Modal (Invitations Tab)
+  const handleOpenViewGoalModal = (invitation: BuddyInvitation) => {
+    setSelectedInvitation(invitation);
     setViewGoalModalOpen(true);
   };
 
@@ -73,7 +78,6 @@ export const BuddyFinderPage = () => {
     setIsFilterOpen(false);
   });
 
-  // Create the breadcrumb path dynamically
   const breadcrumbPath = useMemo(() => {
     const path = ["Goals"];
     if (mainTab === "invitations") {
@@ -89,13 +93,11 @@ export const BuddyFinderPage = () => {
   return (
     <>
       <div className="font-monts w-full flex flex-col">
-        {/* Header: Breadcrumb & Back */}
         <header className="sm:sticky sm:top-22 w-full flex items-center justify-between mb-6">
           <Breadcrumb path={breadcrumbPath} />
         </header>
 
         <main className="w-full sm:max-w-2xl mx-auto ">
-          {/* Top Controls: Tabs, Search, Filter */}
           <SegmentedControl
             tabs={["Explore", "Invitations"]}
             activeTab={mainTab === "explore" ? "Explore" : "Invitations"}
@@ -104,6 +106,7 @@ export const BuddyFinderPage = () => {
             className="w-fit mx-auto"
           />
 
+          {/* Search and Filters */}
           <div className="flex items-center gap-4 my-6 ">
             <div className="relative flex-1">
               <Search
@@ -113,21 +116,19 @@ export const BuddyFinderPage = () => {
               <input
                 type="text"
                 placeholder="Search"
-                className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-[#CDDAE9]  focus:border-blue-500 focus:ring-blue-500"
+                className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-[#CDDAE9] focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
 
             <div className="relative" ref={filterPopoverRef}>
               <button
-                onClick={() => setIsFilterOpen(!isFilterOpen)} // Toggle dropdown
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className="shrink-0 p-3 bg-white rounded-xl border border-[#CDDAE9] hover:bg-gray-50"
               >
                 <SlidersHorizontal size={20} className="text-gray-600" />
               </button>
 
-              {/* --- THIS IS THE NEW FILTER POPOVER --- */}
               <AnimatePresence>
-                {/* Show popover only in the correct view */}
                 {isFilterOpen &&
                   exploreView === "details" &&
                   mainTab === "explore" && (
@@ -166,10 +167,9 @@ export const BuddyFinderPage = () => {
                   )}
               </AnimatePresence>
             </div>
-            {/* --- END OF UPDATED SECTION --- */}
           </div>
 
-          {/* Main Content Area */}
+          {/* Main Content */}
           <AnimatePresence mode="wait">
             <div className="mb-7">
               {exploreView === "details" && mainTab === "explore" && (
@@ -182,6 +182,7 @@ export const BuddyFinderPage = () => {
                 </button>
               )}
             </div>
+
             {mainTab === "explore" ? (
               exploreView === "categories" ? (
                 <CategoryGridView
@@ -193,7 +194,7 @@ export const BuddyFinderPage = () => {
                 <DetailsView
                   key="details"
                   activeTab={detailsTab}
-                  people={PEOPLE_MOCK}
+                  // We don't pass static people mock anymore, the component fetches it
                   communityGoals={COMMUNITY_MOCK}
                   onInvite={handleOpenInviteModal}
                 />
@@ -201,7 +202,6 @@ export const BuddyFinderPage = () => {
             ) : (
               <InvitationsView
                 key="invitations"
-                invitations={INVITATIONS_MOCK}
                 onViewGoal={handleOpenViewGoalModal}
               />
             )}
@@ -215,10 +215,12 @@ export const BuddyFinderPage = () => {
         onClose={() => setInviteModalOpen(false)}
         person={personToInvite}
       />
+
       <ViewGoalModal
         isOpen={viewGoalModalOpen}
         onClose={() => setViewGoalModalOpen(false)}
-        goal={GOAL_MOCK}
+        goalDetails={GOAL_MOCK}
+        invitation={selectedInvitation}
       />
     </>
   );

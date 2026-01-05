@@ -26,7 +26,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
   };
 
   return (
-    <div className="relative w-full mx-auto h-[720px]">
+    <div className="relative w-full mx-auto h-180">
       <AnimatePresence>
         <motion.div
           key={index}
@@ -39,16 +39,16 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
           <div className=" rounded-xl p-4 sm:p-6 pt-0 flex flex-col gap-3 items-center h-full">
             <div className="w-full flex gap-1.5 items-center bg-white shadow p-4 sm:p-6 rounded-lg">
               <span className="font-semibold text-[#3D3D3D]">
-                {person.name}
+                {person?.name}
               </span>
               <span className="size-1 rounded-full bg-primary-600" />
-              <span className=" text-gray-500">{person.age}</span>
+              <span className=" text-gray-500">{person?.age}</span>
             </div>
 
             <div className="relative">
               <img
-                src={person.avatarUrl}
-                alt={person.name}
+                src={person?.avatarUrl}
+                alt={person?.name}
                 className="w-28 h-28 object-cover rounded-full my-4"
               />
 
@@ -58,7 +58,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
             </div>
 
             <span className="text-[#F18E69] ">
-              {person.compatibility}% compatible
+              {person?.compatibility}% compatible
             </span>
             <div className="flex items-center gap-1.5 my-2">
               <span className="text-[#636363] ">Rating:</span>
@@ -67,7 +67,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                   key={i}
                   size={20}
                   className={
-                    i < person.rating
+                    i < person?.rating
                       ? "text-yellow-400 fill-yellow-400"
                       : "text-gray-300"
                   }
@@ -85,7 +85,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                 </span>
               </div>
               <span className="font-semibold text-base text-dark-gray pl-4">
-                {person.seeking}
+                {person?.seeking}
               </span>
             </div>
 
@@ -97,7 +97,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                 </span>
               </div>
               <div className="flex flex-wrap justify-center gap-2 my-4">
-                {person.interests.map((interest) => (
+                {person?.interests?.map((interest) => (
                   <div className="flex items-center bg-[#4E92F426] gap-1.5 px-2.5 py-1 rounded-sm">
                     <interest.icon
                       size={16}
@@ -105,10 +105,10 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                       variant="TwoTone"
                     />
                     <span
-                      key={interest.interest}
+                      key={interest?.interest}
                       className="text-xs font-medium text-gray-600 "
                     >
-                      {interest.interest}
+                      {interest?.interest}
                     </span>
                   </div>
                 ))}
