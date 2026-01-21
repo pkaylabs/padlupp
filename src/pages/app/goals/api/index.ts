@@ -81,6 +81,11 @@ export interface CreateTaskPayload {
   is_shared?: boolean;
 }
 
+export interface UpdateGoalPayload {
+  id: string | number;
+  data: Partial<Omit<Goal, "id" | "user">>; // Allow updating any field except ID/User
+}
+
 export const getGoals = async (
   params: GetGoalsParams
 ): Promise<PaginatedResponse<Goal>> => {
@@ -110,4 +115,12 @@ export const getTasks = async (params: GetTasksParams) => {
 export const createTask = async (payload: CreateTaskPayload) => {
   const { data } = await api.post<Task>("/tasks/", payload);
   return data;
+};
+
+export const updateGoal = async ({
+  id,
+  data,
+}: UpdateGoalPayload): Promise<Goal> => {
+  const response = await api.patch<Goal>(`/goals/${id}/`, data);
+  return response.data;
 };
