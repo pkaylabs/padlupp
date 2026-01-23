@@ -31,6 +31,13 @@ import {
   getDay,
   isSameDay,
   isWithinInterval,
+  isSunday,
+  isSaturday,
+  nextSaturday,
+  nextSunday,
+  startOfWeek,
+  addWeeks,
+  addMonths,
 } from "date-fns";
 import { Modal } from "@/components/core/modal";
 import { StyledSwitch } from "@/routes/_app/-components/toggle";
@@ -44,7 +51,14 @@ interface CreateGoalModalProps {
   onClose: () => void;
 }
 
-type PopoverType = "date" | "time" | "status" | "priority" | "category" | null;
+type PopoverType =
+  | "date"
+  | "time"
+  | "status"
+  | "priority"
+  | "category"
+  | "sm"
+  | null;
 
 // --- Mock Data for Popovers ---
 const CATEGORIES = [
@@ -482,15 +496,26 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
 // SUB-COMPONENTS (POPOVERS)
 // ----------------------------------------------------------------------
 
-// 1. DATE PICKER (Complex Layout)
+// Define the Sidebar options
+type PresetOption =
+  | "Today"
+  | "Tomorrow"
+  | "This weekend"
+  | "Next week"
+  | "Later";
+
 const DatePickerView = ({ range, onChange, onClose }: any) => {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const today = startOfToday();
+
+  // Calendar Grid Generation
   const days = eachDayOfInterval({
     start: startOfMonth(currentMonth),
     end: endOfMonth(currentMonth),
   });
   const padding = Array.from({ length: getDay(startOfMonth(currentMonth)) });
 
+  // Handle Manual Date Click
   const handleDayClick = (day: Date) => {
     if (!range.start || (range.start && range.end)) {
       onChange({ start: day, end: undefined });
@@ -498,6 +523,60 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
       if (day < range.start) onChange({ start: day, end: range.start });
       else onChange({ start: range.start, end: day });
     }
+  };
+
+  // Handle Sidebar Presets
+  const handlePresetClick = (preset: PresetOption) => {
+    let start: Date;
+    let end: Date | undefined;
+
+    switch (preset) {
+      case "Today":
+        start = today;
+        end = today;
+        break;
+
+      case "Tomorrow":
+        start = addDays(today, 1);
+        end = addDays(today, 1);
+        break;
+
+      case "This weekend":
+        if (isSunday(today)) {
+          // If today is Sunday, "This weekend" is today
+          start = today;
+          end = today;
+        } else if (isSaturday(today)) {
+          // If today is Saturday, weekend is Today + Sunday
+          start = today;
+          end = addDays(today, 1);
+        } else {
+          // Otherwise, it's the upcoming Sat + Sun
+          start = nextSaturday(today);
+          end = nextSunday(today);
+        }
+        break;
+
+      case "Next week":
+        // Set to next Monday
+        start = startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 });
+        // Optional: If you want 'Next Week' to imply the whole week, set end to Friday/Sunday
+        // For a deadline, usually just the start date is sufficient
+        end = start;
+        break;
+
+      case "Later":
+        // Logic: Set to 2 weeks from now
+        start = addWeeks(today, 2);
+        end = start;
+        break;
+    }
+
+    // 1. Update the parent state
+    onChange({ start, end });
+
+    // 2. Move the calendar view to the selected month so the user sees it
+    setCurrentMonth(startOfMonth(start));
   };
 
   return (
@@ -509,55 +588,78 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
     >
       {/* Sidebar */}
       <div className="w-40 bg-gray-50 p-4 flex flex-col gap-2 border-r border-gray-100">
-        {["Today", "Later", "Tomorrow", "This weekend", "Next week"].map(
-          (l) => (
-            <button
-              key={l}
-              className="text-left text-sm text-gray-600 hover:bg-gray-100 px-2 py-1.5 rounded"
-            >
-              {l}
-            </button>
-          ),
-        )}
+        {(
+          [
+            "Today",
+            "Tomorrow",
+            "This weekend",
+            "Next week",
+            "Later",
+          ] as PresetOption[]
+        ).map((label) => (
+          <button
+            key={label}
+            onClick={() => handlePresetClick(label)}
+            className="text-left text-sm text-gray-600 hover:bg-gray-200 hover:text-gray-900 px-3 py-2 rounded transition-colors font-medium"
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
       {/* Calendar */}
       <div className="flex-1 p-4">
         <div className="flex justify-between items-center mb-4">
-          <button onClick={() => setCurrentMonth((d) => addDays(d, -30))}>
+          <button
+            onClick={() => setCurrentMonth((d) => addMonths(d, -1))} // Changed to addMonths
+            className="p-1 hover:bg-gray-100 rounded-full text-gray-500"
+          >
             <ChevronLeft size={16} />
           </button>
-          <span className="font-semibold text-sm">
+
+          <span className="font-semibold text-sm text-gray-800">
             {format(currentMonth, "MMM yyyy")}
           </span>
-          <button onClick={() => setCurrentMonth((d) => addDays(d, 30))}>
+
+          <button
+            onClick={() => setCurrentMonth((d) => addMonths(d, 1))} // Changed to addMonths
+            className="p-1 hover:bg-gray-100 rounded-full text-gray-500"
+          >
             <ChevronRight size={16} />
           </button>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400">
+
+        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400 font-medium">
           {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
             <span key={d}>{d}</span>
           ))}
         </div>
+
         <div className="grid grid-cols-7 gap-1">
           {padding.map((_, i) => (
-            <div key={i} />
+            <div key={`padding-${i}`} />
           ))}
           {days.map((day) => {
             const isSelected =
               (range.start && isSameDay(day, range.start)) ||
               (range.end && isSameDay(day, range.end));
+
             const isInRange =
               range.start &&
               range.end &&
               isWithinInterval(day, { start: range.start, end: range.end });
+
             return (
               <button
                 key={day.toString()}
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "w-8 h-8 text-sm rounded-full flex items-center justify-center hover:bg-gray-100",
-                  isSelected && "bg-blue-500 text-white hover:bg-blue-600",
-                  isInRange && !isSelected && "bg-blue-50",
+                  "w-8 h-8 text-sm rounded-full flex items-center justify-center transition-all",
+                  isSelected
+                    ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                    : isInRange && !isSelected
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-100",
                 )}
               >
                 {format(day, "d")}
@@ -570,61 +672,56 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
   );
 };
 
-// 2. TIME PICKER (Interactive)
-const TimePickerView = ({ onSave }: { onSave: (time: string) => void }) => {
-  // State for Hours, Minutes, Seconds
-  const [hours, setHours] = useState("00");
-  const [minutes, setMinutes] = useState("00");
-  const [seconds, setSeconds] = useState("00");
+interface TimeInputProps {
+  value: string;
+  onChange: (val: string) => void;
+  max: number;
+}
 
-  // Helper to handle input changes
-  const handleChange = (
-    value: string,
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    max: number,
-  ) => {
+const TimeInput = ({ value, onChange, max }: TimeInputProps) => {
+  // Encapsulate the validation logic inside this component
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
     // Allow only numbers
-    const numericValue = value.replace(/[^0-9]/g, "");
+    const numericValue = rawValue.replace(/[^0-9]/g, "");
 
-    // Limit length to 2
+    // Validation: Limit length to 2 and check max value
     if (numericValue.length <= 2) {
       if (parseInt(numericValue || "0") <= max) {
-        setter(numericValue);
+        onChange(numericValue);
       }
     }
   };
 
-  // Helper to format on blur (e.g., turn "1" into "01")
-  const handleBlur = (
-    value: string,
-    setter: React.Dispatch<React.SetStateAction<string>>,
-  ) => {
-    setter(value.padStart(2, "0"));
+  // Format on blur (e.g. "1" -> "01")
+  const handleBlur = () => {
+    onChange(value.padStart(2, "0"));
   };
 
-  // Reusable Input Component
-  const TimeInput = ({
-    value,
-    onChange,
-    max,
-  }: {
-    value: string;
-    onChange: React.Dispatch<React.SetStateAction<string>>;
-    max: number;
-  }) => (
+  return (
     <input
       type="text"
       inputMode="numeric"
       value={value}
-      onChange={(e) => handleChange(e.target.value, onChange, max)}
-      onBlur={(e) => handleBlur(e.target.value, onChange)}
+      onChange={handleChange}
+      onBlur={handleBlur}
       className="w-12 h-12 border border-gray-200 rounded-lg text-center text-xl font-medium text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
       placeholder="00"
     />
   );
+};
+
+// 2. TIME PICKER (Interactive)
+export const TimePickerView = ({
+  onSave,
+}: {
+  onSave: (time: string) => void;
+}) => {
+  const [hours, setHours] = useState("00");
+  const [minutes, setMinutes] = useState("00");
+  const [seconds, setSeconds] = useState("00");
 
   const handleSave = () => {
-    // Ensure format is HH:MM:SS
     const formattedTime = `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
     onSave(formattedTime);
   };
