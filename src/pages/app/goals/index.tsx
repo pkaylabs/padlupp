@@ -12,6 +12,7 @@ import { BoardData } from "@/constants/kanban-data";
 import Button from "@/components/core/buttons";
 import { useGoals } from "./hooks/useGoals";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
+import moment from "moment";
 
 // Initial Empty Board Structure
 const EMPTY_BOARD: BoardData = {
@@ -38,26 +39,36 @@ export const GoalsPage = () => {
   // 1. Fetch Goals
   const { data: goalsData, isLoading } = useGoals({ ordering: "target_date" });
 
+  console.log(goalsData, "goals data");
+
   // 2. Mutation for Drag & Drop
   const { mutate: updateGoalStatus } = useUpdateGoal();
 
-  // 3. Transform API Data into Kanban Board Structure
   const boardData = useMemo(() => {
     if (!goalsData?.results) return EMPTY_BOARD;
 
     const board: BoardData = JSON.parse(JSON.stringify(EMPTY_BOARD));
 
+    // 1. Format the selected date to a string "YYYY-MM-DD"
+    // This removes time/timezone variables from the equation
+    const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+
     goalsData.results.forEach((goal) => {
-      const goalDate = parseISO(goal.target_date);
-      if (!isSameDay(goalDate, selectedDate)) return;
+      // 2. Extract the date part from the API string safely
+      // Handles both "2026-01-05" and "2026-01-05T14:30:00Z"
+      const goalDateStr = goal.start_date ? goal.start_date.split("T")[0] : "";
+
+      // 3. Compare Strings directly
+      if (goalDateStr !== selectedDateStr) return;
 
       const item = {
         id: goal.id.toString(),
         title: goal.title,
         description: goal.description,
         tags: ["Regular"],
-        date: format(goalDate, "d MMM"),
-        timeLeft: "Due today",
+        // For display, we can still parse it to look nice
+        date: format(parseISO(goal.target_date), "dd MMM YYY"),
+        timeLeft: moment(goal.target_date).endOf("day").fromNow(),
       };
 
       if (goal.status === "completed") {
@@ -202,7 +213,7 @@ export const GoalsPage = () => {
                   "grid gap-6 w-full h-full transition-all",
                   activeTab === "All"
                     ? "grid-cols-1 md:grid-cols-3"
-                    : "grid-cols-1 md:grid-cols-1 md:max-w-md"
+                    : "grid-cols-1 md:grid-cols-1 md:max-w-md",
                 )}
               >
                 {visibleColumns.map((column) => (

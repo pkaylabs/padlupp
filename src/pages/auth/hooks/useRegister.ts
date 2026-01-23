@@ -2,6 +2,7 @@ import { useAuthStore } from "@/features/auth/authStore";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { RegisterCredentials, registerUser } from "../api";
+import { toast } from "sonner";
 
 export function useRegister() {
   const router = useRouter();
@@ -19,9 +20,8 @@ export function useRegister() {
     },
 
     onError: (error: any) => {
-      console.error("Registration failed:", error);
-      // Optional: Display error toast
-      // toast.error(error.response?.data?.message || 'Registration failed');
+      console.error("Login failed:", error);
+      toast.error(error.response?.data?.detail || "Login failed");
     },
   });
 }

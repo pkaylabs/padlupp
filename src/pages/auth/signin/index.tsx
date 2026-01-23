@@ -9,6 +9,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { GoogleIcon } from "../signup";
 import ButtonLoader from "@/components/loaders/button";
 import { useLogin } from "../hooks/useLogin";
+import { DASHBOARD } from "@/constants/page-path";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
@@ -18,8 +19,6 @@ const validationSchema = Yup.object({
 });
 
 export const SignIn: React.FC = () => {
-  // const navigate = useNavigate();
-
   const { mutate: login, isPending, error } = useLogin();
 
   const formik = useFormik({
@@ -31,9 +30,6 @@ export const SignIn: React.FC = () => {
     onSubmit: (values) => {
       console.log("Form Submitted", values);
       login(values);
-
-      // navigate({ to: "/onboarding" });
-      // alert(JSON.stringify(values, null, 2));
     },
   });
 

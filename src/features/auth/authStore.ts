@@ -37,12 +37,12 @@ export const useAuthStore = create<AuthState>()(
         });
         localStorage.removeItem("auth-storage");
 
-        window.location.href = "/login";
+        window.location.href = "/signin";
       },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-    }
-  )
+    },
+  ),
 );

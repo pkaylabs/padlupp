@@ -15,7 +15,6 @@ import {
 } from "@headlessui/react";
 import {
   Bars3Icon,
-  BellIcon,
   Cog6ToothIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -23,13 +22,14 @@ import classNames from "@/utils/classnames";
 import logo from "@/assets/images/logo.png";
 import { MESSAGES, SETTINGS } from "@/constants/page-path";
 import { TopNav } from "./-components/top-nav";
+import { useAuthStore } from "@/features/auth/authStore";
 
 export const Route = createFileRoute("/_app")({
-  beforeLoad: ({ context, location }) => {
-    // Access auth state directly from the context injected in main.tsx
-    if (!context.auth.isAuthenticated) {
+  beforeLoad: ({ location }) => {
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
       throw redirect({
-        to: '/signin',
+        to: "/signin",
         search: {
           redirect: location.href,
         },
@@ -97,7 +97,7 @@ function AppLayout() {
                                       isActive
                                         ? "bg-primary-500 text-white font-semibold"
                                         : "text-dark-blue-normal hover:bg-primary-100  font-medium",
-                                      "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out"
+                                      "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                                     )}
                                   >
                                     <item.icon
@@ -106,7 +106,7 @@ function AppLayout() {
                                         isActive
                                           ? "text-white"
                                           : "text-dark-blue-normal",
-                                        "h-5 w-5 shrink-0"
+                                        "h-5 w-5 shrink-0",
                                       )}
                                     />
                                     {item.name}
@@ -128,7 +128,7 @@ function AppLayout() {
                                 isActive
                                   ? "bg-primary-500 text-white font-semibold"
                                   : "text-dark-blue-normal hover:bg-primary-200  font-medium",
-                                "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out"
+                                "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                               )}
                             >
                               <Cog6ToothIcon
@@ -137,7 +137,7 @@ function AppLayout() {
                                   isActive
                                     ? "text-white"
                                     : "text-dark-blue-normal",
-                                  "h-5 w-5 shrink-0"
+                                  "h-5 w-5 shrink-0",
                                 )}
                               />
                               Settings
@@ -178,7 +178,7 @@ function AppLayout() {
                                   isActive
                                     ? "bg-primary-500 text-white font-semibold"
                                     : "text-dark-blue-normal hover:bg-primary-100  font-medium",
-                                  "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out"
+                                  "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                                 )}
                               >
                                 <item.icon
@@ -187,7 +187,7 @@ function AppLayout() {
                                     isActive
                                       ? "text-white"
                                       : "text-dark-blue-normal",
-                                    "h-5 w-5 shrink-0"
+                                    "h-5 w-5 shrink-0",
                                   )}
                                 />
                                 {item.name}
@@ -209,7 +209,7 @@ function AppLayout() {
                               isActive
                                 ? "bg-primary-500 text-white font-semibold"
                                 : "text-dark-blue-normal hover:bg-primary-200  font-medium",
-                              "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out"
+                              "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                             )}
                           >
                             <Cog6ToothIcon
@@ -218,7 +218,7 @@ function AppLayout() {
                                 isActive
                                   ? "text-white"
                                   : "text-dark-blue-normal",
-                                "h-5 w-5 shrink-0"
+                                "h-5 w-5 shrink-0",
                               )}
                             />
                             Settings

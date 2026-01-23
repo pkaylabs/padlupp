@@ -141,8 +141,8 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               due_at: newGoal.target_date
                 ? new Date(newGoal.target_date).toISOString()
                 : new Date().toISOString(),
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -188,7 +188,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       className={cn(
         "px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 relative",
         color,
-        activePopover === type && "ring-2 ring-offset-1 ring-blue-200"
+        activePopover === type && "ring-2 ring-offset-1 ring-blue-200",
       )}
     >
       <span>{icon}</span> {label}
@@ -279,7 +279,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                     range={dateRange}
                     onChange={(r: any) => {
                       setDateRange(
-                        r
+                        r,
                       ); /* Don't close immediately to allow range selection */
                     }}
                     onClose={() => setActivePopover(null)}
@@ -517,7 +517,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
             >
               {l}
             </button>
-          )
+          ),
         )}
       </div>
       {/* Calendar */}
@@ -557,7 +557,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
                 className={cn(
                   "w-8 h-8 text-sm rounded-full flex items-center justify-center hover:bg-gray-100",
                   isSelected && "bg-blue-500 text-white hover:bg-blue-600",
-                  isInRange && !isSelected && "bg-blue-50"
+                  isInRange && !isSelected && "bg-blue-50",
                 )}
               >
                 {format(day, "d")}
@@ -581,14 +581,13 @@ const TimePickerView = ({ onSave }: { onSave: (time: string) => void }) => {
   const handleChange = (
     value: string,
     setter: React.Dispatch<React.SetStateAction<string>>,
-    max: number
+    max: number,
   ) => {
     // Allow only numbers
     const numericValue = value.replace(/[^0-9]/g, "");
 
     // Limit length to 2
     if (numericValue.length <= 2) {
-      // logic to prevent invalid times (e.g. 70 minutes)
       if (parseInt(numericValue || "0") <= max) {
         setter(numericValue);
       }
@@ -598,7 +597,7 @@ const TimePickerView = ({ onSave }: { onSave: (time: string) => void }) => {
   // Helper to format on blur (e.g., turn "1" into "01")
   const handleBlur = (
     value: string,
-    setter: React.Dispatch<React.SetStateAction<string>>
+    setter: React.Dispatch<React.SetStateAction<string>>,
   ) => {
     setter(value.padStart(2, "0"));
   };
@@ -702,7 +701,7 @@ const SelectionPopover = ({
               <div
                 className={cn(
                   "w-2 h-2 rounded-full ring-2 ring-offset-1",
-                  colors[idx].replace("text", "bg").replace("500", "400")
+                  colors[idx].replace("text", "bg").replace("500", "400"),
                 )}
               />
             )}
@@ -739,7 +738,7 @@ const CategoryPopover = ({ selected, onSelect }: any) => {
                 cat.color,
                 selected === cat.label
                   ? "ring-2 ring-offset-1 ring-blue-300"
-                  : "group-hover:scale-105"
+                  : "group-hover:scale-105",
               )}
             >
               <cat.icon size={20} />

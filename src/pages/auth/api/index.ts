@@ -24,14 +24,14 @@ export interface LoginCredentials {
 
 // Pure Async Function
 export const loginUser = async (
-  credentials: LoginCredentials
+  credentials: LoginCredentials,
 ): Promise<any> => {
-  const { data } = await api.post<any>("/auth/login", credentials);
+  const { data } = await api.post<any>("/auth/login/", credentials);
   return data;
 };
 
 export const registerUser = async (
-  credentials: RegisterCredentials
+  credentials: RegisterCredentials,
 ): Promise<any> => {
   const { data } = await api.post<any>("/onboarding/register/", credentials);
   return data;

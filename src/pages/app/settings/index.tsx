@@ -23,14 +23,11 @@ import { PiTagSimpleDuotone } from "react-icons/pi";
 import clsx, { ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// --- Mock / External Imports Replacements ---
-// Assuming these exist in your project based on previous context,
-// but defining fallbacks or keeping imports if they are standard.
-// If your project structure is strict, you might need to adjust these paths.
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import TextInput from "@/components/core/inputs";
 import { DualRangeSlider } from "./components/dual-range-slider";
+import { useLogout } from "./hooks/useLogout";
 // import { StyledSwitch } from "@/routes/_app/-components/toggle"; // Replaced with inline Switch
 
 // --- Utility ---
@@ -108,13 +105,13 @@ const StyledSwitch = ({
     onClick={() => onChange(!checked)}
     className={cn(
       "w-11 h-6 bg-gray-200 rounded-full relative transition-colors duration-200 ease-in-out focus:outline-none",
-      checked ? "bg-blue-600" : "bg-gray-200"
+      checked ? "bg-blue-600" : "bg-gray-200",
     )}
   >
     <span
       className={cn(
         "translate-x-1 inline-block w-4 h-4 transform bg-white rounded-full transition duration-200 ease-in-out",
-        checked ? "translate-x-6" : "translate-x-1"
+        checked ? "translate-x-6" : "translate-x-1",
       )}
     />
   </button>
@@ -134,10 +131,10 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
 
   // Data State
   const [selectedPrompt, setSelectedPrompt] = useState(
-    "I'm looking for a buddy who"
+    "I'm looking for a buddy who",
   );
   const [promptAnswer, setPromptAnswer] = useState(
-    "Shares similar goals, and can help keep me accountable as we work towards success together!"
+    "Shares similar goals, and can help keep me accountable as we work towards success together!",
   );
   const [interests, setInterests] = useState([
     "Hiking",
@@ -398,7 +395,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
                   "px-4 py-2 rounded-full text-xs font-medium border transition-all",
                   interests.includes(int)
                     ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300",
                 )}
               >
                 {int}
@@ -459,6 +456,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     location: "Lagos, Nigeria",
   });
 
+  const { mutate: logout, isPending } = useLogout();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
@@ -490,7 +489,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       onClick={onClick}
       className={cn(
         "w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50 transition-colors group",
-        isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700"
+        isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700",
       )}
     >
       <div className="flex items-center gap-3">
@@ -539,7 +538,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   );
 
   const filteredLanguages = LANGUAGES.filter((lang) =>
-    lang.toLowerCase().includes(searchQuery.toLowerCase())
+    lang.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const SwitchItem = ({
@@ -745,7 +744,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                       "text-sm",
                       displayLanguage === lang
                         ? "font-medium text-blue-600"
-                        : "text-gray-600"
+                        : "text-gray-600",
                     )}
                   >
                     {lang}
@@ -918,8 +917,12 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
             {/* Footer Actions */}
             <div className="mt-12 border-t border-gray-100 pt-4 space-y-1">
-              <button className="w-full flex items-center bg-white justify-center py-3 text-gray-900 font-medium text-sm rounded-lg">
-                Log out
+              <button
+                onClick={() => logout()}
+                disabled={isPending}
+                className="w-full flex items-center bg-white justify-center py-3 text-gray-900 font-medium text-sm rounded-lg"
+              >
+                {isPending ? "Logging out..." : "Log out"}
               </button>
               <div className="flex justify-center">
                 <ChevronsUp className="text-blue-500 animate-bounce" />
@@ -948,7 +951,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 export const SettingsPage = () => {
   // 'sidebar' is the menu, 'profile' is the profile editor on the right
   const [mobileView, setMobileView] = useState<"sidebar" | "profile">(
-    "sidebar"
+    "sidebar",
   );
 
   return (
@@ -960,7 +963,7 @@ export const SettingsPage = () => {
       <div
         className={cn(
           "w-full md:w-96 h-full border-r border-gray-200 bg-white transition-all",
-          mobileView === "sidebar" ? "block" : "hidden md:block"
+          mobileView === "sidebar" ? "block" : "hidden md:block",
         )}
       >
         <SettingsSidebar
@@ -977,7 +980,7 @@ export const SettingsPage = () => {
           "flex-1 bg-white h-full overflow-hidden",
           mobileView === "profile"
             ? "fixed inset-0 z-50 bg-white w-full md:static md:z-auto"
-            : "hidden md:block"
+            : "hidden md:block",
         )}
       >
         <ProfileSettings onMobileBack={() => setMobileView("sidebar")} />
