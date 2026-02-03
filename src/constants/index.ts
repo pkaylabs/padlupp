@@ -40,4 +40,60 @@ export const userNavigation = [
   { name: "Sign out", href: "#" },
 ];
 
-export const BASE_URL = 'https://api.padlupp.com/api-v1'
+export const BASE_URL = "https://api.padlupp.com/api-v1";
+
+export const LANGUAGES = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Chinese",
+  "Japanese",
+  "Korean",
+  "Russian",
+  "Portuguese",
+  "Italian",
+];
+
+export const INTERESTS_LIST = [
+  "Painting",
+  "Sculpting",
+  "Writing",
+  "Drawing",
+  "Journaling",
+  "Filmmaking",
+  "Photography",
+  "Sewing",
+  "Animation",
+  "Hiking",
+  "Pottery",
+  "Scrapbooking",
+  "Running",
+  "Stargazing",
+  "Cycling",
+  "Weightlifting",
+  "Pilates",
+  "Soccer",
+  "CrossFit",
+  "Tennis",
+  "Boxing",
+  "Coding/Programming",
+  "Yoga",
+  "Swimming",
+  "3D Printing",
+  "Web Development",
+  "Theater",
+  "Basketball",
+  "Singing",
+  "Dancing",
+];
+
+export const PROMPTS_LIST = [
+  "A goal I'm working on right now is...",
+  "My dream achievement is...",
+  "One thing I want to master this year is...",
+  "I feel most accomplished when I...",
+  "My favorite way to stay focused is...",
+  "The best productivity hack I've learned is...",
+  "I stay inspired by...",
+];
