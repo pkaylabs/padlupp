@@ -10,6 +10,8 @@ import { GoogleIcon } from "../signup";
 import ButtonLoader from "@/components/loaders/button";
 import { useLogin } from "../hooks/useLogin";
 import { DASHBOARD } from "@/constants/page-path";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { GoogleLogin } from "@react-oauth/google";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
@@ -19,7 +21,14 @@ const validationSchema = Yup.object({
 });
 
 export const SignIn: React.FC = () => {
-  const { mutate: login, isPending, error } = useLogin();
+  const { mutate: login, isPending: isEmailLoading } = useLogin();
+  const {
+    handleGoogleSuccess,
+    handleGoogleError,
+    isPending: isGoogleLoading,
+  } = useGoogleAuth();
+
+  const isGlobalLoading = isEmailLoading || isGoogleLoading;
 
   const formik = useFormik({
     initialValues: {
@@ -66,16 +75,39 @@ export const SignIn: React.FC = () => {
         />
 
         <Button type="submit" variant="primary">
-          {isPending ? <ButtonLoader title="Signing in..." /> : "Sign in"}
+          {isEmailLoading ? <ButtonLoader title="Signing in..." /> : "Sign in"}
         </Button>
       </form>
 
       <Divider text="or" />
 
-      <Button variant="outline">
-        <GoogleIcon />
-        Sign in with Google
-      </Button>
+      {/* <Button
+        variant="outline"
+        onClick={() => loginWithGoogle()}
+        disabled={isGlobalLoading}
+        type="button"
+      >
+        {isGoogleLoading ? (
+          <ButtonLoader title="Connecting..." />
+        ) : (
+          <>
+            <GoogleIcon />
+            Sign in with Google
+          </>
+        )}
+      </Button> */}
+
+      <div className="flex justify-center mt-4">
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          theme="outline"
+          size="large"
+          width="100%"
+          text="signin_with"
+          shape="circle"
+        />
+      </div>
 
       <p className="text-center text-sm text-gray-600 mt-8">
         Don’t have an account?{" "}

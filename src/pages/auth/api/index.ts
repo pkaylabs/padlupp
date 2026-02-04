@@ -12,6 +12,12 @@ export interface LoginCredentials {
   password: string; // Add other fields if needed
 }
 
+export interface GoogleAuthPayload {
+  id_token: string;
+  name?: string;
+  phone?: string;
+}
+
 // export interface AuthResponse {
 //   token: string;
 //   user: {
@@ -35,4 +41,12 @@ export const registerUser = async (
 ): Promise<any> => {
   const { data } = await api.post<any>("/onboarding/register/", credentials);
   return data;
+};
+
+export const googleAuthUser = async (payload: GoogleAuthPayload) => {
+  const response = await api.post("/auth/google-auth/", payload);
+  return {
+    data: response.data,
+    status: response.status,
+  };
 };

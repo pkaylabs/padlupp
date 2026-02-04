@@ -8,6 +8,8 @@ import Button from "@/components/core/buttons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import ButtonLoader from "@/components/loaders/button";
 import { useRegister } from "../hooks/useRegister";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { GoogleLogin } from "@react-oauth/google";
 
 // Google G logo SVG
 export const GoogleIcon = () => (
@@ -41,9 +43,14 @@ const validationSchema = Yup.object({
 });
 
 export const SignUp: React.FC = () => {
-  const navigate = useNavigate();
+  const { mutate: register, isPending: isEmailLoading } = useRegister();
+  const {
+    handleGoogleSuccess,
+    handleGoogleError,
+    isPending: isGoogleLoading,
+  } = useGoogleAuth();
 
-  const { mutate: register, isPending, error } = useRegister();
+  const isGlobalLoading = isEmailLoading || isGoogleLoading;
 
   const formik = useFormik({
     initialValues: {
@@ -109,16 +116,39 @@ export const SignUp: React.FC = () => {
         />
 
         <Button type="submit" variant="primary">
-          {isPending ? <ButtonLoader title="Signing up..." /> : "Sign up "}
+          {isEmailLoading ? <ButtonLoader title="Signing up..." /> : "Sign up "}
         </Button>
       </form>
 
       <Divider text="or" />
 
-      <Button variant="outline">
-        <GoogleIcon />
-        Sign up with Google
-      </Button>
+      {/* <Button
+        variant="outline"
+        onClick={() => loginWithGoogle()}
+        disabled={isGlobalLoading}
+        type="button"
+      >
+        {isGoogleLoading ? (
+          <ButtonLoader title="Connecting..." />
+        ) : (
+          <>
+            <GoogleIcon />
+            Sign up with Google
+          </>
+        )}
+      </Button> */}
+
+      <div className="flex justify-center mt-4">
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          theme="outline"
+          size="large"
+          width="100%"
+          text="signin_with"
+          shape="circle"
+        />
+      </div>
 
       <p className="text-center text-sm text-gray-600 mt-8">
         Already have an account?{" "}
