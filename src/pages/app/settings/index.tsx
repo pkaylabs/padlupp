@@ -33,6 +33,7 @@ import {
   useUpdateExtendedProfile,
   useUpdateUserAccount,
   useUserProfile,
+  useUpdateUserAvatar,
 } from "@/pages/auth/hooks/useProfile";
 import { toast } from "sonner";
 import { INTERESTS_LIST, LANGUAGES } from "@/constants";
@@ -77,6 +78,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
     useUpdateExtendedProfile();
   const { mutate: updateExperience, isPending: isUpdatingExp } =
     useUpdateExperience();
+  const { mutate: updateAvatar, isPending: isUpdatingAvatar } =
+    useUpdateUserAvatar();
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeModal, setActiveModal] = useState<
@@ -135,6 +138,18 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
     }
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    updateAvatar({ avatar: file });
+
+    // Reset input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSaveProfile = () => {
     const promises = [];
 
@@ -173,7 +188,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
     );
   }
 
-  const isSaving = isUpdatingProfile || isUpdatingExp;
+  const isSaving = isUpdatingProfile || isUpdatingExp || isUpdatingAvatar;
 
   return (
     <div className="flex-1 p-0 md:p-8 flex flex-col items-center h-full overflow-y-auto bg-gray-50 md:bg-white">
@@ -206,7 +221,14 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
                 <Edit2 size={14} />
               </button>
             )}
-            <input type="file" ref={fileInputRef} className="hidden" />
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileSelect}
+              disabled={isUpdatingAvatar}
+            />
           </div>
         </div>
 
@@ -781,7 +803,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   value={formData.phone}
                   onClick={() => setView("phone")}
                 />
-                <MenuItem
+                {/* <MenuItem
                   icon={Globe}
                   label="Language"
                   value={displayLanguage}
@@ -792,12 +814,12 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   label="Social Media"
                   value="Add"
                   onClick={() => setView("social")}
-                />
+                /> */}
               </div>
             </div>
 
             {/* Discovery Settings */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <h3 className="text-base font-semibold text-black uppercase mb-2">
                 Discovery Settings
               </h3>
@@ -814,7 +836,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                       handleBlur={() =>
                         updateProfile({ location: formData.location })
                       }
-                      className="text-right text-xs border-none p-0 focus:ring-0 w-32"
+                      className="text-right text-xs border-none p-0 focus:ring-0 w-full"
                       placeholder="Set Location"
                     />
                     <ChevronRight size={14} className="text-gray-400" />
@@ -829,7 +851,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   <DualRangeSlider min={18} max={60} onChange={setAgeRange} />
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Notification */}
             <div className="mb-8">
@@ -847,12 +869,12 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   label="Email"
                   onClick={() => setView("email_notifications")}
                 />
-                <MenuItem
+                {/* <MenuItem
                   icon={Globe}
                   label="Prompt Language"
                   value="Select"
                   onClick={() => {}}
-                />
+                /> */}
               </div>
             </div>
 
@@ -903,7 +925,9 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                 <MenuItem
                   label="Help & Support"
                   isExternal={true}
-                  onClick={() => window.open("/support", "_blank")}
+                  onClick={() =>
+                    window.open("https://t.me/+ijvNLk3ifQlmOTZk", "_blank")
+                  }
                 />
               </div>
             </div>

@@ -4,9 +4,9 @@ import {
   updateExperience,
   updateUserAccount,
   updateExtendedProfile,
+  updateUserAvatar,
   UpdateExperiencePayload,
-  UpdateUserPayload,
-  UpdateProfilePayload,
+  UpdateAvatarPayload,
 } from "../api/profile";
 import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/authStore";
@@ -32,7 +32,6 @@ export function useUpdateExperience() {
     mutationFn: (payload: UpdateExperiencePayload) => updateExperience(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      toast.success("Interests updated successfully");
     },
     onError: () => toast.error("Failed to update experience"),
   });
@@ -46,7 +45,7 @@ export function useUpdateUserAccount() {
   const token = useAuthStore((state) => state.token);
 
   return useMutation({
-    mutationFn: (payload: UpdateUserPayload) => updateUserAccount(payload),
+    mutationFn: (payload: any) => updateUserAccount(payload),
     onSuccess: (updatedUser) => {
       // 1. Refresh Profile Query
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
@@ -67,12 +66,24 @@ export function useUpdateExtendedProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: UpdateProfilePayload) =>
-      updateExtendedProfile(payload),
+    mutationFn: (payload: any) => updateExtendedProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      toast.success("Profile updated successfully");
     },
     onError: () => toast.error("Failed to update profile"),
+  });
+}
+
+// 4. Update User Avatar
+export function useUpdateUserAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateAvatarPayload) => updateUserAvatar(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      toast.success("Avatar updated successfully");
+    },
+    onError: () => toast.error("Failed to update avatar"),
   });
 }

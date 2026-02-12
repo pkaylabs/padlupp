@@ -1,10 +1,5 @@
-import {
-  CHAT_MOCK_DATA,
-  CURRENT_USER_ID,
-  Message,
-} from "@/constants/chat-mock";
+import { useEffect, useMemo, useState } from "react";
 import { PEOPLE_MOCK } from "@/constants/goals-data";
-import { useMemo, useState } from "react";
 import {
   CreateGoalModal,
   RateUserModal,
@@ -28,68 +23,133 @@ import {
 } from "./components/chat-side-views";
 import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
 import { VideoCallOverlay } from "./components/video-call-overlay";
+import { useChat } from "./hooks/useChat";
+import { useAuthStore } from "@/features/auth/authStore";
 
 type SideView = "none" | "profile" | "progress";
 type ActiveModal = "none" | "create_goal" | "rate" | "report";
 
+const formatMessageTime = (isoString?: string) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getConversationName = (conversationId: number) =>
+  `Conversation #${conversationId}`;
+
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+
 export const MessagesPage = () => {
-  const [activeConvId, setActiveConvId] = useState(CHAT_MOCK_DATA[0].id);
+  const {
+    conversations,
+    messages,
+    activeConversationId,
+    setActiveConversationId,
+    sendMessage,
+    setTyping,
+    markAllRead,
+    loadingHistory,
+    sending,
+    connectionState,
+    conversationsConnectionState,
+    isPeerTyping,
+    onlineUserIds,
+  } = useChat();
+
+  const authUser = useAuthStore((state) => state.user);
+
   const [activeTab, setActiveTab] = useState<"Activities" | "Shared">(
-    "Activities"
+    "Activities",
   );
-
-  // Mobile specific state to toggle between list and chat view
+  const [searchValue, setSearchValue] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
-
   const [sideView, setSideView] = useState<SideView>("none");
   const [activeModal, setActiveModal] = useState<ActiveModal>("none");
   const [inputPopoverOpen, setInputPopoverOpen] = useState(false);
   const [vidCall, setVidCall] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
-  const activeConv = useMemo(
-    () => CHAT_MOCK_DATA.find((c) => c.id === activeConvId),
-    [activeConvId]
+  const filteredConversations = useMemo(() => {
+    const trimmed = searchValue.trim().toLowerCase();
+    if (!trimmed) return conversations;
+
+    return conversations.filter((conversation) =>
+      getConversationName(conversation.id).toLowerCase().includes(trimmed),
+    );
+  }, [conversations, searchValue]);
+
+  const activeConversation = useMemo(
+    () => conversations.find((conv) => conv.id === activeConversationId) ?? null,
+    [activeConversationId, conversations],
   );
 
-  // Mock Person data for the profile view (Jade)
   const activePerson = PEOPLE_MOCK[0];
+
+  useEffect(() => {
+    if (!activeConversationId && conversations.length > 0) {
+      setActiveConversationId(conversations[0].id);
+    }
+  }, [activeConversationId, conversations, setActiveConversationId]);
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+    markAllRead();
+  }, [activeConversationId, markAllRead]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setTyping(Boolean(inputValue.trim()));
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [inputValue, setTyping]);
 
   const handleOpenProfile = () => setSideView("profile");
   const handleOpenProgress = () => setSideView("progress");
   const handleBackToChat = () => setSideView("none");
 
+  const handleSend = async () => {
+    const text = inputValue.trim();
+    if (!text) return;
+
+    await sendMessage(text);
+    setInputValue("");
+    setTyping(false);
+  };
+
   return (
     <>
       <div className="font-monts w-full flex h-[92vh] bg-white overflow-hidden relative">
-        {/* --- LEFT SIDEBAR --- */}
-        {/* Responsive Logic:
-            - w-full on mobile, w-96 on desktop (md)
-            - If showMobileChat is true: Hidden on mobile, Visible on desktop
-            - If showMobileChat is false: Visible on mobile, Visible on desktop
-        */}
         <div
           className={cn(
             "w-full md:w-96 border-r overflow-y-auto border-gray-200 flex-col bg-white",
-            showMobileChat ? "hidden md:flex" : "flex"
+            showMobileChat ? "hidden md:flex" : "flex",
           )}
         >
-          {/* Header / Breadcrumb mock */}
           <div className="h-16 flex items-center px-4 text-gray-500 text-sm font-medium">
             <ArrowLeft2 size="16" color="#636363" />
             <ArrowRight2 size="16" color="#636363" className="mx-2" />
-            <span className="cursor-pointer hover:text-gray-900">
-              Goals
-            </span>{" "}
+            <span className="cursor-pointer hover:text-gray-900">Goals</span>
             <span className="mx-2">/</span>
-            <span className="cursor-pointer hover:text-gray-900">
-              Invitation
-            </span>{" "}
+            <span className="cursor-pointer hover:text-gray-900">Invitation</span>
             <span className="mx-2">/</span>
             <span className="text-gray-900">Messages</span>
           </div>
 
-          {/* Search */}
-          <div className="px-4 mb-4">
+          <div className="px-4 mb-2">
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -97,93 +157,85 @@ export const MessagesPage = () => {
               />
               <input
                 type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="Search"
                 className="w-full pl-10 pr-4 py-3 bg-white border border-[#CDDAE9] rounded-xl text-sm focus:outline-none transition-colors"
               />
             </div>
           </div>
 
-          {/* Chat List */}
+          <div className="px-4 pb-2 text-xs text-gray-500">
+            Conversations socket: {conversationsConnectionState}
+          </div>
+
           <div className="flex-1 overflow-y-auto">
-            {CHAT_MOCK_DATA.map((conv) => (
-              <div
-                key={conv.id}
-                onClick={() => {
-                  setActiveConvId(conv.id);
-                  setSideView("none");
-                  setShowMobileChat(true); // Switch to chat view on mobile
-                }}
-                className={cn(
-                  "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative",
-                  activeConvId === conv.id ? "bg-primary-100/50" : ""
-                )}
-              >
-                {/* Avatar Logic */}
-                <div className="relative mr-3 shrink-0">
-                  {conv.type === "group" ? (
-                    <div className="flex -space-x-4 overflow-hidden w-15 h-15">
-                      {conv.members?.slice(0, 2).map((m, i) => (
-                        <img
-                          key={i}
-                          className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                          src={m.avatarUrl}
-                          alt=""
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <img
-                      src={conv.avatarUrl}
-                      alt={conv.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  )}
-                </div>
+            {filteredConversations.map((conversation) => {
+              const isActive = activeConversationId === conversation.id;
+              const name = getConversationName(conversation.id);
+              const lastText = conversation.last_message?.text ?? "No messages yet";
+              const timeText = formatMessageTime(
+                conversation.last_message?.created_at ?? conversation.updated_at,
+              );
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between mb-1">
-                    <h3 className="text-sm font-medium text-dark-gray truncate">
-                      {conv.name}
-                    </h3>
+              return (
+                <div
+                  key={conversation.id}
+                  onClick={() => {
+                    setActiveConversationId(conversation.id);
+                    setSideView("none");
+                    setShowMobileChat(true);
+                  }}
+                  className={cn(
+                    "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative",
+                    isActive ? "bg-primary-100/50" : "",
+                  )}
+                >
+                  <div className="relative mr-3 shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
+                      {getInitials(name)}
+                    </div>
                   </div>
-                  <p className="text-sm font-medium text-[#616161] truncate">
-                    {conv.messages[conv.messages.length - 1].text}
-                  </p>
-                </div>
 
-                <div className="flex flex-col gap-1.5 items-end">
-                  <span className="font-sans text-sm text-[#929191] ">
-                    17:36
-                  </span>
-                  {conv.unreadCount > 0 && (
-                    <div className=" bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
-                      {conv.unreadCount}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between mb-1">
+                      <h3 className="text-sm font-medium text-dark-gray truncate">
+                        {name}
+                      </h3>
                     </div>
-                  )}
+                    <p className="text-sm font-medium text-[#616161] truncate">
+                      {lastText}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 items-end">
+                    <span className="font-sans text-sm text-[#929191]">{timeText}</span>
+                    {conversation.unread_count > 0 && (
+                      <div className="bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
+                        {conversation.unread_count}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
+            {filteredConversations.length === 0 && (
+              <div className="px-4 py-8 text-sm text-gray-500">No conversations found.</div>
+            )}
           </div>
         </div>
 
-        {/* --- MAIN CHAT AREA --- */}
-        {/* Responsive Logic:
-            - Hidden on mobile by default.
-            - If showMobileChat is true: Fixed full screen (z-50) on mobile.
-            - Always static and flex-1 on desktop.
-        */}
         <div
           className={cn(
             "flex-col bg-white",
             showMobileChat
               ? "fixed inset-0 z-50 flex w-full h-full md:static md:flex-1"
-              : "hidden md:flex md:flex-1 md:relative"
+              : "hidden md:flex md:flex-1 md:relative",
           )}
         >
-          {/* Chat Header */}
           <div className="border-b border-gray-200 flex items-center justify-between py-2.5 px-4 md:px-6">
             <div className="flex items-center">
-              {/* Mobile Back Button */}
               <button
                 onClick={() => setShowMobileChat(false)}
                 className="mr-3 md:hidden p-1 -ml-2"
@@ -192,39 +244,23 @@ export const MessagesPage = () => {
               </button>
 
               <div
-                className="flex items-center cursor-pointer"
+                className="w-10 h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-3 cursor-pointer"
                 onClick={handleOpenProfile}
               >
-                {activeConv?.type === "group" ? (
-                  <div className="flex -space-x-2 mr-3">
-                    {activeConv.members?.slice(0, 4).map((m, i) => (
-                      <img
-                        key={i}
-                        className="h-8 w-8 rounded-full ring-2 ring-white object-cover"
-                        src={m.avatarUrl}
-                        alt=""
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <img
-                    src={activeConv?.avatarUrl}
-                    alt=""
-                    className="w-10 h-10 rounded-full mr-3 object-cover"
-                  />
+                {getInitials(
+                  activeConversation ? getConversationName(activeConversation.id) : "Chat",
                 )}
               </div>
 
               <div>
                 <h2 className="font-semibold text-[#666668] text-sm">
-                  {activeConv?.name}
+                  {activeConversation
+                    ? getConversationName(activeConversation.id)
+                    : "Select a conversation"}
                 </h2>
                 <p className="text-xs text-green-500 flex items-center">
-                  {activeConv?.type === "personal"
-                    ? activeConv.isOnline
-                      ? "Online"
-                      : "Offline"
-                    : "2 online"}
+                  Chat socket: {connectionState}
+                  {onlineUserIds.length > 0 && ` • ${onlineUserIds.length} online`}
                 </p>
               </div>
             </div>
@@ -232,7 +268,7 @@ export const MessagesPage = () => {
             <div className="flex items-center text-gray-400 gap-1 md:gap-0">
               <div
                 onClick={() => setVidCall(true)}
-                className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md "
+                className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md"
               >
                 <CallCalling
                   size={20}
@@ -241,7 +277,7 @@ export const MessagesPage = () => {
               </div>
               <div
                 onClick={() => setVidCall(true)}
-                className="size-10 md:size-12 flex justify-center  items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md "
+                className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md"
               >
                 <Video
                   size={24}
@@ -249,7 +285,7 @@ export const MessagesPage = () => {
                   className="hover:text-gray-600 text-[#130F26] cursor-pointer"
                 />
               </div>
-              <div className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md ">
+              <div className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md">
                 <Search
                   size={20}
                   className="hover:text-gray-600 text-[#130F26] cursor-pointer"
@@ -258,7 +294,6 @@ export const MessagesPage = () => {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="sticky top-2.5 flex gap-6 px-6 py-4 text-sm font-medium bg-bg-gray">
             <button
               onClick={() => setActiveTab("Activities")}
@@ -270,62 +305,52 @@ export const MessagesPage = () => {
             </button>
             <button
               onClick={() => setActiveTab("Shared")}
-              className={
-                activeTab === "Shared" ? "text-gray-900" : "text-gray-400"
-              }
+              className={activeTab === "Shared" ? "text-gray-900" : "text-gray-400"}
             >
               Shared
             </button>
           </div>
 
-          {/* Messages Area or Side View Overlay */}
           <div className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray relative">
             {activeTab === "Shared" ? (
-              <div className=" text-center text-gray-500">
+              <div className="text-center text-gray-500">
                 <SharedFilesView />
               </div>
             ) : (
               <div className="h-full p-4 md:p-6 space-y-6">
-                {/* Group Welcome Banner */}
-                {activeConv?.type === "group" ? (
-                  <div className="text-center mb-4">
-                    <span className="text-base text-[#3D3D3D] font-semibold">
-                      👋 Welcome to the {activeConv.name}
-                    </span>
-                    <div className="text-center mt-2">
-                      <button
-                        onClick={handleOpenProgress}
-                        className="text-sm text-primary-500 hover:underline"
-                      >
-                        Goal details
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+                {activeConversation ? (
                   <div className="w-full flex flex-col justify-center items-center">
                     <p className="border border-dashed border-[#CDDAE9] rounded-lg p-3 bg-white text-sm text-gray-600 w-fit">
-                      You started a conversation with Jade .Lorem ipsum dolor
-                      sit amet consectetur.
+                      Real-time chat connected with optimistic message send and reconnect handling.
                     </p>
+                  </div>
+                ) : (
+                  <div className="w-full flex justify-center text-sm text-gray-500">
+                    Select a conversation to begin.
                   </div>
                 )}
 
-                {activeConv?.messages.map((msg) => (
+                {loadingHistory && (
+                  <div className="text-sm text-gray-500">Loading messages...</div>
+                )}
+
+                {messages.map((message) => (
                   <MessageBubble
-                    key={msg.id}
-                    message={msg}
-                    isMe={msg.senderId === CURRENT_USER_ID}
-                    onOpenProgress={handleOpenProgress}
-                    personAvatar={activeConv.avatarUrl}
+                    key={message.id}
+                    text={message.text}
+                    senderName={message.sender?.name || "User"}
+                    isMe={message.sender?.id === authUser?.id}
+                    timestamp={formatMessageTime(message.created_at)}
+                    pending={Boolean(message.optimistic)}
                   />
                 ))}
+
+                {isPeerTyping && (
+                  <div className="text-xs text-gray-500">The other user is typing...</div>
+                )}
               </div>
             )}
 
-            {/* --- SIDE VIEW OVERLAY (Profile/Progress) --- */}
-            {/* This will overlay perfectly on mobile because the parent container 
-                is 'fixed inset-0' when active.
-            */}
             <AnimatePresence>
               {sideView !== "none" && (
                 <motion.div
@@ -344,7 +369,7 @@ export const MessagesPage = () => {
                   )}
                   {sideView === "progress" && (
                     <GoalProgressView
-                      personName={activeConv?.name || "User"}
+                      personName={activeConversation ? getConversationName(activeConversation.id) : "User"}
                       onBack={handleBackToChat}
                       onReport={() => setActiveModal("report")}
                     />
@@ -354,9 +379,7 @@ export const MessagesPage = () => {
             </AnimatePresence>
           </div>
 
-          {/* Input Area */}
           <div className="p-4 bg-white border-t border-gray-200">
-            {/* Popover for Create Goal */}
             <AnimatePresence>
               {inputPopoverOpen && (
                 <motion.div
@@ -372,7 +395,7 @@ export const MessagesPage = () => {
                     }}
                     className="flex items-center w-full p-2 hover:bg-gray-50 text-sm text-gray-700 rounded-md text-left"
                   >
-                    <CheckCircle size={16} className="text-blue-500 mr-2" />{" "}
+                    <CheckCircle size={16} className="text-blue-500 mr-2" />
                     Create goal
                   </button>
                   <button className="flex items-center w-full p-2 hover:bg-gray-50 text-sm text-gray-700 rounded-md text-left">
@@ -394,10 +417,25 @@ export const MessagesPage = () => {
               </button>
               <input
                 type="text"
-                placeholder="Type a message"
-                className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 placeholder:text-gray-400"
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void handleSend();
+                  }
+                }}
+                disabled={!activeConversationId}
+                placeholder={
+                  activeConversationId ? "Type a message" : "Select a conversation"
+                }
+                className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 placeholder:text-gray-400 disabled:text-gray-400"
               />
-              <button className="p-2 bg-blue-200 rounded-lg text-[#3D3D3D] hover:bg-[#B6D8FF] transition-colors">
+              <button
+                disabled={!activeConversationId || sending}
+                onClick={() => void handleSend()}
+                className="p-2 bg-blue-200 rounded-lg text-[#3D3D3D] hover:bg-[#B6D8FF] transition-colors disabled:opacity-60"
+              >
                 <Send size={20} className="ml-0.5" />
               </button>
             </div>
@@ -405,7 +443,6 @@ export const MessagesPage = () => {
         </div>
       </div>
 
-      {/* --- MODALS --- */}
       <CreateGoalModal
         isOpen={activeModal === "create_goal"}
         onClose={() => setActiveModal("none")}
@@ -418,98 +455,38 @@ export const MessagesPage = () => {
         isOpen={activeModal === "report"}
         onClose={() => setActiveModal("none")}
       />
-      <VideoCallOverlay
-        isOpen={vidCall}
-        onMinimize={() => setVidCall(!vidCall)}
-      />
+      <VideoCallOverlay isOpen={vidCall} onMinimize={() => setVidCall(!vidCall)} />
     </>
   );
 };
 
-// --- Helper Component: Message Bubble ---
 const MessageBubble = ({
-  message,
+  text,
+  senderName,
   isMe,
-  onOpenProgress,
-  personAvatar,
+  timestamp,
+  pending,
 }: {
-  message: Message;
+  text: string;
+  senderName: string;
   isMe: boolean;
-  onOpenProgress: () => void;
-  personAvatar: string;
+  timestamp: string;
+  pending: boolean;
 }) => {
-  // System/Goal Messages
-  if (message.type === "goal_created" || message.type === "task_completed") {
-    return (
-      <div className="flex gap-3">
-        <img
-          src={
-            isMe ? "https://placehold.co/100/336699/FFF?text=Me" : personAvatar
-          }
-          className="w-8 h-8 rounded-full"
-          alt=""
-        />
-        <div className="flex-1">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="font-semibold text-sm text-gray-900">
-              {isMe ? "Me" : "Jade"}
-            </span>
-            <span className="text-xs text-gray-400">{message.timestamp}</span>
-          </div>
-          {message.type === "goal_created" ? (
-            <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-white text-sm text-gray-600 w-fit">
-              <span className="text-blue-500">@{isMe ? "Me" : "Jade"}</span>{" "}
-              just created a goal{" "}
-              <button
-                onClick={onOpenProgress}
-                className="text-blue-500 hover:underline ml-1"
-              >
-                {message.goalTitle}
-              </button>
-            </div>
-          ) : (
-            <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-white text-sm text-gray-600 w-fit">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-blue-500">@{isMe ? "Me" : "Jade"}</span>{" "}
-                  just completed a subtask!
-                </div>
-                <span className="text-blue-300 text-lg">👍</span>
-              </div>
-              <div className="mt-2 pt-2 border-t border-gray-100 text-gray-800">
-                Almost there! A have checked off their tasks for today! 🔥 Let's
-                keep it up!
-                <img
-                  src={personAvatar}
-                  className="w-5 h-5 rounded-full mt-2"
-                  alt=""
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Standard Text Messages
   return (
     <div className="flex gap-3">
-      <img
-        src={
-          isMe ? "https://placehold.co/100/336699/FFF?text=Me" : personAvatar
-        }
-        className="w-8 h-8 rounded-full object-cover"
-        alt=""
-      />
+      <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold">
+        {getInitials(isMe ? "Me" : senderName)}
+      </div>
       <div>
         <div className="flex items-baseline gap-2 mb-1">
           <span className="font-semibold text-sm text-gray-900">
-            {isMe ? "Me" : message.senderId === "u2" ? "Jade" : "User"}
+            {isMe ? "Me" : senderName}
           </span>
-          <span className="text-xs text-gray-400">{message.timestamp}</span>
+          <span className="text-xs text-gray-400">{timestamp}</span>
+          {pending && <span className="text-xs text-gray-400">sending...</span>}
         </div>
-        <div className="text-sm text-gray-800">{message.text}</div>
+        <div className="text-sm text-gray-800">{text}</div>
       </div>
     </div>
   );

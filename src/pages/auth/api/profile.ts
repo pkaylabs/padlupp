@@ -58,6 +58,11 @@ export interface UpdateProfilePayload {
   communication_styles?: string;
 }
 
+// Endpoint 5 Payload
+export interface UpdateAvatarPayload {
+  avatar: File;
+}
+
 // --- API Functions ---
 
 // 1. GET Full Profile
@@ -93,5 +98,16 @@ export const updateExtendedProfile = async (
     "/onboarding/profile/",
     payload,
   );
+  return data;
+};
+
+// 5. POST User Avatar
+export const updateUserAvatar = async (
+  payload: UpdateAvatarPayload,
+): Promise<User> => {
+  const formData = new FormData();
+  formData.append("avatar", payload.avatar);
+
+  const { data } = await api.patch<User>("/onboarding/user-avatar/", formData);
   return data;
 };

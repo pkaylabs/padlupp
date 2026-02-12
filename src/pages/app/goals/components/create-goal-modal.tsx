@@ -1,5 +1,5 @@
 // src/components/goals/modals/CreateGoalModal.tsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -506,7 +506,26 @@ type PresetOption =
 
 const DatePickerView = ({ range, onChange, onClose }: any) => {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const popoverRef = useRef<HTMLDivElement>(null);
   const today = startOfToday();
+
+  // Handle click outside to close the date picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    // Only add listener when the popover is visible
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
 
   // Calendar Grid Generation
   const days = eachDayOfInterval({
@@ -581,6 +600,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
 
   return (
     <motion.div
+      ref={popoverRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
