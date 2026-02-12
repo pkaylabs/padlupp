@@ -1,17 +1,43 @@
 // src/components/layout/TopNav.tsx
 import React, { useState } from "react";
-import { Sun, Moon, Bell, ChevronRight } from "lucide-react";
-import Logo from "@/assets/images/logo.png";
+import { Bell, ChevronRight } from "lucide-react";
 import Profile from "@/assets/images/profile.png";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import { TimerModal } from "./timer-modal";
 import { TimerStart } from "iconsax-reactjs";
 import { ThemeToggle } from "./toggle-theme";
+import { useUserProfile } from "@/pages/auth/hooks/useProfile";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+interface LongestStreakResponse {
+  longest_streak?: number;
+  streak?: number;
+  days?: number;
+}
+
+const resolveLongestStreak = (payload?: LongestStreakResponse): number => {
+  if (!payload) return 0;
+  const value = payload.longest_streak ?? payload.streak ?? payload.days ?? 0;
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+};
 
 export const TopNav: React.FC = () => {
   const [isTimerOpen, setIsTimerOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { data: userProfile } = useUserProfile();
+  const { data: streakResponse } = useQuery({
+    queryKey: ["longest-streak"],
+    queryFn: async () => {
+      const { data } = await api.get<LongestStreakResponse>(
+        "/stats/longest-streak/",
+      );
+      return data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+  const longestStreak = resolveLongestStreak(streakResponse);
 
   const handleToggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -29,10 +55,14 @@ export const TopNav: React.FC = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             {/* User Avatar */}
-            <img src={Profile} alt="User" className="w-10 h-10 rounded-full" />
+            <img
+              src={userProfile?.user?.avatar || Profile}
+              alt="User"
+              className="w-10 h-10 rounded-full object-cover"
+            />
             {/* Streak */}
             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50">
-              <span className="text-sm">🔥 12 days</span>
+              <span className="text-sm">🔥 {longestStreak} days</span>
               <ChevronRight className="size-5" />
             </button>
           </div>

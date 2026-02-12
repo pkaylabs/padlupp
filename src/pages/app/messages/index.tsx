@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { PEOPLE_MOCK } from "@/constants/goals-data";
 import {
   CreateGoalModal,
   RateUserModal,
@@ -17,6 +16,7 @@ import {
 import { cn } from "@/utils/cs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ChatPartnerProfile,
   GoalProgressView,
   SharedFilesView,
   UserProfileView,
@@ -25,6 +25,7 @@ import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
 import { VideoCallOverlay } from "./components/video-call-overlay";
 import { useChat } from "./hooks/useChat";
 import { useAuthStore } from "@/features/auth/authStore";
+import type { Conversation } from "./api";
 
 type SideView = "none" | "profile" | "progress";
 type ActiveModal = "none" | "create_goal" | "rate" | "report";
@@ -39,8 +40,11 @@ const formatMessageTime = (isoString?: string) => {
   });
 };
 
-const getConversationName = (conversationId: number) =>
-  `Conversation #${conversationId}`;
+const getConversationName = (conversation: Conversation) =>
+  conversation.partner_name?.trim() || `Conversation #${conversation.id}`;
+
+const getConversationAvatar = (conversation: Conversation) =>
+  conversation.partner_avatar?.trim() || "";
 
 const getInitials = (name: string) =>
   name
@@ -85,7 +89,7 @@ export const MessagesPage = () => {
     if (!trimmed) return conversations;
 
     return conversations.filter((conversation) =>
-      getConversationName(conversation.id).toLowerCase().includes(trimmed),
+      getConversationName(conversation).toLowerCase().includes(trimmed),
     );
   }, [conversations, searchValue]);
 
@@ -94,7 +98,20 @@ export const MessagesPage = () => {
     [activeConversationId, conversations],
   );
 
-  const activePerson = PEOPLE_MOCK[0];
+  const activePartnerProfile = useMemo<ChatPartnerProfile | null>(() => {
+    if (!activeConversation) return null;
+
+    return {
+      id: String(activeConversation.id),
+      name: getConversationName(activeConversation),
+      avatarUrl:
+        getConversationAvatar(activeConversation) ||
+        "https://placehold.co/120x120/E6F0FD/1F2937?text=U",
+    };
+  }, [activeConversation]);
+
+  const hasConversations = conversations.length > 0;
+  const hasActiveConversation = Boolean(activeConversation);
 
   useEffect(() => {
     if (!activeConversationId && conversations.length > 0) {
@@ -117,8 +134,10 @@ export const MessagesPage = () => {
     };
   }, [inputValue, setTyping]);
 
-  const handleOpenProfile = () => setSideView("profile");
-  const handleOpenProgress = () => setSideView("progress");
+  const handleOpenProfile = () => {
+    if (!hasActiveConversation) return;
+    setSideView("profile");
+  };
   const handleBackToChat = () => setSideView("none");
 
   const handleSend = async () => {
@@ -172,7 +191,8 @@ export const MessagesPage = () => {
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.map((conversation) => {
               const isActive = activeConversationId === conversation.id;
-              const name = getConversationName(conversation.id);
+              const name = getConversationName(conversation);
+              const avatarUrl = getConversationAvatar(conversation);
               const lastText = conversation.last_message?.text ?? "No messages yet";
               const timeText = formatMessageTime(
                 conversation.last_message?.created_at ?? conversation.updated_at,
@@ -192,9 +212,17 @@ export const MessagesPage = () => {
                   )}
                 >
                   <div className="relative mr-3 shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
-                      {getInitials(name)}
-                    </div>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
+                        {getInitials(name)}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -244,31 +272,55 @@ export const MessagesPage = () => {
               </button>
 
               <div
-                className="w-10 h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-3 cursor-pointer"
+                className={cn(
+                  "w-10 h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-3",
+                  hasActiveConversation ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+                )}
                 onClick={handleOpenProfile}
               >
-                {getInitials(
-                  activeConversation ? getConversationName(activeConversation.id) : "Chat",
+                {activeConversation && getConversationAvatar(activeConversation) ? (
+                  <img
+                    src={getConversationAvatar(activeConversation)}
+                    alt={getConversationName(activeConversation)}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  getInitials(
+                    activeConversation ? getConversationName(activeConversation) : "Chat",
+                  )
                 )}
               </div>
 
               <div>
                 <h2 className="font-semibold text-[#666668] text-sm">
                   {activeConversation
-                    ? getConversationName(activeConversation.id)
-                    : "Select a conversation"}
+                    ? getConversationName(activeConversation)
+                    : hasConversations
+                      ? "Select a conversation"
+                      : "No conversations yet"}
                 </h2>
-                <p className="text-xs text-green-500 flex items-center">
-                  Chat socket: {connectionState}
-                  {onlineUserIds.length > 0 && ` • ${onlineUserIds.length} online`}
-                </p>
+                {hasActiveConversation ? (
+                  <p className="text-xs text-green-500 flex items-center">
+                    Chat socket: {connectionState}
+                    {onlineUserIds.length > 0 && ` • ${onlineUserIds.length} online`}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 flex items-center">
+                    Choose a chat from the left to start messaging.
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="flex items-center text-gray-400 gap-1 md:gap-0">
               <div
-                onClick={() => setVidCall(true)}
-                className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md"
+                onClick={() => hasActiveConversation && setVidCall(true)}
+                className={cn(
+                  "size-10 md:size-12 flex justify-center items-center bg-white rounded-md",
+                  hasActiveConversation
+                    ? "cursor-pointer hover:bg-[#4E92F421]"
+                    : "cursor-not-allowed opacity-40",
+                )}
               >
                 <CallCalling
                   size={20}
@@ -276,8 +328,13 @@ export const MessagesPage = () => {
                 />
               </div>
               <div
-                onClick={() => setVidCall(true)}
-                className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md"
+                onClick={() => hasActiveConversation && setVidCall(true)}
+                className={cn(
+                  "size-10 md:size-12 flex justify-center items-center bg-white rounded-md",
+                  hasActiveConversation
+                    ? "cursor-pointer hover:bg-[#4E92F421]"
+                    : "cursor-not-allowed opacity-40",
+                )}
               >
                 <Video
                   size={24}
@@ -285,7 +342,14 @@ export const MessagesPage = () => {
                   className="hover:text-gray-600 text-[#130F26] cursor-pointer"
                 />
               </div>
-              <div className="size-10 md:size-12 flex justify-center items-center cursor-pointer bg-white hover:bg-[#4E92F421] rounded-md">
+              <div
+                className={cn(
+                  "size-10 md:size-12 flex justify-center items-center bg-white rounded-md",
+                  hasActiveConversation
+                    ? "cursor-pointer hover:bg-[#4E92F421]"
+                    : "cursor-not-allowed opacity-40",
+                )}
+              >
                 <Search
                   size={20}
                   className="hover:text-gray-600 text-[#130F26] cursor-pointer"
@@ -304,8 +368,9 @@ export const MessagesPage = () => {
               Activities
             </button>
             <button
-              onClick={() => setActiveTab("Shared")}
-              className={activeTab === "Shared" ? "text-gray-900" : "text-gray-400"}
+              disabled
+              title="Shared files coming soon"
+              className="text-gray-300 cursor-not-allowed"
             >
               Shared
             </button>
@@ -318,19 +383,31 @@ export const MessagesPage = () => {
               </div>
             ) : (
               <div className="h-full p-4 md:p-6 space-y-6">
-                {activeConversation ? (
+                {hasActiveConversation ? (
                   <div className="w-full flex flex-col justify-center items-center">
                     <p className="border border-dashed border-[#CDDAE9] rounded-lg p-3 bg-white text-sm text-gray-600 w-fit">
                       Real-time chat connected with optimistic message send and reconnect handling.
                     </p>
                   </div>
                 ) : (
-                  <div className="w-full flex justify-center text-sm text-gray-500">
-                    Select a conversation to begin.
+                  <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center px-6">
+                    <div className="size-16 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xl font-semibold mb-4">
+                      {hasConversations ? "CH" : "NC"}
+                    </div>
+                    <p className="text-base text-gray-700 font-medium">
+                      {hasConversations
+                        ? "Select a conversation to start chatting"
+                        : "You don't have any conversations yet"}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {hasConversations
+                        ? "Pick a chat from the list on the left."
+                        : "When you connect with a buddy, chats will appear here."}
+                    </p>
                   </div>
                 )}
 
-                {loadingHistory && (
+                {loadingHistory && hasActiveConversation && (
                   <div className="text-sm text-gray-500">Loading messages...</div>
                 )}
 
@@ -345,14 +422,14 @@ export const MessagesPage = () => {
                   />
                 ))}
 
-                {isPeerTyping && (
+                {isPeerTyping && hasActiveConversation && (
                   <div className="text-xs text-gray-500">The other user is typing...</div>
                 )}
               </div>
             )}
 
             <AnimatePresence>
-              {sideView !== "none" && (
+              {sideView !== "none" && hasActiveConversation && activePartnerProfile && (
                 <motion.div
                   initial={{ x: "100%" }}
                   animate={{ x: 0 }}
@@ -362,14 +439,16 @@ export const MessagesPage = () => {
                 >
                   {sideView === "profile" && (
                     <UserProfileView
-                      person={activePerson}
+                      person={activePartnerProfile}
                       onBack={handleBackToChat}
                       onRate={() => setActiveModal("rate")}
                     />
                   )}
                   {sideView === "progress" && (
                     <GoalProgressView
-                      personName={activeConversation ? getConversationName(activeConversation.id) : "User"}
+                      personName={
+                        activeConversation ? getConversationName(activeConversation) : "User"
+                      }
                       onBack={handleBackToChat}
                       onReport={() => setActiveModal("report")}
                     />
@@ -407,8 +486,11 @@ export const MessagesPage = () => {
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setInputPopoverOpen(!inputPopoverOpen)}
-                className="p-2 bg-gray-100 rounded-lg text-[#3D3D3D] hover:bg-gray-200 transition-colors"
+                onClick={() =>
+                  hasActiveConversation && setInputPopoverOpen(!inputPopoverOpen)
+                }
+                disabled={!hasActiveConversation}
+                className="p-2 bg-gray-100 rounded-lg text-[#3D3D3D] hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus size={20} />
               </button>

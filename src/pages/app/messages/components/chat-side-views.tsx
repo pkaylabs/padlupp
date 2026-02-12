@@ -1,7 +1,6 @@
 // src/components/chat/ChatSideViews.tsx
 import React, { useState } from "react";
-import { ChevronLeft, Star, MoreVertical } from "lucide-react";
-import { Person } from "@/constants/goals-data";
+import { Star, MoreVertical } from "lucide-react";
 import Button from "@/components/core/buttons";
 import { ArrowLeft, QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
@@ -18,6 +17,17 @@ import {
 } from "lucide-react";
 
 // --- Types & Mock Data ---
+export interface ChatPartnerProfile {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  age?: number;
+  compatibility?: number;
+  rating?: number;
+  seeking?: string;
+  interests?: { label: string }[];
+}
+
 type FileType = "video" | "image" | "link" | "audio" | "doc";
 
 interface SharedFile {
@@ -96,10 +106,14 @@ export const UserProfileView = ({
   onBack,
   onRate,
 }: {
-  person: Person;
+  person: ChatPartnerProfile;
   onBack: () => void;
   onRate: () => void;
 }) => {
+  const hasCompatibility = typeof person.compatibility === "number";
+  const hasRating = typeof person.rating === "number";
+  const hasInterests = Boolean(person.interests?.length);
+
   return (
     <div className="h-full flex flex-col bg-bg-gray px-4 sm:px-20 pt-8">
       <div className=" flex justify-between items-center bg-white shadow rounded-lg p-6">
@@ -107,11 +121,13 @@ export const UserProfileView = ({
           onClick={onBack}
           className="flex items-center text-base font-semibold text-[#3D3D3D] "
         >
-          <ArrowLeft className="mr-3" /> {person.name}{" "}
-          <span className="text-gray-400 ml-2 text-base font-normal">
-            {" "}
-            • {person.age}
-          </span>
+          <ArrowLeft className="mr-3" /> {person.name}
+          {typeof person.age === "number" && (
+            <span className="text-gray-400 ml-2 text-base font-normal">
+              {" "}
+              • {person.age}
+            </span>
+          )}
         </button>
       </div>
 
@@ -127,25 +143,29 @@ export const UserProfileView = ({
         </div>
 
         <div className="text-center mb-6">
-          <p className="text-orange-400 text-base mb-1">
-            {person.compatibility}% compatible
-          </p>
-          <div className="flex items-center justify-center gap-1">
-            <span className="text-gray-500 text-base">Rating:</span>
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star
-                  key={i}
-                  size={20}
-                  className={
-                    i <= person.rating
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                  }
-                />
-              ))}
+          {hasCompatibility && (
+            <p className="text-orange-400 text-base mb-1">
+              {person.compatibility}% compatible
+            </p>
+          )}
+          {hasRating && (
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-gray-500 text-base">Rating:</span>
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    size={20}
+                    className={
+                      i <= (person.rating ?? 0)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="w-full p-6 py-8 bg-white rounded-lg shadow text-sm text-gray-700 my-4">
@@ -158,7 +178,7 @@ export const UserProfileView = ({
             </span>
           </div>
           <span className="font-semibold text-base text-dark-gray pl-4">
-            {person.seeking}
+            {person.seeking || "No profile details available yet."}
           </span>
         </div>
 
@@ -170,17 +190,22 @@ export const UserProfileView = ({
             </span>
           </div>
           <div className="flex flex-wrap justify-center  gap-2 my-4">
-            {person.interests.map((interest) => (
-              <div className="flex items-center bg-[#4E92F426] gap-1.5 px-2.5 py-1 rounded-sm">
-                <interest.icon size={16} color="#141B34" variant="TwoTone" />
-                <span
-                  key={interest.interest}
-                  className="text-xs font-medium text-gray-600 "
+            {hasInterests ? (
+              person.interests?.map((interest) => (
+                <div
+                  key={interest.label}
+                  className="flex items-center bg-[#4E92F426] gap-1.5 px-2.5 py-1 rounded-sm"
                 >
-                  {interest.interest}
-                </span>
-              </div>
-            ))}
+                  <span className="text-xs font-medium text-gray-600 ">
+                    {interest.label}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span className="text-xs text-gray-500">
+                No interests shared yet.
+              </span>
+            )}
           </div>
         </div>
 

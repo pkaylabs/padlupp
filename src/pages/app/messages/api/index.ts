@@ -25,6 +25,8 @@ export interface ChatMessage {
 export interface Conversation {
   id: number;
   partnership: number;
+  partner_name?: string | null;
+  partner_avatar?: string | null;
   last_message: ChatMessage | null;
   unread_count: number;
   created_at: string;

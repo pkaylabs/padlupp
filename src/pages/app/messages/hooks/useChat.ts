@@ -109,7 +109,9 @@ export const useChat = (): UseChatState => {
         return sortByCreatedAt([conversation, ...prev]).reverse();
       }
       return prev
-        .map((item) => (item.id === conversation.id ? conversation : item))
+        .map((item) =>
+          item.id === conversation.id ? { ...item, ...conversation } : item,
+        )
         .sort(
           (a, b) =>
             new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
@@ -198,16 +200,22 @@ export const useChat = (): UseChatState => {
         };
       });
 
+      const existingConversation = conversations.find(
+        (conversation) => conversation.id === conversationId,
+      );
+
       upsertConversation({
         id: conversationId,
-        partnership: 0,
+        partnership: existingConversation?.partnership ?? 0,
+        partner_name: existingConversation?.partner_name ?? null,
+        partner_avatar: existingConversation?.partner_avatar ?? null,
         last_message: message,
-        unread_count: 0,
-        created_at: message.created_at,
+        unread_count: existingConversation?.unread_count ?? 0,
+        created_at: existingConversation?.created_at ?? message.created_at,
         updated_at: message.updated_at,
       });
     },
-    [clearFallbackTimer, upsertConversation],
+    [clearFallbackTimer, conversations, upsertConversation],
   );
 
   const fetchHistory = useCallback(async (conversationId: number) => {
