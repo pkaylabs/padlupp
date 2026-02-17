@@ -22,12 +22,15 @@ export const InviteModal: React.FC<InviteModalProps> = ({
 
   const handleSend = () => {
     if (person?.id) {
-      sendRequest(Number(person.id), {
-        onSuccess: () => {
-          setNote(""); // Reset note
-          onClose();
+      sendRequest(
+        { userId: Number(person.id), message: note },
+        {
+          onSuccess: () => {
+            setNote("");
+            onClose();
+          },
         },
-      });
+      );
     }
   };
 
@@ -50,10 +53,10 @@ export const InviteModal: React.FC<InviteModalProps> = ({
         <div className="text-right text-sm text-gray-500 mt-1">
           {note.length}/{maxLength}
         </div>
-        <div className="mt-4 text-xs text-gray-400 italic">
+        {/* <div className="mt-4 text-xs text-gray-400 italic">
           * Note: Messages are currently disabled in this version. Request will
           be sent immediately.
-        </div>
+        </div> */}
         <Button
           variant="primary"
           className="w-full mt-4"

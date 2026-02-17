@@ -5,11 +5,13 @@ import * as Yup from "yup";
 import { Divider } from "@/components/system/divider";
 import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import ButtonLoader from "@/components/loaders/button";
 import { useRegister } from "../hooks/useRegister";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { GoogleLogin } from "@react-oauth/google";
+import { Check, X } from "lucide-react";
+import { motion } from "framer-motion";
 
 // Google G logo SVG
 export const GoogleIcon = () => (
@@ -39,6 +41,9 @@ const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
   password: Yup.string()
     .min(8, "Must be at least 8 characters")
+    .matches(/[A-Z]/, "Must include at least one uppercase letter")
+    .matches(/[0-9]/, "Must include at least one number")
+    .matches(/[^A-Za-z0-9]/, "Must include at least one symbol")
     .required("Required field"),
 });
 
@@ -51,6 +56,7 @@ export const SignUp: React.FC = () => {
   } = useGoogleAuth();
 
   const isGlobalLoading = isEmailLoading || isGoogleLoading;
+  const [passwordFocused, setPasswordFocused] = React.useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -69,10 +75,30 @@ export const SignUp: React.FC = () => {
     },
   });
 
+  const passwordValue = formik.values.password || "";
+  const meetsMinPasswordLength = passwordValue.length >= 8;
+  const hasUppercase = /[A-Z]/.test(passwordValue);
+  const hasNumber = /[0-9]/.test(passwordValue);
+  const hasSymbol = /[^A-Za-z0-9]/.test(passwordValue);
+  const meetsPasswordRequirements =
+    meetsMinPasswordLength && hasUppercase && hasNumber && hasSymbol;
+
   return (
     <div className="w-full max-w-lg mx-auto py-12 px-4">
       <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900">
-        Welcome to Padlupp 👋
+        Welcome to Padlupp{" "}
+        <motion.span
+          className="inline-block origin-[70%_70%]"
+          animate={{ rotate: [0, 16, -10, 16, -6, 10, 0] }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            repeatDelay: 1.1,
+            ease: "easeInOut",
+          }}
+        >
+          👋
+        </motion.span>
       </h1>
       <p className="text-gray-600 text-center sm:text-left mt-2 mb-8">
         Find your community. Achieve goals. Stay inspired.
@@ -113,9 +139,45 @@ export const SignUp: React.FC = () => {
           touched={formik.touched}
           handleChange={formik.handleChange}
           handleBlur={formik.handleBlur}
+          onFocus={() => setPasswordFocused(true)}
         />
+        {(passwordFocused || passwordValue.length > 0) && (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p className="text-xs font-medium text-gray-600 mb-2">
+              Password requirement
+            </p>
+            <div
+              className={`flex items-center gap-2 text-xs ${meetsMinPasswordLength ? "text-green-600" : "text-gray-500"}`}
+            >
+              {meetsMinPasswordLength ? <Check size={14} /> : <X size={14} />}
+              At least 8 characters
+            </div>
+            <div
+              className={`flex items-center gap-2 text-xs mt-1 ${hasUppercase ? "text-green-600" : "text-gray-500"}`}
+            >
+              {hasUppercase ? <Check size={14} /> : <X size={14} />}
+              At least one uppercase letter
+            </div>
+            <div
+              className={`flex items-center gap-2 text-xs mt-1 ${hasNumber ? "text-green-600" : "text-gray-500"}`}
+            >
+              {hasNumber ? <Check size={14} /> : <X size={14} />}
+              At least one number
+            </div>
+            <div
+              className={`flex items-center gap-2 text-xs mt-1 ${hasSymbol ? "text-green-600" : "text-gray-500"}`}
+            >
+              {hasSymbol ? <Check size={14} /> : <X size={14} />}
+              At least one symbol
+            </div>
+          </div>
+        )}
 
-        <Button type="submit" variant="primary">
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isGlobalLoading || !meetsPasswordRequirements}
+        >
           {isEmailLoading ? <ButtonLoader title="Signing up..." /> : "Sign up "}
         </Button>
       </form>

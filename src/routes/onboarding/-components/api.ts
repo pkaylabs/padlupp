@@ -2,28 +2,17 @@ import { api } from "@/lib/api";
 
 export interface OnboardingPayload {
   experience?: string;
-  interests?: any[];
+  interests?: string[];
   avatar?: File | null;
 }
 
 export const setOnboardingExperience = async (data: OnboardingPayload) => {
-  const formData = new FormData();
+  const payload = {
+    experience: data.experience ?? "",
+    interests: data.interests ?? [],
+  };
 
-  if (data.experience) {
-    formData.append("experience", data.experience);
-  }
-
-  if (data.interests) {
-    const cleanInterests = data.interests.flat(Infinity);
-
-    cleanInterests.forEach((interest) => {
-      if (typeof interest === "string" && interest.trim() !== "") {
-        formData.append("interests", interest);
-      }
-    });
-  }
-
-  const response = await api.post("/onboarding/set-experience/", formData);
+  const response = await api.post("/onboarding/set-experience/", payload);
   return response.data;
 };
 
@@ -34,6 +23,6 @@ export const setOnboardingAvatar = async (data: OnboardingPayload) => {
     formData.append("avatar", data.avatar);
   }
 
-  const response = await api.post("/onboarding/user-avatar/", formData);
+  const response = await api.patch("/onboarding/user-avatar/", formData);
   return response.data;
 };

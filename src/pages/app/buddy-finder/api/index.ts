@@ -67,8 +67,14 @@ export const getInvitations = async () => {
 };
 
 // POST: Send Request
-export const sendConnectionRequest = async (toUserId: number) => {
-  const { data } = await api.post("/buddies/connect/", { to_user: toUserId });
+export const sendConnectionRequest = async (
+  toUserId: number,
+  message: string,
+) => {
+  const { data } = await api.post("/buddies/connect/", {
+    to_user: toUserId,
+    message,
+  });
   return data;
 };
 

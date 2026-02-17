@@ -1,5 +1,5 @@
 // src/pages/BuddyFinderPage.tsx
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -36,6 +36,8 @@ export const BuddyFinderPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [detailsTab, setDetailsTab] = useState<DetailsTab>("People");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   // --- Modal States ---
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -90,6 +92,14 @@ export const BuddyFinderPage = () => {
     return path;
   }, [mainTab, selectedCategory]);
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 280);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchQuery]);
+
   return (
     <>
       <div className="font-monts w-full flex flex-col">
@@ -116,6 +126,8 @@ export const BuddyFinderPage = () => {
               <input
                 type="text"
                 placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-[#CDDAE9] focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
@@ -194,6 +206,7 @@ export const BuddyFinderPage = () => {
                 <DetailsView
                   key="details"
                   activeTab={detailsTab}
+                  searchQuery={debouncedSearchQuery}
                   // We don't pass static people mock anymore, the component fetches it
                   communityGoals={COMMUNITY_MOCK}
                   onInvite={handleOpenInviteModal}

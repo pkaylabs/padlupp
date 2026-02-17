@@ -1,5 +1,5 @@
 // src/components/onboarding/Step1Interests.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Book,
   Smile,
@@ -20,7 +20,9 @@ import ButtonLoader from "@/components/loaders/button";
 
 interface Step1Props {
   onContinue: (interests: string[]) => void;
+  onBack: () => void;
   isPending: boolean;
+  initialSelected?: string[];
 }
 
 const interestOptions = [
@@ -38,9 +40,15 @@ const interestOptions = [
 
 export const Step1Interests: React.FC<Step1Props> = ({
   onContinue,
+  onBack,
   isPending,
+  initialSelected = [],
 }) => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(initialSelected);
+
+  useEffect(() => {
+    setSelected(initialSelected);
+  }, [initialSelected]);
 
   const toggleInterest = (label: string) => {
     setSelected((prev) =>
@@ -72,14 +80,24 @@ export const Step1Interests: React.FC<Step1Props> = ({
         ))}
       </div>
 
-      <Button
-        variant="primary"
-        onClick={() => onContinue(selected)}
-        disabled={selected.length === 0 || isPending}
-        className="w-full"
-      >
-        {isPending ? <ButtonLoader title="Setting up..." /> : "Continue"}
-      </Button>
+      <div className="w-full space-y-3">
+        <Button
+          variant="primary"
+          onClick={() => onContinue(selected)}
+          disabled={selected.length === 0 || isPending}
+          className="w-full"
+        >
+          {isPending ? <ButtonLoader title="Setting up..." /> : "Continue"}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onBack}
+          disabled={isPending}
+          className="w-full"
+        >
+          Back
+        </Button>
+      </div>
       <Link
         to={DASHBOARD}
         className="mt-4 text-sm text-gray-500 hover:text-gray-700"

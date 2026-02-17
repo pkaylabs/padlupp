@@ -1,5 +1,5 @@
 // src/components/onboarding/Step3ProfileImage.tsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef } from "react";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import Button from "@/components/core/buttons";
@@ -8,16 +8,22 @@ import { DASHBOARD } from "@/constants/page-path";
 import ButtonLoader from "@/components/loaders/button";
 
 interface Step3Props {
-  onFinish: (file: File | null) => void;
+  preview: string | null;
+  onFileSelect: (file: File | null, preview: string | null) => void;
+  onBack: () => void;
+  onFinish: () => void;
+  onSkip: () => void;
   isPending: boolean;
 }
 
 export const Step3ProfileImage: React.FC<Step3Props> = ({
+  preview,
+  onFileSelect,
+  onBack,
   onFinish,
+  onSkip,
   isPending,
 }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
@@ -25,23 +31,10 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-
-      // Create a preview URL
-      const previewUrl = URL.createObjectURL(selectedFile);
-      setPreview(previewUrl);
-    }
+    if (!selectedFile) return;
+    const previewUrl = URL.createObjectURL(selectedFile);
+    onFileSelect(selectedFile, previewUrl);
   };
-
-  // Clean up the object URL to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
-    };
-  }, [preview]);
 
   // Trigger the hidden file input
   const triggerFileInput = () => {
@@ -94,15 +87,24 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
 
       <Button
         variant="primary"
-        onClick={() => onFinish(file)}
+        onClick={onFinish}
         className="w-full"
         disabled={isPending}
       >
         {isPending ? <ButtonLoader title="Finishing up..." /> : "Finish up"}
       </Button>
+      <Button
+        variant="outline"
+        onClick={onBack}
+        className="w-full mt-3"
+        disabled={isPending}
+      >
+        Back
+      </Button>
       <button
         onClick={() => {
-          onFinish(null);
+          onSkip();
+          onFileSelect(null, null);
           navigate({ to: DASHBOARD });
         }}
         className="mt-4 text-sm text-gray-500 hover:text-gray-700"

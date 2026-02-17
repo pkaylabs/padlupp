@@ -1,12 +1,12 @@
 // src/components/goals/PeopleCardStack.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ChevronLeft, ChevronRight } from "lucide-react";
-import { useWindowSize } from "react-use";
+import { Star } from "lucide-react";
 import { type Person } from "@/constants/goals-data";
 import Button from "@/components/core/buttons";
 import { ArrowLeft2, ArrowRight2, QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
+import { UserAvatar } from "./user-avatar";
 
 interface PeopleCardStackProps {
   people: Person[];
@@ -18,7 +18,11 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
   onInvite,
 }) => {
   const [index, setIndex] = useState(0);
-  const { width } = useWindowSize();
+
+  useEffect(() => {
+    setIndex(0);
+  }, [people]);
+
   const person = people[index];
 
   const paginate = (direction: number) => {
@@ -46,10 +50,11 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
             </div>
 
             <div className="relative">
-              <img
+              <UserAvatar
                 src={person?.avatarUrl}
-                alt={person?.name}
-                className="w-28 h-28 object-cover rounded-full my-4"
+                name={person?.name}
+                className="w-28 h-28 my-4"
+                textClassName="text-2xl"
               />
 
               <div className="size-3 absolute z-20 bottom-4 right-6 p-px bg-white rounded-full">

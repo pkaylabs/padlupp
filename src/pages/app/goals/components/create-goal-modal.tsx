@@ -122,6 +122,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
     // if (!dateRange.start) return toast.error("Start date required");
     if (!title.trim()) return;
     if (!dateRange.start) return;
+    if (dateRange.start < startOfToday()) return;
 
     try {
       // Step A: Create the Goal
@@ -321,6 +322,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                       setTime(t);
                       setActivePopover(null);
                     }}
+                    onClose={() => setActivePopover(null)}
                   />
                 )}
               </AnimatePresence>
@@ -508,6 +510,8 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const popoverRef = useRef<HTMLDivElement>(null);
   const today = startOfToday();
+  const currentMonthStart = startOfMonth(currentMonth);
+  const todayMonthStart = startOfMonth(today);
 
   // Handle click outside to close the date picker
   useEffect(() => {
@@ -536,6 +540,8 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
 
   // Handle Manual Date Click
   const handleDayClick = (day: Date) => {
+    if (day < today) return;
+
     if (!range.start || (range.start && range.end)) {
       onChange({ start: day, end: undefined });
     } else {
@@ -631,8 +637,9 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
       <div className="flex-1 p-4">
         <div className="flex justify-between items-center mb-4">
           <button
-            onClick={() => setCurrentMonth((d) => addMonths(d, -1))} // Changed to addMonths
-            className="p-1 hover:bg-gray-100 rounded-full text-gray-500"
+            onClick={() => setCurrentMonth((d) => addMonths(d, -1))}
+            disabled={currentMonthStart <= todayMonthStart}
+            className="p-1 hover:bg-gray-100 rounded-full text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={16} />
           </button>
@@ -668,10 +675,12 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
               range.start &&
               range.end &&
               isWithinInterval(day, { start: range.start, end: range.end });
+            const isPastDate = day < today;
 
             return (
               <button
                 key={day.toString()}
+                disabled={isPastDate}
                 onClick={() => handleDayClick(day)}
                 className={cn(
                   "w-8 h-8 text-sm rounded-full flex items-center justify-center transition-all",
@@ -679,7 +688,9 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
                     ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
                     : isInRange && !isSelected
                       ? "bg-blue-50 text-blue-600"
-                      : "text-gray-700 hover:bg-gray-100",
+                      : isPastDate
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-700 hover:bg-gray-100",
                 )}
               >
                 {format(day, "d")}
@@ -734,12 +745,31 @@ const TimeInput = ({ value, onChange, max }: TimeInputProps) => {
 // 2. TIME PICKER (Interactive)
 export const TimePickerView = ({
   onSave,
+  onClose,
 }: {
   onSave: (time: string) => void;
+  onClose: () => void;
 }) => {
   const [hours, setHours] = useState("00");
   const [minutes, setMinutes] = useState("00");
   const [seconds, setSeconds] = useState("00");
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
 
   const handleSave = () => {
     const formattedTime = `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}:${seconds.padStart(2, "0")}`;
@@ -748,6 +778,7 @@ export const TimePickerView = ({
 
   return (
     <motion.div
+      ref={popoverRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}

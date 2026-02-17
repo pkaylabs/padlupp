@@ -29,6 +29,7 @@ import TextInput from "@/components/core/inputs";
 import { DualRangeSlider } from "./components/dual-range-slider";
 import { useLogout } from "./hooks/useLogout";
 import {
+  useDeleteAccount,
   useUpdateExperience,
   useUpdateExtendedProfile,
   useUpdateUserAccount,
@@ -51,16 +52,24 @@ const StyledSwitch = ({
   onChange: (v: boolean) => void;
 }) => (
   <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
     onClick={() => onChange(!checked)}
     className={cn(
-      "w-11 h-6 bg-gray-200 rounded-full relative transition-colors duration-200 ease-in-out focus:outline-none",
-      checked ? "bg-blue-600" : "bg-gray-200",
+      "relative inline-flex h-7 w-12 items-center rounded-full border transition-all duration-300 ease-out",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2",
+      "active:scale-[0.98]",
+      checked
+        ? "border-blue-500 bg-linear-to-r from-blue-500 to-blue-600 shadow-[0_4px_14px_-8px_rgba(37,99,235,0.9)]"
+        : "border-gray-300 bg-gray-200 hover:bg-gray-300/80",
     )}
   >
     <span
       className={cn(
-        "translate-x-1 inline-block w-4 h-4 transform bg-white rounded-full transition duration-200 ease-in-out",
-        checked ? "translate-x-6" : "translate-x-1",
+        "pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-md",
+        "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        checked ? "translate-x-6" : "translate-x-0",
       )}
     />
   </button>
@@ -429,6 +438,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   const { mutate: updateProfile, isPending: isUpdatingProfile } =
     useUpdateExtendedProfile();
   const { mutate: logout, isPending } = useLogout();
+  const { mutate: deleteAccount, isPending: isDeletingAccount } =
+    useDeleteAccount();
 
   const [view, setView] = useState<SettingsView>("menu");
   const [theme, setTheme] = useState<Theme>("system");
@@ -446,6 +457,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   const [pushSettings, setPushSettings] = useState({
     emailNotification: false,
   });
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -937,14 +950,17 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               <button
                 onClick={() => logout()}
                 disabled={isPending}
-                className="w-full flex items-center bg-white justify-center py-3 text-gray-900 font-medium text-sm rounded-lg"
+                className="w-full flex items-center bg-white hover:bg-gray-50 justify-center py-3 text-gray-900 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
               >
                 {isPending ? "Logging out..." : "Log out"}
               </button>
               <div className="flex justify-center">
                 <ChevronsUp className="text-blue-500 animate-bounce" />
               </div>
-              <button className="w-full flex items-center bg-white justify-center py-3 text-red-500 font-medium text-sm rounded-lg">
+              <button
+                onClick={() => setDeleteAccountModalOpen(true)}
+                className="w-full flex items-center bg-white hover:bg-gray-50 justify-center py-3 text-red-500 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
+              >
                 Delete Account
               </button>
             </div>
@@ -959,6 +975,65 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         <ChevronsUp size={32} />
       </div>
       {renderContent()}
+      <Modal
+        isOpen={deleteAccountModalOpen}
+        onClose={() => {
+          if (isDeletingAccount) return;
+          setDeleteAccountModalOpen(false);
+        }}
+        className="w-full max-w-md p-6 rounded-2xl top-1/2 -translate-y-1/2"
+      >
+        <h2 className="text-lg font-semibold text-gray-900">Delete Account</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Tell us why you are leaving. This action is permanent.
+        </p>
+        <textarea
+          value={deleteReason}
+          onChange={(e) => setDeleteReason(e.target.value)}
+          placeholder="Reason for deleting your account..."
+          className="w-full mt-4 h-28 p-3 bg-gray-50 rounded-xl border border-gray-200 resize-none text-sm focus:ring-2 focus:ring-blue-100 focus:outline-none"
+          disabled={isDeletingAccount}
+        />
+        <div className="flex gap-3 mt-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setDeleteAccountModalOpen(false)}
+            disabled={isDeletingAccount}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            className="w-full bg-red-500 hover:bg-red-600"
+            onClick={() => {
+              const reason = deleteReason.trim();
+              if (!reason) {
+                toast.error("Please provide a reason");
+                return;
+              }
+
+              deleteAccount(
+                { reason },
+                {
+                  onSuccess: () => {
+                    toast.success("Account deletion request submitted");
+                    setDeleteReason("");
+                    setDeleteAccountModalOpen(false);
+                    logout();
+                  },
+                  onError: () => {
+                    toast.error("Failed to submit delete account request");
+                  },
+                },
+              );
+            }}
+            disabled={isDeletingAccount}
+          >
+            {isDeletingAccount ? "Submitting..." : "Confirm Delete"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -973,13 +1048,9 @@ export const SettingsPage = () => {
 
   return (
     <div className="flex w-full h-[92vh] overflow-hidden bg-white relative">
-      {/* Sidebar Area 
-        - Mobile: Visible only when view is 'sidebar'
-        - Desktop: Always visible (w-96)
-      */}
       <div
         className={cn(
-          "w-full md:w-96 h-full border-r border-gray-200 bg-white transition-all",
+          "w-full md:w-92 h-full border-r border-gray-200 bg-white transition-all",
           mobileView === "sidebar" ? "block" : "hidden md:block",
         )}
       >

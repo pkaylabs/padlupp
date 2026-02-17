@@ -1,10 +1,11 @@
 // src/components/onboarding/Step2Goal.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SelectableCard } from "./select-card";
 import Button from "@/components/core/buttons";
 
 interface Step2Props {
   onContinue: (goal: string) => void;
+  initialGoal?: string;
 }
 
 const goalOptions = [
@@ -25,8 +26,15 @@ const goalOptions = [
   },
 ];
 
-export const Step2Goal: React.FC<Step2Props> = ({ onContinue }) => {
-  const [selected, setSelected] = useState("");
+export const Step2Goal: React.FC<Step2Props> = ({
+  onContinue,
+  initialGoal = "",
+}) => {
+  const [selected, setSelected] = useState(initialGoal);
+
+  useEffect(() => {
+    setSelected(initialGoal);
+  }, [initialGoal]);
 
   return (
     <div className="flex flex-col items-center w-full">

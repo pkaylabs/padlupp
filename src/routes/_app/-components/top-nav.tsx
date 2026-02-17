@@ -10,6 +10,7 @@ import { ThemeToggle } from "./toggle-theme";
 import { useUserProfile } from "@/pages/auth/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { Link } from "@tanstack/react-router";
 
 interface LongestStreakResponse {
   longest_streak?: number;
@@ -55,11 +56,14 @@ export const TopNav: React.FC = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             {/* User Avatar */}
-            <img
-              src={userProfile?.user?.avatar || Profile}
-              alt="User"
-              className="w-10 h-10 rounded-full object-cover"
-            />
+            <Link to="/settings">
+              <img
+                src={userProfile?.user?.avatar || Profile}
+                alt="User"
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            </Link>
+
             {/* Streak */}
             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50">
               <span className="text-sm">🔥 {longestStreak} days</span>

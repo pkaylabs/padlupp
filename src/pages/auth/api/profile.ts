@@ -63,6 +63,10 @@ export interface UpdateAvatarPayload {
   avatar: File;
 }
 
+export interface DeleteAccountPayload {
+  reason: string;
+}
+
 // --- API Functions ---
 
 // 1. GET Full Profile
@@ -110,4 +114,10 @@ export const updateUserAvatar = async (
 
   const { data } = await api.patch<User>("/onboarding/user-avatar/", formData);
   return data;
+};
+
+export const deleteAccount = async (
+  payload: DeleteAccountPayload,
+): Promise<void> => {
+  await api.post("/auth/delete-account/", payload);
 };

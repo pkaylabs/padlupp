@@ -39,7 +39,8 @@ export function useSendRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userId: number) => sendConnectionRequest(userId),
+    mutationFn: ({ userId, message }: { userId: number; message: string }) =>
+      sendConnectionRequest(userId, message),
     onSuccess: () => {
       // Refresh the finder list to update status from "none" to "pending"
       queryClient.invalidateQueries({ queryKey: ["buddies", "finder"] });

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  deleteAccount,
+  DeleteAccountPayload,
   getUserProfile,
   updateExperience,
   updateUserAccount,
@@ -85,5 +87,11 @@ export function useUpdateUserAvatar() {
       toast.success("Avatar updated successfully");
     },
     onError: () => toast.error("Failed to update avatar"),
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: (payload: DeleteAccountPayload) => deleteAccount(payload),
   });
 }

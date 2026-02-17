@@ -23,7 +23,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     >
       <motion.div
         className="absolute top-1 left-1 w-7 h-7 bg-white rounded-full shadow"
-        animate={{ x: isDarkMode ? 0 : 32 }}
+        animate={{ x: isDarkMode ? 0 : 35 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
       />
 
@@ -37,7 +37,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             size={16}
             className={cn(
               "transition-colors",
-              isDarkMode ? "text-gray-800" : "text-gray-400"
+              isDarkMode ? "text-gray-800" : "text-gray-400",
             )}
           />
         </span>
@@ -48,7 +48,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             size={16}
             className={cn(
               "transition-colors",
-              isDarkMode ? "text-gray-400" : "text-blue-500"
+              isDarkMode ? "text-gray-400" : "text-blue-500",
             )}
           />
         </span>

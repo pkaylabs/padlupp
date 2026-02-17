@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { DASHBOARD } from "@/constants/page-path";
 import { OnboardingPayload, setOnboardingAvatar } from "./api";
 
-export function useOnboarding() {
+export function useOnboardingAvatar() {
   const router = useRouter();
 
   return useMutation({
@@ -16,7 +16,7 @@ export function useOnboarding() {
       router.navigate({ to: DASHBOARD });
       //   toast.success('Profile setup complete!');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Onboarding failed:", error);
       //   toast.error('Failed to save profile. Please try again.');
     },

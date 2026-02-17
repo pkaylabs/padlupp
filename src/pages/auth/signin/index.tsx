@@ -5,13 +5,13 @@ import * as Yup from "yup";
 import { Divider } from "@/components/system/divider";
 import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { GoogleIcon } from "../signup";
 import ButtonLoader from "@/components/loaders/button";
 import { useLogin } from "../hooks/useLogin";
-import { DASHBOARD } from "@/constants/page-path";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { GoogleLogin } from "@react-oauth/google";
+import { motion } from "framer-motion";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email address").required("Required field"),
@@ -45,7 +45,19 @@ export const SignIn: React.FC = () => {
   return (
     <div className="w-full max-w-lg mx-auto py-12 px-4">
       <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900">
-        Welcome Back 👋
+        Welcome Back{" "}
+        <motion.span
+          className="inline-block origin-[70%_70%]"
+          animate={{ rotate: [0, 16, -10, 16, -6, 10, 0] }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            repeatDelay: 1.1,
+            ease: "easeInOut",
+          }}
+        >
+          👋
+        </motion.span>
       </h1>
       <p className="text-gray-600 text-center sm:text-left mt-2 mb-8">
         Find your community. Achieve goals. Stay inspired.
