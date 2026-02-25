@@ -39,9 +39,9 @@ const buttonVariants = cva(
         primary:
           "bg-[#4E92F4] text-white hover:bg-[#3278DE] focus:ring-4 focus:ring-blue-300",
         secondary:
-          "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100",
+          "bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 focus:ring-4 focus:ring-gray-100 dark:focus:ring-slate-700",
         outline:
-          "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100",
+          "bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-100 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 focus:ring-4 focus:ring-gray-100 dark:focus:ring-slate-700",
         danger:
           "border-none text-white bg-red-500 hover:bg-red-600 focus:ring-4 focus:ring-red-300",
       },

@@ -93,12 +93,12 @@ const InfoItem: React.FC<{ icon: React.ReactNode; text: string }> = ({
   icon,
   text,
 }) => (
-  <div className="font-monts flex items-center gap-2 text-gray-500">
-    <div className="flex justify-center items-center size-9 rounded-full border border-[#D6D6D6] bg-white shadow ">
+  <div className="font-monts flex items-center gap-2 text-gray-500 dark:text-slate-400">
+    <div className="flex justify-center items-center size-9 rounded-full border border-[#D6D6D6] dark:border-slate-600 bg-white dark:bg-slate-800 shadow ">
       {icon}
     </div>
 
-    <span className="text-xs sm:text-sm font-medium text-[#44424C] ">
+    <span className="text-xs sm:text-sm font-medium text-[#44424C] dark:text-slate-300">
       {text}
     </span>
   </div>
@@ -126,7 +126,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   time,
 }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-md  border border-gray-100 space-y-4 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-gray-100 dark:border-slate-800 space-y-4 overflow-hidden">
       {/* Top row: Time Left */}
       <div className="pt-5 px-5 space-y-4">
         <div className="w-fit flex items-center gap-1.5 px-3 py-1 rounded-sm bg-primary-500 text-white">
@@ -136,8 +136,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
         {/* Title and Subtitle */}
         <div className="font-monts space-y-1">
-          <h3 className=" sm:text-lg font-medium text-[#3D3D3D] ">{title}</h3>
-          <p className="text-sm text-[#838181] ">{subtitle}</p>
+          <h3 className=" sm:text-lg font-medium text-[#3D3D3D] dark:text-slate-100">{title}</h3>
+          <p className="text-sm text-[#838181] dark:text-slate-400">{subtitle}</p>
         </div>
 
         {/* Tags row */}
@@ -150,7 +150,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       </div>
 
       {/* Bottom row: Date and Time <AlarmClock /> */}
-      <div className="flex items-center justify-between bg-[#F5F6F8] p-5 rounded-2xl ">
+      <div className="flex items-center justify-between bg-[#F5F6F8] dark:bg-slate-800 p-5 rounded-2xl">
         <InfoItem icon={<Calendar size={18} color="#4E92F4" />} text={date} />
         <InfoItem icon={<AlarmClock size={18} color="#F29268" />} text={time} />
       </div>

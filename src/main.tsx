@@ -6,6 +6,9 @@ import "./App.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { initializeTheme } from "./utils/theme";
+
+initializeTheme();
 
 export const router = createRouter({
   routeTree,

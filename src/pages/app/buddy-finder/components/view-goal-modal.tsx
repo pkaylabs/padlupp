@@ -1,7 +1,6 @@
 // src/components/goals/modals/ViewGoalModal.tsx
 import React from "react";
 import { Calendar, Circle, Briefcase, Sparkles } from "lucide-react";
-import { GoalDetails } from "@/constants/goals-data";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import { BuddyInvitation } from "../api";
@@ -10,11 +9,10 @@ import { useAcceptInvitation, useRejectInvitation } from "../hooks/useBuddies";
 interface ViewGoalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  goalDetails: GoalDetails; // Visual data only
   invitation: BuddyInvitation | null; // Real data for API ID
 }
 
-const GoalTag: React.FC<{ tag: GoalDetails["tags"][0] }> = ({ tag }) => {
+const GoalTag: React.FC<{ tag: { label: string; type: string } }> = ({ tag }) => {
   const Icon =
     tag.type === "inProgress"
       ? Briefcase
@@ -39,7 +37,6 @@ const GoalTag: React.FC<{ tag: GoalDetails["tags"][0] }> = ({ tag }) => {
 export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
   isOpen,
   onClose,
-  goalDetails,
   invitation,
 }) => {
   const { mutate: accept, isPending: isAccepting } = useAcceptInvitation();
@@ -64,19 +61,19 @@ export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       showCloseButton
-      className="font-monts top-1/2 -translate-y-1/2"
+      className="font-monts top-1/2 -translate-y-1/2 w-[calc(100%-1.5rem)] max-w-xl max-h-[90vh]"
     >
-      <div className="p-6 w-full max-w-xl">
+      <div className="p-4 sm:p-6 w-full max-w-xl max-h-[90vh] flex flex-col">
         <div className="flex items-center gap-3 mb-4">
           <img
             src={invitation?.from_user.avatar || "/default-avatar.png"}
             className="w-10 h-10 rounded-full"
           />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Invitation from {invitation?.from_user.name}
             </h3>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-slate-400">
               Sent{" "}
               {invitation
                 ? new Date(invitation.created_at).toLocaleDateString()
@@ -85,38 +82,50 @@ export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
           </div>
         </div>
 
-        <h4 className="font-semibold text-gray-800 mb-2">Description</h4>
-        <p className="text-sm text-gray-600 mb-4">{goalDetails.description}</p>
+        <div className="overflow-y-auto pr-1">
+          <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">Invitation note</h4>
+          <p className="text-sm text-gray-600 dark:text-slate-300 mb-4 break-words">
+            {invitation?.message?.trim() ||
+              `${invitation?.from_user.name || "This user"} invited you to connect and work on goals together.`}
+          </p>
 
-        <div className="flex items-center gap-2 text-sm text-gray-700 mb-4">
-          <Calendar size={16} />
-          <span>{goalDetails.dateRange}</span>
+          <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 mb-4">
+            <Calendar size={16} />
+            <span>
+              {invitation
+                ? new Date(invitation.created_at).toLocaleDateString()
+                : "N/A"}
+            </span>
+          </div>
+
+          {invitation?.goal_title && (
+            <>
+              <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">Goal</h4>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <Circle size={16} className="text-gray-400 dark:text-slate-500" />
+                  <span className="text-sm text-gray-600 dark:text-slate-300 break-words">
+                    {invitation.goal_title}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center gap-2 mb-6">
+            <GoalTag tag={{ label: "Invitation", type: "regular" }} />
+            <GoalTag tag={{ label: "Connection", type: "inProgress" }} />
+          </div>
         </div>
 
-        <h4 className="font-semibold text-gray-800 mb-2">Subtasks</h4>
-        <div className="space-y-2 mb-4">
-          {goalDetails.subtasks.map((task, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Circle size={16} className="text-gray-400" />
-              <span className="text-sm text-gray-600">{task.text}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 mb-6">
-          {goalDetails.tags.map((tag) => (
-            <GoalTag key={tag.label} tag={tag} />
-          ))}
-        </div>
-
-        <div className="flex gap-4">
+        <div className="flex gap-3 sm:gap-4 mt-auto pt-2 bg-white dark:bg-slate-900">
           <Button
             variant="outline"
             className="w-full text-red-600 border-red-200 hover:bg-red-50"
             onClick={handleReject}
             disabled={isLoading}
           >
-            {isRejecting ? "Rejecting..." : "Reject"}
+            {isRejecting ? "Declining..." : "Decline"}
           </Button>
           <Button
             variant="primary"
@@ -124,7 +133,7 @@ export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
             onClick={handleAccept}
             disabled={isLoading}
           >
-            {isAccepting ? "Connecting..." : "Commit"}
+            {isAccepting ? "Accepting..." : "Accept"}
           </Button>
         </div>
       </div>

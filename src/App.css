@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-primary-100: #dbe9fd;
@@ -19,12 +20,61 @@
   --font-monts: "Montserrat", sans-serif;
 }
 
-input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
-input:-moz-autofill {
-  box-shadow: 0 0 0 1000px white inset !important;
+body {
+  background: #fafafa;
+  color: #232323;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background: #020617;
+  color: #e5e7eb;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #111827 !important;
+  caret-color: #111827 !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+input:-moz-autofill,
+textarea:-moz-autofill {
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -moz-text-fill-color: #111827 !important;
+  caret-color: #111827 !important;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark textarea:-webkit-autofill:hover,
+.dark textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0 !important;
+}
+
+.dark input:-moz-autofill,
+.dark textarea:-moz-autofill {
+  box-shadow: 0 0 0 1000px #0f172a inset !important;
+  -moz-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0 !important;
 }
 
 @keyframes on-autofill-start {

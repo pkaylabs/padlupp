@@ -77,7 +77,7 @@ export const Modal: React.FC<ModalProps> = ({
           {/* 2. Modal Content */}
           <motion.div
             className={cn(
-              "relative z-10 bg-white rounded-lg shadow-xl overflow-hidden",
+              "relative z-10 bg-white dark:bg-slate-900 rounded-lg shadow-xl overflow-hidden border border-transparent dark:border-slate-700",
               className
             )}
             variants={modalVariants}
@@ -89,9 +89,9 @@ export const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="absolute top-3 right-3 text-[#153047] hover:text-gray-600"
+                className="absolute top-3 right-3 text-[#153047] dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-100"
               >
-                <X size={20} className="text-[#153047]" />
+                <X size={20} className="text-[#153047] dark:text-slate-300" />
               </button>
             )}
             {children}

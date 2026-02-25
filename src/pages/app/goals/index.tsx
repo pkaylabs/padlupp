@@ -34,7 +34,7 @@ const EMPTY_BOARD: BoardData = {
 export const GoalsPage = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(startOfToday());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // 1. Fetch Goals
   const { data: goalsData, isLoading } = useGoals({ ordering: "target_date" });
@@ -51,7 +51,9 @@ export const GoalsPage = () => {
 
     // 1. Format the selected date to a string "YYYY-MM-DD"
     // This removes time/timezone variables from the equation
-    const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+    const selectedDateStr = selectedDate
+      ? format(selectedDate, "yyyy-MM-dd")
+      : null;
 
     goalsData.results.forEach((goal) => {
       // 2. Extract the date part from the API string safely
@@ -59,7 +61,7 @@ export const GoalsPage = () => {
       const goalDateStr = goal.start_date ? goal.start_date.split("T")[0] : "";
 
       // 3. Compare Strings directly
-      if (goalDateStr !== selectedDateStr) return;
+      if (selectedDateStr && goalDateStr !== selectedDateStr) return;
 
       const item = {
         id: goal.id.toString(),
@@ -110,7 +112,7 @@ export const GoalsPage = () => {
   // 5. Logic for Tabs (Filtering Columns)
   const visibleColumns = useMemo(() => {
     if (activeTab === "All") {
-      return [boardData.inProgress, boardData.todo, boardData.completed];
+      return [boardData.todo, boardData.inProgress, boardData.completed];
     }
     const mapTabToId: Record<string, keyof BoardData> = {
       "To-do": "todo",
@@ -126,17 +128,23 @@ export const GoalsPage = () => {
     return visibleColumns.some((col) => col.items.length > 0);
   }, [visibleColumns]);
 
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate((prev) =>
+      prev && isSameDay(prev, date) ? null : date,
+    );
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full text-gray-900 dark:text-slate-100">
       <div className="w-full mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8 mb-16 sm:mb-0 ">
         <div className="xl:col-span-3 flex flex-col h-full">
-          <div className="bg-white pt-6 px-5 pb-5 rounded-lg mb-5">
+          <div className="bg-white dark:bg-slate-900 pt-6 px-5 pb-5 rounded-lg mb-5 border border-gray-100 dark:border-slate-800">
             <div className="mb-6">
               <TodayProgress
                 goals={Object.values(boardData)
                   .flatMap((c) => c.items)
                   .map((i) => ({ ...i, status: "todo" }))}
-                selectedDate={selectedDate}
+                selectedDate={selectedDate ?? startOfToday()}
               />
             </div>
             <div className="">
@@ -145,8 +153,10 @@ export const GoalsPage = () => {
           </div>
 
           <div className="mb-6 flex justify-between items-center">
-            <h1 className="font-monts text-lg sm:text-xl font-semibold text-[#636363] ">
-              {isSameDay(selectedDate, startOfToday())
+            <h1 className="font-monts text-lg sm:text-xl font-semibold text-[#636363] dark:text-slate-200">
+              {!selectedDate
+                ? "All goals"
+                : isSameDay(selectedDate, startOfToday())
                 ? "Today's goals"
                 : `Goals for ${format(selectedDate, "MMM do")}`}
             </h1>
@@ -155,7 +165,7 @@ export const GoalsPage = () => {
             {!isLoading && !hasGoals && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="text-sm font-medium text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
               >
                 + Quick Add
               </button>
@@ -167,29 +177,31 @@ export const GoalsPage = () => {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex-1 h-64 bg-gray-100 rounded-xl animate-pulse"
+                  className="flex-1 h-64 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse"
                 />
               ))}
             </div>
           ) : !hasGoals ? (
             // --- EMPTY STATE UI ---
-            <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-200">
-              <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700">
+              <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mb-4">
                 {activeTab === "Completed" ? (
-                  <ClipboardList size={32} className="text-gray-400" />
+                  <ClipboardList size={32} className="text-gray-400 dark:text-slate-500" />
                 ) : (
                   <Target size={32} className="text-blue-500" />
                 )}
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
                 {activeTab === "Completed"
                   ? "No completed goals yet"
                   : "No goals found"}
               </h3>
-              <p className="text-gray-500 mb-6 text-sm max-w-xs text-center mt-1">
+              <p className="text-gray-500 dark:text-slate-400 mb-6 text-sm max-w-xs text-center mt-1">
                 {activeTab === "Completed"
                   ? "Keep working! Once you finish a task, it will appear here."
-                  : isSameDay(selectedDate, startOfToday())
+                  : !selectedDate
+                    ? `No ${activeTab.toLowerCase()} goals found yet.`
+                    : isSameDay(selectedDate, startOfToday())
                     ? "You haven't set any goals for today. Ready to start?"
                     : `No goals scheduled for ${format(selectedDate, "MMMM do")}.`}
               </p>
@@ -231,7 +243,7 @@ export const GoalsPage = () => {
         <div className="xl:col-span-1">
           <CalendarWidget
             selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
+            onDateSelect={handleDateSelect}
           />
         </div>
       </div>

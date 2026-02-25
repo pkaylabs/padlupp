@@ -40,6 +40,8 @@ export interface BuddyInvitation {
   id: number; // This is the ID used for accept/reject
   from_user: User;
   to_user: User;
+  message?: string | null;
+  goal_title?: string | null;
   status: "pending" | "accepted" | "rejected";
   responded_at: string | null;
   created_at: string;

@@ -26,8 +26,8 @@ export const TodayProgress: React.FC<TodayProgressProps> = ({
   return (
     <div className="font-monts w-full">
       <div className="flex justify-between gap-3.5 items-center mb-2">
-        <span className="text-sm font-medium text-gray-400">{dateTitle}</span>
-        <div className="flex-1 w-full bg-gray-200 rounded-full h-2">
+        <span className="text-sm font-medium text-gray-400 dark:text-slate-400">{dateTitle}</span>
+        <div className="flex-1 w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
           <motion.div
             className="bg-primary-500 h-2 rounded-full"
             initial={{ width: 0 }}
@@ -35,7 +35,7 @@ export const TodayProgress: React.FC<TodayProgressProps> = ({
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </div>
-        <span className="text-sm font-medium text-gray-400">
+        <span className="text-sm font-medium text-gray-400 dark:text-slate-400">
           {progress}% complete
         </span>
       </div>

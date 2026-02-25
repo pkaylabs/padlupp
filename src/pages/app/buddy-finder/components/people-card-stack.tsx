@@ -41,12 +41,12 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           <div className=" rounded-xl p-4 sm:p-6 pt-0 flex flex-col gap-3 items-center h-full">
-            <div className="w-full flex gap-1.5 items-center bg-white shadow p-4 sm:p-6 rounded-lg">
-              <span className="font-semibold text-[#3D3D3D]">
+            <div className="w-full flex gap-1.5 items-center bg-white dark:bg-slate-900 shadow p-4 sm:p-6 rounded-lg border border-transparent dark:border-slate-800">
+              <span className="font-semibold text-[#3D3D3D] dark:text-slate-100">
                 {person?.name}
               </span>
               <span className="size-1 rounded-full bg-primary-600" />
-              <span className=" text-gray-500">{person?.age}</span>
+              <span className=" text-gray-500 dark:text-slate-400">{person?.age}</span>
             </div>
 
             <div className="relative">
@@ -66,7 +66,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
               {person?.compatibility}% compatible
             </span>
             <div className="flex items-center gap-1.5 my-2">
-              <span className="text-[#636363] ">Rating:</span>
+              <span className="text-[#636363] dark:text-slate-300">Rating:</span>
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
@@ -80,30 +80,30 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
               ))}
             </div>
 
-            <div className="w-full p-4 sm:p-6 py-8 bg-white rounded-lg shadow text-sm text-gray-700 my-4">
+            <div className="w-full p-4 sm:p-6 py-8 bg-white dark:bg-slate-900 rounded-lg shadow text-sm text-gray-700 dark:text-slate-300 my-4 border border-transparent dark:border-slate-800">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="bg-primary-100/50 p-1 rounded-full ">
                   <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
                 </div>
-                <span className="font-semibold text-sm text-dark-gray ">
+                <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
                   Seeking for accountability on
                 </span>
               </div>
-              <span className="font-semibold text-base text-dark-gray pl-4">
+              <span className="font-semibold text-base text-dark-gray dark:text-slate-200 pl-4">
                 {person?.seeking}
               </span>
             </div>
 
-            <div className=" w-full bg-white rounded-xl px-4 sm:px-6 py-8 ">
+            <div className=" w-full bg-white dark:bg-slate-900 rounded-xl px-4 sm:px-6 py-8 border border-transparent dark:border-slate-800">
               <div className="flex items-center gap-1.5">
                 <PiTagSimpleDuotone size={18} color="#A3CBFA" />
-                <span className="font-semibold text-base text-dark-gray ">
+                <span className="font-semibold text-base text-dark-gray dark:text-slate-100">
                   Interest
                 </span>
               </div>
               <div className="flex flex-wrap justify-center gap-2 my-4">
                 {person?.interests?.map((interest) => (
-                  <div className="flex items-center bg-[#4E92F426] gap-1.5 px-2.5 py-1 rounded-sm">
+                  <div className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1 rounded-sm">
                     <interest.icon
                       size={16}
                       color="#141B34"
@@ -111,7 +111,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                     />
                     <span
                       key={interest?.interest}
-                      className="text-xs font-medium text-gray-600 "
+                      className="text-xs font-medium text-gray-600 dark:text-slate-300"
                     >
                       {interest?.interest}
                     </span>
@@ -135,13 +135,13 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
       {/* Navigation Arrows */}
       <button
         onClick={() => paginate(-1)}
-        className="absolute left-6 sm:left-0 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
+        className="absolute left-6 sm:left-0 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
       >
         <ArrowLeft2 variant="Bold" size={30} />
       </button>
       <button
         onClick={() => paginate(1)}
-        className="absolute right-6 sm:right-0 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
+        className="absolute right-6 sm:right-0 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
       >
         <ArrowRight2 variant="Bold" size={30} />
       </button>

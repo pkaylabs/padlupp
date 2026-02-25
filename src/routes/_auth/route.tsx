@@ -9,12 +9,12 @@ export const Route = createFileRoute("/_auth")({
 
 function RouteComponent() {
   return (
-    <div className="min-h-screen w-full flex bg-white">
+    <div className="min-h-screen w-full flex bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       <div className="flex-1 hidden md:flex">
         <AuthLeftPanel />
       </div>
 
-      <div className="relative w-full md:flex-2 flex flex-col sm:flex-row items-center justify-center">
+      <div className="relative w-full md:flex-2 flex flex-col sm:flex-row items-center justify-center bg-white dark:bg-slate-900">
         <img
           src={logo}
           alt="logo"

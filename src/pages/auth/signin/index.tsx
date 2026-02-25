@@ -44,7 +44,7 @@ export const SignIn: React.FC = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto py-12 px-4">
-      <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900">
+      <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900 dark:text-slate-100">
         Welcome Back{" "}
         <motion.span
           className="inline-block origin-[70%_70%]"
@@ -59,7 +59,7 @@ export const SignIn: React.FC = () => {
           👋
         </motion.span>
       </h1>
-      <p className="text-gray-600 text-center sm:text-left mt-2 mb-8">
+      <p className="text-gray-600 dark:text-slate-400 text-center sm:text-left mt-2 mb-8">
         Find your community. Achieve goals. Stay inspired.
       </p>
 
@@ -121,7 +121,7 @@ export const SignIn: React.FC = () => {
         />
       </div>
 
-      <p className="text-center text-sm text-gray-600 mt-8">
+      <p className="text-center text-sm text-gray-600 dark:text-slate-400 mt-8">
         Don’t have an account?{" "}
         <Link
           to="/signup"

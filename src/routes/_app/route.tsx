@@ -44,7 +44,7 @@ function AppLayout() {
   const matchRoute = useMatchRoute();
   return (
     <>
-      <div>
+      <div className="bg-bg-gray dark:bg-bg-gray dark:text-gray-100">
         <Dialog
           open={sidebarOpen}
           onClose={setSidebarOpen}
@@ -76,7 +76,7 @@ function AppLayout() {
                 </div>
               </TransitionChild>
               {/* Sidebar component */}
-              <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
+              <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-slate-900 px-6 pb-4">
                 <div className="flex h-16 shrink-0 items-center">
                   <img alt="logo" src={logo} className="h-8 w-auto" />
                 </div>
@@ -96,7 +96,7 @@ function AppLayout() {
                                     className={classNames(
                                       isActive
                                         ? "bg-primary-500 text-white font-semibold"
-                                        : "text-dark-blue-normal hover:bg-primary-100  font-medium",
+                                        : "text-dark-blue-normal dark:text-slate-300 hover:bg-primary-100 dark:hover:bg-slate-800 hover:text-dark-blue-normal dark:hover:text-slate-100 font-medium",
                                       "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                                     )}
                                   >
@@ -106,7 +106,7 @@ function AppLayout() {
                                         isActive
                                           ? "text-white"
                                           : "text-dark-blue-normal",
-                                        "h-5 w-5 shrink-0",
+                                        "h-5 w-5 shrink-0 dark:text-slate-200",
                                       )}
                                     />
                                     {item.name}
@@ -127,7 +127,7 @@ function AppLayout() {
                               className={classNames(
                                 isActive
                                   ? "bg-primary-500 text-white font-semibold"
-                                  : "text-dark-blue-normal hover:bg-primary-200  font-medium",
+                                  : "text-dark-blue-normal dark:text-slate-300 hover:bg-primary-200 dark:hover:bg-slate-800 hover:text-dark-blue-normal dark:hover:text-slate-100 font-medium",
                                 "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                               )}
                             >
@@ -137,7 +137,7 @@ function AppLayout() {
                                   isActive
                                     ? "text-white"
                                     : "text-dark-blue-normal",
-                                  "h-5 w-5 shrink-0",
+                                  "h-5 w-5 shrink-0 dark:text-slate-200",
                                 )}
                               />
                               Settings
@@ -156,7 +156,7 @@ function AppLayout() {
         {/* Static sidebar for desktop */}
         <div className="font-monts hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
           {/* Sidebar component*/}
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
+          <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-slate-900 px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center mt-4 rounded-md">
               <img
                 alt="Your Company"
@@ -177,7 +177,7 @@ function AppLayout() {
                                 className={classNames(
                                   isActive
                                     ? "bg-primary-500 text-white font-semibold"
-                                    : "text-dark-blue-normal hover:bg-primary-100  font-medium",
+                                    : "text-dark-blue-normal dark:text-slate-300 hover:bg-primary-100 dark:hover:bg-slate-800 hover:text-dark-blue-normal dark:hover:text-slate-100 font-medium",
                                   "group mx-2 flex items-center gap-x-3 rounded-sm px-3 py-2 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                                 )}
                               >
@@ -187,7 +187,7 @@ function AppLayout() {
                                     isActive
                                       ? "text-white"
                                       : "text-dark-blue-normal",
-                                    "h-5 w-5 shrink-0",
+                                    "h-5 w-5 shrink-0 dark:text-slate-200",
                                   )}
                                 />
                                 {item.name}
@@ -208,7 +208,7 @@ function AppLayout() {
                             className={classNames(
                               isActive
                                 ? "bg-primary-500 text-white font-semibold"
-                                : "text-dark-blue-normal hover:bg-primary-200  font-medium",
+                                : "text-dark-blue-normal dark:text-slate-300 hover:bg-primary-200 dark:hover:bg-slate-800 hover:text-dark-blue-normal dark:hover:text-slate-100 font-medium",
                               "group mx-2 flex items-center gap-x-3 rounded-md px-3 py-3 text-sm leading-6 capitalize transition-all duration-150 ease-in-out",
                             )}
                           >
@@ -218,7 +218,7 @@ function AppLayout() {
                                 isActive
                                   ? "text-white"
                                   : "text-dark-blue-normal",
-                                "h-5 w-5 shrink-0",
+                                "h-5 w-5 shrink-0 dark:text-slate-200",
                               )}
                             />
                             Settings
@@ -234,7 +234,7 @@ function AppLayout() {
         </div>
 
         <div className="lg:pl-64 flex flex-col min-h-screen">
-          <div className="sticky top-0 z-40 border-b  border-gray-200 flex h-16 shrink-0 items-center gap-x-4 bg-white sm:gap-x-6 ">
+          <div className="sticky top-0 z-40 border-b border-gray-200 dark:border-slate-800 flex h-16 shrink-0 items-center gap-x-4 bg-white dark:bg-slate-900 sm:gap-x-6 ">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -247,7 +247,7 @@ function AppLayout() {
             <TopNav />
           </div>
 
-          <main className={`flex-1 h-full  bg-bg-gray`}>
+          <main className="flex-1 h-full bg-bg-gray dark:bg-slate-950">
             <div
               className={`h-full ${matchRoute({ to: MESSAGES }) || (matchRoute({ to: SETTINGS }) ? "p-0" : "p-4 sm:p-6")} `}
             >

@@ -21,7 +21,6 @@ import { cn } from "@/utils/cs";
 import {
   CATEGORIES_MOCK,
   COMMUNITY_MOCK,
-  GOAL_MOCK,
   type Person,
 } from "@/constants/goals-data";
 import { BuddyInvitation } from "./api";
@@ -102,7 +101,7 @@ export const BuddyFinderPage = () => {
 
   return (
     <>
-      <div className="font-monts w-full flex flex-col">
+      <div className="font-monts w-full flex flex-col text-gray-900 dark:text-slate-100">
         <header className="sm:sticky sm:top-22 w-full flex items-center justify-between mb-6">
           <Breadcrumb path={breadcrumbPath} />
         </header>
@@ -128,16 +127,16 @@ export const BuddyFinderPage = () => {
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-[#CDDAE9] focus:border-blue-500 focus:ring-blue-500"
+                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 text-gray-800 dark:text-slate-200 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
 
             <div className="relative" ref={filterPopoverRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="shrink-0 p-3 bg-white rounded-xl border border-[#CDDAE9] hover:bg-gray-50"
+                className="shrink-0 p-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800"
               >
-                <SlidersHorizontal size={20} className="text-gray-600" />
+                <SlidersHorizontal size={20} className="text-gray-600 dark:text-slate-300" />
               </button>
 
               <AnimatePresence>
@@ -149,7 +148,7 @@ export const BuddyFinderPage = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute right-0 top-13 w-48 bg-white rounded-lg shadow border border-gray-100/50 py-4 pb-2 px-2 z-20"
+                      className="absolute right-0 top-13 w-48 bg-white dark:bg-slate-900 rounded-lg shadow border border-gray-100/50 dark:border-slate-700 py-4 pb-2 px-2 z-20"
                     >
                       <button
                         onClick={() => handleDetailsTabChange("People")}
@@ -157,7 +156,7 @@ export const BuddyFinderPage = () => {
                           "flex items-center justify-between w-full px-3 py-2 mb-1 text-sm rounded-md",
                           detailsTab === "People"
                             ? "font-semibold text-primary-500 bg-blue-50"
-                            : "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                         )}
                       >
                         People
@@ -169,7 +168,7 @@ export const BuddyFinderPage = () => {
                           "flex items-center justify-between w-full px-3 py-2 text-sm rounded-md",
                           detailsTab === "Community"
                             ? "font-semibold text-blue-600 bg-blue-50"
-                            : "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                         )}
                       >
                         Community
@@ -187,7 +186,7 @@ export const BuddyFinderPage = () => {
               {exploreView === "details" && mainTab === "explore" && (
                 <button
                   onClick={handleBackToCategories}
-                  className="flex gap-1.5 items-center text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className="flex gap-1.5 items-center text-sm font-medium text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
                 >
                   <ArrowLeft size={20} />
                   Categories
@@ -232,7 +231,6 @@ export const BuddyFinderPage = () => {
       <ViewGoalModal
         isOpen={viewGoalModalOpen}
         onClose={() => setViewGoalModalOpen(false)}
-        goalDetails={GOAL_MOCK}
         invitation={selectedInvitation}
       />
     </>

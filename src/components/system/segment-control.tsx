@@ -21,7 +21,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   return (
     <div
       className={cn(
-        "flex w-fit space-x-1 rounded-lg bg-primary-100/50 p-1",
+        "flex w-fit space-x-1 rounded-lg bg-primary-100/50 dark:bg-slate-800 p-1",
         className
       )}
     >
@@ -33,7 +33,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
             "relative flex items-center gap-2 rounded-md px-5 py-1.5 text-sm font-medium transition-colors",
             activeTab === tab
               ? "text-white"
-              : "text-gray-600 hover:text-gray-800"
+              : "text-gray-600 dark:text-slate-300 hover:text-gray-800 dark:hover:text-slate-100"
           )}
         >
           {activeTab === tab && (

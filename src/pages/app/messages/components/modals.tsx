@@ -19,24 +19,24 @@ export const CreateGoalModal = ({
       showCloseButton
       className="max-w-lg w-full p-6 top-1/2 -translate-y-1/2 "
     >
-      <h2 className="text-xl font-semibold mb-6 text-center">Create goal</h2>
+      <h2 className="text-xl font-semibold mb-6 text-center text-gray-900 dark:text-slate-100">Create goal</h2>
       <div className="space-y-4">
         <input
           type="text"
           placeholder="Title..."
-          className="w-full text-lg font-medium border-none focus:ring-0 p-0 placeholder:text-gray-800"
+          className="w-full text-lg font-medium border-none focus:ring-0 p-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-800 dark:placeholder:text-slate-400 bg-transparent"
         />
         <input
           type="text"
           placeholder="Description"
-          className="w-full text-sm border-none focus:ring-0 p-0 text-gray-600"
+          className="w-full text-sm border-none focus:ring-0 p-0 text-gray-600 dark:text-slate-300 bg-transparent"
         />
 
-        <button className="flex items-center text-gray-500 hover:text-gray-700 text-sm gap-2">
+        <button className="flex items-center text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 text-sm gap-2">
           <Calendar size={16} /> Add dates
         </button>
 
-        <button className="flex items-center text-gray-500 hover:text-gray-700 text-sm gap-2">
+        <button className="flex items-center text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 text-sm gap-2">
           + Add subtask
         </button>
 
@@ -83,8 +83,8 @@ export const RateUserModal = ({
       showCloseButton
       className="max-w-md w-full p-6 top-1/2 -translate-y-1/2"
     >
-      <h2 className="text-lg font-semibold mb-2 text-center">Rate XY</h2>
-      <p className="text-xs text-gray-500 text-center mb-6 px-4">
+      <h2 className="text-lg font-semibold mb-2 text-center text-gray-900 dark:text-slate-100">Rate XY</h2>
+      <p className="text-xs text-gray-500 dark:text-slate-400 text-center mb-6 px-4">
         Lorem ipsum dolor sit amet consectetur. Purus convallis volutpat mollis
         vitae dolor.
       </p>
@@ -104,10 +104,10 @@ export const RateUserModal = ({
         {options.map((opt, idx) => (
           <div
             key={idx}
-            className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
+            className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded cursor-pointer"
             onClick={() => setSelectedOption(idx)}
           >
-            <span className="text-sm text-gray-600">{opt}</span>
+            <span className="text-sm text-gray-600 dark:text-slate-300">{opt}</span>
             <div
               className={`w-4 h-4 rounded-full border ${selectedOption === idx ? "border-4 border-orange-400" : "border-gray-300"}`}
             />
@@ -117,7 +117,7 @@ export const RateUserModal = ({
 
       <textarea
         placeholder="Add note"
-        className="w-full h-24 bg-gray-50 border-none rounded-lg p-3 text-sm resize-none mb-4"
+        className="w-full h-24 bg-gray-50 dark:bg-slate-800 border-none rounded-lg p-3 text-sm text-gray-800 dark:text-slate-200 resize-none mb-4"
       />
 
       <Button variant="primary" className="w-full" onClick={onClose}>
@@ -149,10 +149,10 @@ export const ReportUserModal = ({
       showCloseButton
       className="max-w-md w-full p-6 top-1/2 -translate-y-1/2"
     >
-      <h2 className="text-lg font-semibold mb-2 text-center">
+      <h2 className="text-lg font-semibold mb-2 text-center text-gray-900 dark:text-slate-100">
         why are you reporting userXY
       </h2>
-      <p className="text-xs text-gray-500 text-center mb-6 px-4">
+      <p className="text-xs text-gray-500 dark:text-slate-400 text-center mb-6 px-4">
         our report helps keep Padlupp and our community safe. We will not notify
         the user when this report is submitted. don't wait.
       </p>
@@ -161,10 +161,10 @@ export const ReportUserModal = ({
         {options.map((opt, idx) => (
           <div
             key={idx}
-            className="flex items-center justify-between p-3 border-b border-gray-100 last:border-0 cursor-pointer"
+            className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-slate-700 last:border-0 cursor-pointer"
             onClick={() => setSelectedOption(idx)}
           >
-            <span className="text-sm text-gray-600">{opt}</span>
+            <span className="text-sm text-gray-600 dark:text-slate-300">{opt}</span>
             <div
               className={`w-4 h-4 rounded-full border ${selectedOption === idx ? "border-4 border-orange-400" : "border-gray-300"}`}
             />

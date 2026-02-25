@@ -16,19 +16,19 @@ export const GoalColumn: React.FC<GoalColumnProps> = ({
   onAddTask,
 }) => {
   return (
-    <div className="flex flex-col h-fit sm:w-[300px] bg-[#F5F5F5] rounded-xl p-3 ">
+    <div className="flex flex-col h-fit sm:w-[300px] bg-[#F5F5F5] dark:bg-slate-900 rounded-xl p-3 border border-transparent dark:border-slate-800">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
           <div className={cn("w-2 h-2 rounded-full", column.color)} />
-          <h3 className="font-medium text-xs text-[#0D062D] ">
+          <h3 className="font-medium text-xs text-[#0D062D] dark:text-slate-100">
             {column.title}
           </h3>
-          <span className="bg-gray-200 text-gray-600 text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+          <span className="bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-[10px] font-medium px-1.5 py-0.5 rounded-full">
             {column.items.length}
           </span>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
+        <button className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
           <MoreHorizontal size={20} />
         </button>
       </div>
@@ -44,7 +44,7 @@ export const GoalColumn: React.FC<GoalColumnProps> = ({
             {...provided.droppableProps}
             className={cn(
               "flex-1 transition-colors rounded-xl",
-              snapshot.isDraggingOver ? "bg-primary-100/50" : ""
+              snapshot.isDraggingOver ? "bg-primary-100/50 dark:bg-slate-800/80" : ""
             )}
           >
             {column.items.map((task, index) => (
@@ -63,7 +63,7 @@ export const GoalColumn: React.FC<GoalColumnProps> = ({
       {/* Add Task Button */}
       <button
         onClick={onAddTask}
-        className="mt-2 w-full py-3 bg-white border border-[#959BA3] rounded-md flex items-center justify-center text-[#959BA3] gap-2 hover:bg-gray-50 hover:shadow transition-all font-medium text-sm"
+        className="mt-2 w-full py-3 bg-white dark:bg-slate-800 border border-[#959BA3] dark:border-slate-600 rounded-md flex items-center justify-center text-[#959BA3] dark:text-slate-300 gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 hover:shadow transition-all font-medium text-sm"
       >
         <Plus size={16} /> Add Task
       </button>

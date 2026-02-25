@@ -85,7 +85,7 @@ export const SignUp: React.FC = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto py-12 px-4">
-      <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900">
+      <h1 className="text-xl text-center sm:text-left sm:text-3xl font-semibold text-gray-900 dark:text-slate-100">
         Welcome to Padlupp{" "}
         <motion.span
           className="inline-block origin-[70%_70%]"
@@ -100,7 +100,7 @@ export const SignUp: React.FC = () => {
           👋
         </motion.span>
       </h1>
-      <p className="text-gray-600 text-center sm:text-left mt-2 mb-8">
+      <p className="text-gray-600 dark:text-slate-400 text-center sm:text-left mt-2 mb-8">
         Find your community. Achieve goals. Stay inspired.
       </p>
 
@@ -142,30 +142,30 @@ export const SignUp: React.FC = () => {
           onFocus={() => setPasswordFocused(true)}
         />
         {(passwordFocused || passwordValue.length > 0) && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs font-medium text-gray-600 mb-2">
+          <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+            <p className="text-xs font-medium text-gray-600 dark:text-slate-300 mb-2">
               Password requirement
             </p>
             <div
-              className={`flex items-center gap-2 text-xs ${meetsMinPasswordLength ? "text-green-600" : "text-gray-500"}`}
+              className={`flex items-center gap-2 text-xs ${meetsMinPasswordLength ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-slate-400"}`}
             >
               {meetsMinPasswordLength ? <Check size={14} /> : <X size={14} />}
               At least 8 characters
             </div>
             <div
-              className={`flex items-center gap-2 text-xs mt-1 ${hasUppercase ? "text-green-600" : "text-gray-500"}`}
+              className={`flex items-center gap-2 text-xs mt-1 ${hasUppercase ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-slate-400"}`}
             >
               {hasUppercase ? <Check size={14} /> : <X size={14} />}
               At least one uppercase letter
             </div>
             <div
-              className={`flex items-center gap-2 text-xs mt-1 ${hasNumber ? "text-green-600" : "text-gray-500"}`}
+              className={`flex items-center gap-2 text-xs mt-1 ${hasNumber ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-slate-400"}`}
             >
               {hasNumber ? <Check size={14} /> : <X size={14} />}
               At least one number
             </div>
             <div
-              className={`flex items-center gap-2 text-xs mt-1 ${hasSymbol ? "text-green-600" : "text-gray-500"}`}
+              className={`flex items-center gap-2 text-xs mt-1 ${hasSymbol ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-slate-400"}`}
             >
               {hasSymbol ? <Check size={14} /> : <X size={14} />}
               At least one symbol
@@ -212,7 +212,7 @@ export const SignUp: React.FC = () => {
         />
       </div>
 
-      <p className="text-center text-sm text-gray-600 mt-8">
+      <p className="text-center text-sm text-gray-600 dark:text-slate-400 mt-8">
         Already have an account?{" "}
         <Link
           to="/signin"

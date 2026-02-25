@@ -78,7 +78,7 @@ const SHARED_FILES_MOCK: SharedFile[] = [
 
 // --- Helper to get Icon ---
 const FileIcon = ({ type }: { type: FileType }) => {
-  const iconProps = { size: 24, className: "text-gray-700" };
+  const iconProps = { size: 24, className: "text-gray-700 dark:text-slate-300" };
 
   switch (type) {
     case "video":
@@ -89,8 +89,8 @@ const FileIcon = ({ type }: { type: FileType }) => {
       return <LinkIcon {...iconProps} />; // Rotate icon 45deg via CSS if needed to match perfectly
     case "audio":
       return (
-        <div className="border-2 border-gray-700 rounded-md p-0.5">
-          <div className="w-3 h-3 bg-gray-700 rounded-full"></div>
+        <div className="border-2 border-gray-700 dark:border-slate-300 rounded-md p-0.5">
+          <div className="w-3 h-3 bg-gray-700 dark:bg-slate-300 rounded-full"></div>
         </div>
       ); // Custom shape for "speaker" or use Mic
     case "doc":
@@ -115,15 +115,15 @@ export const UserProfileView = ({
   const hasInterests = Boolean(person.interests?.length);
 
   return (
-    <div className="h-full flex flex-col bg-bg-gray px-4 sm:px-20 pt-8">
-      <div className=" flex justify-between items-center bg-white shadow rounded-lg p-6">
+    <div className="h-full flex flex-col bg-bg-gray dark:bg-slate-950 px-4 sm:px-20 pt-8">
+      <div className=" flex justify-between items-center bg-white dark:bg-slate-900 shadow rounded-lg p-6 border border-transparent dark:border-slate-800">
         <button
           onClick={onBack}
-          className="flex items-center text-base font-semibold text-[#3D3D3D] "
+          className="flex items-center text-base font-semibold text-[#3D3D3D] dark:text-slate-100"
         >
           <ArrowLeft className="mr-3" /> {person.name}
           {typeof person.age === "number" && (
-            <span className="text-gray-400 ml-2 text-base font-normal">
+            <span className="text-gray-400 dark:text-slate-400 ml-2 text-base font-normal">
               {" "}
               • {person.age}
             </span>
@@ -150,7 +150,7 @@ export const UserProfileView = ({
           )}
           {hasRating && (
             <div className="flex items-center justify-center gap-1">
-              <span className="text-gray-500 text-base">Rating:</span>
+              <span className="text-gray-500 dark:text-slate-400 text-base">Rating:</span>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Star
@@ -168,24 +168,24 @@ export const UserProfileView = ({
           )}
         </div>
 
-        <div className="w-full p-6 py-8 bg-white rounded-lg shadow text-sm text-gray-700 my-4">
+        <div className="w-full p-6 py-8 bg-white dark:bg-slate-900 rounded-lg shadow text-sm text-gray-700 dark:text-slate-300 my-4 border border-transparent dark:border-slate-800">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="bg-primary-100/50 p-1 rounded-full ">
               <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
             </div>
-            <span className="font-semibold text-sm text-dark-gray ">
-              Seeking for accountability on
-            </span>
-          </div>
-          <span className="font-semibold text-base text-dark-gray pl-4">
+              <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
+                Seeking for accountability on
+              </span>
+            </div>
+          <span className="font-semibold text-base text-dark-gray dark:text-slate-200 pl-4">
             {person.seeking || "No profile details available yet."}
           </span>
         </div>
 
-        <div className="w-full bg-white rounded-xl px-6 py-8 shadow ">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-xl px-6 py-8 shadow border border-transparent dark:border-slate-800">
           <div className="flex items-center gap-1.5">
             <PiTagSimpleDuotone size={18} color="#A3CBFA" />
-            <span className="font-semibold text-base text-dark-gray ">
+            <span className="font-semibold text-base text-dark-gray dark:text-slate-100">
               Interest
             </span>
           </div>
@@ -194,15 +194,15 @@ export const UserProfileView = ({
               person.interests?.map((interest) => (
                 <div
                   key={interest.label}
-                  className="flex items-center bg-[#4E92F426] gap-1.5 px-2.5 py-1 rounded-sm"
+                  className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1 rounded-sm"
                 >
-                  <span className="text-xs font-medium text-gray-600 ">
+                  <span className="text-xs font-medium text-gray-600 dark:text-slate-300">
                     {interest.label}
                   </span>
                 </div>
               ))
             ) : (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-slate-400">
                 No interests shared yet.
               </span>
             )}
@@ -232,11 +232,11 @@ export const GoalProgressView = ({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="h-full flex flex-col bg-bg-gray">
+    <div className="h-full flex flex-col bg-bg-gray dark:bg-slate-950">
       <div className="p-4 flex justify-between items-center">
         <button
           onClick={onBack}
-          className="flex items-center text-base font-semibold text-[#3D3D3D] "
+          className="flex items-center text-base font-semibold text-[#3D3D3D] dark:text-slate-100"
         >
           <ArrowLeft className="mr-3" /> {personName}’s progress
         </button>
@@ -244,19 +244,19 @@ export const GoalProgressView = ({
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-1 hover:bg-gray-100 rounded-full"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
           >
-            <MoreVertical size={20} className="text-gray-600" />
+            <MoreVertical size={20} className="text-gray-600 dark:text-slate-300" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-8 bg-white shadow-lg rounded-lg border border-gray-100 py-1 min-w-[100px] z-10">
+            <div className="absolute right-0 top-8 bg-white dark:bg-slate-900 shadow-lg rounded-lg border border-gray-100 dark:border-slate-700 py-1 min-w-[100px] z-10">
               <button
                 onClick={() => {
                   setMenuOpen(false);
                   onReport();
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 Report
               </button>
@@ -266,7 +266,7 @@ export const GoalProgressView = ({
       </div>
 
       <div className="px-4 sm:px-20 mt-6 overflow-y-auto">
-        <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400 text-sm mb-6">
           <span>📅</span> 30th March, 2025 - 30th May, 2025
         </div>
 
@@ -274,13 +274,13 @@ export const GoalProgressView = ({
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-white p-4 rounded-lg  border border-gray-100 flex items-start justify-between"
+              className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-gray-100 dark:border-slate-800 flex items-start justify-between"
             >
               <div>
-                <p className="text-gray-700 text-sm mb-1">
+                <p className="text-gray-700 dark:text-slate-200 text-sm mb-1">
                   Lorem ipsum dolor sit amet consectetur.
                 </p>
-                <div className="flex items-center gap-2 text-xs text-blue-400">
+                <div className="flex items-center gap-2 text-xs text-blue-400 dark:text-blue-300">
                   <span>5 Apr</span> <span>01:40 PM</span>
                 </div>
               </div>
@@ -317,7 +317,7 @@ export const SharedFilesView: React.FC = () => {
     <div className="h-full px-8 overflow-y-auto">
       {/* Filter/Sort Header */}
       <div className="flex justify-end mb-4">
-        <button className="flex items-center gap-2 text-base font-medium text-[#1E1E1E] hover:text-gray-600">
+        <button className="flex items-center gap-2 text-base font-medium text-[#1E1E1E] dark:text-slate-100 hover:text-gray-600 dark:hover:text-slate-300">
           Name
           <AlignRight size={24} className="rotate-180" />{" "}
           {/* Rotated to match the 'sort' lines icon */}
@@ -329,23 +329,23 @@ export const SharedFilesView: React.FC = () => {
         {SHARED_FILES_MOCK.map((file) => (
           <div
             key={file.id}
-            className="flex items-center justify-between bg-white p-4 rounded-md hover:shadow transition-shadow"
+            className="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-md hover:shadow transition-shadow border border-transparent dark:border-slate-800"
           >
             {/* Icon & Details */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 flex items-center justify-center">
                 {/* Custom audio icon logic if standard Mic doesn't fit, otherwise generic icons */}
                 {file.type === "audio" ? (
-                  <Mic size={24} className="text-gray-700" />
+                  <Mic size={24} className="text-gray-700 dark:text-slate-300" />
                 ) : (
                   <FileIcon type={file.type} />
                 )}
               </div>
               <div>
-                <h3 className="text-sm font-medium text-[#1E1E1E] ">
+                <h3 className="text-sm font-medium text-[#1E1E1E] dark:text-slate-100">
                   {file.title}
                 </h3>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-slate-400">
                   {file.date} <span className="ml-2">{file.time}</span>
                 </p>
               </div>
@@ -356,9 +356,9 @@ export const SharedFilesView: React.FC = () => {
               <button className="flex flex-col items-center gap-1 group">
                 <Download
                   size={20}
-                  className="text-gray-600 group-hover:text-blue-600"
+                  className="text-gray-600 dark:text-slate-300 group-hover:text-blue-600"
                 />
-                <span className="text-[10px] text-gray-500 group-hover:text-blue-600">
+                <span className="text-[10px] text-gray-500 dark:text-slate-400 group-hover:text-blue-600">
                   Download
                 </span>
               </button>
@@ -366,9 +366,9 @@ export const SharedFilesView: React.FC = () => {
               <button className="flex flex-col items-center gap-1 group">
                 <Share2
                   size={20}
-                  className="text-gray-600 group-hover:text-blue-600"
+                  className="text-gray-600 dark:text-slate-300 group-hover:text-blue-600"
                 />
-                <span className="text-[10px] text-gray-500 group-hover:text-blue-600">
+                <span className="text-[10px] text-gray-500 dark:text-slate-400 group-hover:text-blue-600">
                   Share
                 </span>
               </button>

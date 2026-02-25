@@ -79,11 +79,11 @@ export const DashboardComponent = () => {
   };
 
   return (
-    <div className="">
+    <div className="text-gray-900 dark:text-slate-100">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16 sm:mb-0">
         {/* LEFT COLUMN: GOALS LIST */}
         <div className="lg:col-span-2 space-y-5">
-          <div className="bg-white p-5 rounded-sm">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-sm border border-gray-100 dark:border-slate-800">
             {/* Pass mapped goals to Progress widget */}
             <TodayProgress
               goals={filteredGoals.map(mapGoalToCard)}
@@ -94,7 +94,7 @@ export const DashboardComponent = () => {
           </div>
 
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold text-[#636363] mb-4">
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#636363] dark:text-slate-200 mb-4">
               {isSameDay(selectedDate, startOfToday())
                 ? "Today's goals"
                 : `Goals for ${format(selectedDate, "MMM do")}`}
@@ -107,7 +107,7 @@ export const DashboardComponent = () => {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="h-40 bg-gray-100 animate-pulse rounded-xl"
+                      className="h-40 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-xl"
                     />
                   ))}
                 </>
@@ -115,7 +115,7 @@ export const DashboardComponent = () => {
 
               {/* Error State */}
               {isError && (
-                <div className="col-span-full p-6 text-center text-red-500 bg-red-50 rounded-xl">
+                <div className="col-span-full p-6 text-center text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl">
                   Failed to load goals. Please refresh the page.
                 </div>
               )}
@@ -131,12 +131,12 @@ export const DashboardComponent = () => {
 
               {/* Empty State */}
               {!isLoading && !isError && filteredGoals.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-xl">
-                  <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
-                    <ClipboardList className="text-gray-400" size={24} />
+                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 dark:bg-slate-900/60 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl">
+                  <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mb-3">
+                    <ClipboardList className="text-gray-400 dark:text-slate-500" size={24} />
                   </div>
-                  <p className="text-gray-900 font-medium">No goals found</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-gray-900 dark:text-slate-100 font-medium">No goals found</p>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                     {activeTab !== "All"
                       ? `You have no ${activeTab.toLowerCase()} goals for this date.`
                       : "You haven't scheduled any goals for this day yet."}

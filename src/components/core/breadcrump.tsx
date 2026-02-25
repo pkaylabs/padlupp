@@ -13,13 +13,15 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ path }) => {
         <React.Fragment key={item}>
           <span
             className={
-              index === path.length - 1 ? "text-gray-800" : "text-gray-500"
+              index === path.length - 1
+                ? "text-gray-800 dark:text-slate-100"
+                : "text-gray-500 dark:text-slate-400"
             }
           >
             {item}
           </span>
           {index < path.length - 1 && (
-            <ChevronRight size={16} className="mx-1 text-gray-400" />
+            <ChevronRight size={16} className="mx-1 text-gray-400 dark:text-slate-500" />
           )}
         </React.Fragment>
       ))}

@@ -38,6 +38,11 @@ import {
 } from "@/pages/auth/hooks/useProfile";
 import { toast } from "sonner";
 import { INTERESTS_LIST, LANGUAGES } from "@/constants";
+import {
+  AppTheme,
+  getStoredThemePreference,
+  setThemePreference,
+} from "@/utils/theme";
 
 // --- Utility ---
 function cn(...inputs: ClassValue[]) {
@@ -200,19 +205,30 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
   const isSaving = isUpdatingProfile || isUpdatingExp || isUpdatingAvatar;
 
   return (
-    <div className="flex-1 p-0 md:p-8 flex flex-col items-center h-full overflow-y-auto bg-gray-50 md:bg-white">
-      <div className="relative w-full max-w-lg md:rounded-xl overflow-hidden md:mt-10 pb-24 md:pb-0 bg-white min-h-screen md:min-h-0">
+    <div className="flex-1 p-0 md:p-4 flex flex-col items-center h-full overflow-y-auto bg-gray-50 dark:bg-slate-950 md:bg-white dark:md:bg-slate-950">
+      <div className="relative w-full max-w-lg md:rounded-xl md:mt-6 pb-6 bg-white dark:bg-slate-900 min-h-full border border-transparent dark:border-slate-800">
+        {onMobileBack && (
+          <div className="md:hidden px-4 pt-4">
+            <button
+              onClick={onMobileBack}
+              className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-slate-300"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+          </div>
+        )}
         {/* Header */}
-        <div className="w-full flex gap-1.5 items-center bg-white shadow-sm md:shadow p-6 md:rounded-lg border-b md:border-none border-gray-100">
-          <span className="font-semibold text-[#3D3D3D] ">
+        <div className="w-full flex gap-1.5 items-center bg-white dark:bg-slate-900 shadow-sm md:shadow p-6 md:rounded-lg border-b md:border-none border-gray-100 dark:border-slate-800">
+          <span className="font-semibold text-[#3D3D3D] dark:text-slate-100">
             {userProfile?.user?.name || "User"}
           </span>
           <span className="size-1 rounded-full bg-primary-600" />
-          <span className=" text-gray-500">Member</span>
+          <span className=" text-gray-500 dark:text-slate-400">Member</span>
         </div>
 
         {/* Profile Image */}
-        <div className="flex justify-center mt-6 mb-8 relative">
+        <div className="flex justify-center overflow-hidden mt-6 mb-8 relative">
           <div className="relative group overflow-hidden size-32 rounded-full">
             <img
               src={
@@ -227,7 +243,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-0 right-0 left-0 bg-black/50 text-white h-8 flex items-center justify-center rounded-b-full backdrop-blur-sm hover:bg-black/70 transition-colors"
               >
-                <Edit2 size={14} />
+                <Edit2 size={15} />
               </button>
             )}
             <input
@@ -243,19 +259,19 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
 
         {/* Prompt / Bio Section */}
         <div className="px-6 mb-4">
-          <div className="w-full p-6 py-8 bg-white md:border border-gray-100 md:border-none rounded-lg shadow-sm md:shadow text-sm text-gray-700 my-4 relative group ring-1 ring-black/5 md:ring-0">
+          <div className="w-full p-6 py-8 bg-white dark:bg-slate-900 md:border border-gray-100 dark:border-slate-800 md:border-none rounded-lg shadow-sm md:shadow text-sm text-gray-700 dark:text-slate-300 my-4 relative group ring-1 ring-black/5 dark:ring-slate-700 md:ring-0">
             <div className="flex gap-2 mb-2">
               <div className="bg-primary-100/50 p-1 rounded-full ">
                 <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
               </div>
-              <h3 className="font-semibold text-sm text-dark-gray">
+              <h3 className="font-semibold text-sm text-dark-gray dark:text-slate-100">
                 {selectedPrompt}
               </h3>
             </div>
-            <p className="text-gray-600 text-sm pl-6 leading-relaxed whitespace-pre-wrap">
+            <p className="text-gray-600 dark:text-slate-300 text-sm pl-6 leading-relaxed whitespace-pre-wrap">
               {promptAnswer ||
                 (isEditing ? (
-                  <span className="text-gray-400 italic">
+                  <span className="text-gray-400 dark:text-slate-500 italic">
                     Tap to add your bio...
                   </span>
                 ) : (
@@ -271,7 +287,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
                 }}
                 className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center"
               >
-                <div className="bg-white px-4 py-2 rounded-full shadow-sm text-xs font-bold text-gray-700">
+                <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-full shadow-sm text-xs font-bold text-gray-700 dark:text-slate-200">
                   Edit Bio
                 </div>
               </button>
@@ -280,18 +296,18 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
         </div>
 
         {/* Interests Section */}
-        <div className="w-full bg-white rounded-xl px-6 py-8">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-xl px-6 py-8 pb-12">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-1.5">
               <PiTagSimpleDuotone size={18} color="#A3CBFA" />
-              <span className="font-semibold text-base text-dark-gray ">
+              <span className="font-semibold text-base text-dark-gray dark:text-slate-100">
                 Interests
               </span>
             </div>
             {isEditing && (
               <button
                 onClick={() => setActiveModal("interest")}
-                className="text-gray-400 hover:text-blue-500"
+                className="text-gray-400 dark:text-slate-500 hover:text-blue-500"
               >
                 <ChevronRight size={18} />
               </button>
@@ -302,13 +318,13 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
               interests.map((int) => (
                 <span
                   key={int}
-                  className="bg-[#4E92F426] text-xs font-medium text-gray-600 px-3 py-1.5 rounded-lg flex items-center gap-1"
+                  className="bg-[#4E92F426] dark:bg-blue-500/20 text-xs font-medium text-gray-600 dark:text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1"
                 >
                   {int}
                 </span>
               ))
             ) : (
-              <span className="text-xs text-gray-400 italic">
+              <span className="text-xs text-gray-400 dark:text-slate-500 italic">
                 No interests selected
               </span>
             )}
@@ -316,10 +332,10 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
         </div>
 
         {/* Action Button */}
-        <div className="px-6 pb-8 mt-4 md:mt-0">
+        <div className="px-6 pt-3 sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur supports-backdrop-filter:bg-white/80 dark:supports-backdrop-filter:bg-slate-900/80 border-t border-gray-100 dark:border-slate-800">
           <Button
             variant="primary"
-            className="w-full md:w-60 md:absolute md:bottom-2 md:left-1/2 md:-translate-x-1/2 md:-mt-8 text-white text-base font-semibold border-none bg-linear-to-r 
+            className="w-full md:w-60 md:mx-auto text-white text-base font-semibold border-none bg-linear-to-r 
         from-[#4E92F4] to-[#7938BE] hover:opacity-90 rounded-full shadow-lg md:shadow-none"
             size="md"
             onClick={() =>
@@ -346,9 +362,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
       >
         <div className="flex justify-between items-center mb-6">
           <button onClick={() => setActiveModal("none")}>
-            <X size={20} className="text-gray-400" />
+            <X size={20} className="text-gray-400 dark:text-slate-500" />
           </button>
-          <h2 className="font-bold text-gray-800">Edit Bio</h2>
+          <h2 className="font-bold text-gray-800 dark:text-slate-100">Edit Bio</h2>
           <div className="w-5" />
         </div>
         <div className="mb-4">
@@ -357,9 +373,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
             onChange={(e) => setTempAnswer(e.target.value)}
             maxLength={300}
             placeholder="Tell us about yourself..."
-            className="w-full h-32 p-3 bg-gray-50 rounded-xl border-none resize-none text-sm focus:ring-2 focus:ring-blue-100"
+            className="w-full h-32 p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border-none resize-none text-sm text-gray-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-100"
           />
-          <div className="text-right text-xs text-gray-400 mt-1">
+          <div className="text-right text-xs text-gray-400 dark:text-slate-500 mt-1">
             {tempAnswer.length}/300
           </div>
         </div>
@@ -374,9 +390,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
         onClose={() => setActiveModal("none")}
         className="w-full max-w-md p-0 rounded-2xl h-150 flex flex-col top-1/2 -translate-y-1/2"
       >
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
+        <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900">
           <div className="w-10" />
-          <h2 className="font-bold text-gray-800">Edit interests</h2>
+          <h2 className="font-bold text-gray-800 dark:text-slate-100">Edit interests</h2>
           <button
             onClick={() => setActiveModal("none")}
             className="text-blue-500 font-medium text-sm"
@@ -384,8 +400,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
             Done
           </button>
         </div>
-        <div className="p-4 border-b border-gray-100 bg-white">
-          <p className="text-xs text-gray-500">
+        <div className="p-4 border-b border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <p className="text-xs text-gray-500 dark:text-slate-400">
             Select interests to share with your community.
           </p>
         </div>
@@ -399,7 +415,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
                   "px-4 py-2 rounded-full text-xs font-medium border transition-all",
                   interests.includes(int)
                     ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300",
+                    : "border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500",
                 )}
               >
                 {int}
@@ -423,7 +439,6 @@ type SettingsView =
   | "display_language"
   | "push_notifications"
   | "email_notifications";
-type Theme = "system" | "light" | "dark";
 
 interface SettingsSidebarProps {
   onMobileProfileClick?: () => void;
@@ -442,7 +457,9 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     useDeleteAccount();
 
   const [view, setView] = useState<SettingsView>("menu");
-  const [theme, setTheme] = useState<Theme>("system");
+  const [theme, setTheme] = useState<AppTheme>(() =>
+    getStoredThemePreference(),
+  );
   const [displayLanguage, setDisplayLanguage] = useState("English");
   const [searchQuery, setSearchQuery] = useState("");
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 35]);
@@ -480,6 +497,22 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       }));
     }
   }, [userProfile]);
+
+  useEffect(() => {
+    const syncTheme = () => {
+      setTheme(getStoredThemePreference());
+    };
+
+    window.addEventListener("theme-change", syncTheme);
+    return () => {
+      window.removeEventListener("theme-change", syncTheme);
+    };
+  }, []);
+
+  const handleThemeChange = (value: AppTheme) => {
+    setTheme(value);
+    setThemePreference(value);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -521,7 +554,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     <button
       onClick={onClick}
       className={cn(
-        "w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50 transition-colors group",
+        "w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group",
         isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700",
       )}
     >
@@ -529,29 +562,29 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         {Icon && (
           <Icon
             size={18}
-            className={isDestructive ? "text-red-500" : "text-gray-500"}
+            className={isDestructive ? "text-red-500" : "text-gray-500 dark:text-slate-400"}
           />
         )}
-        <span className={cn("text-sm font-medium", !Icon && "ml-0")}>
+        <span className={cn("text-sm font-medium dark:text-slate-200", !Icon && "ml-0")}>
           {label}
         </span>
       </div>
       <div className="flex items-center gap-2">
-        {value && <span className="text-xs text-gray-400">{value}</span>}
+        {value && <span className="text-xs text-gray-400 dark:text-slate-500">{value}</span>}
 
         {isSelected ? (
           <Check size={18} className="text-blue-500" />
         ) : isExternal ? (
           <ExternalLink
             size={16}
-            className="text-gray-300 group-hover:text-gray-500"
+            className="text-gray-300 dark:text-slate-600 group-hover:text-gray-500 dark:group-hover:text-slate-400"
           />
         ) : (
           hasChevron &&
           !isDestructive && (
             <ChevronRight
               size={16}
-              className="text-gray-300 group-hover:text-gray-500"
+              className="text-gray-300 dark:text-slate-600 group-hover:text-gray-500 dark:group-hover:text-slate-400"
             />
           )
         )}
@@ -563,7 +596,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     <div className="mb-6">
       <button
         onClick={() => setView("menu")}
-        className="flex items-center text-sm font-bold text-gray-800 hover:text-blue-600"
+        className="flex items-center text-sm font-bold text-gray-800 dark:text-slate-200 hover:text-blue-600"
       >
         <ChevronLeft size={20} className="mr-1" /> {title.toUpperCase()}
       </button>
@@ -584,7 +617,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onChange: (val: boolean) => void;
   }) => (
     <div className="flex items-center justify-between py-4 px-1">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</span>
       <StyledSwitch checked={checked} onChange={onChange} />
     </div>
   );
@@ -756,7 +789,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-1">
@@ -764,14 +797,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                 <button
                   key={lang}
                   onClick={() => setDisplayLanguage(lang)}
-                  className="w-full flex items-center justify-between py-3 px-2 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                  className="w-full flex items-center justify-between py-3 px-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors text-left"
                 >
                   <span
                     className={cn(
                       "text-sm",
                       displayLanguage === lang
                         ? "font-medium text-blue-600"
-                        : "text-gray-600",
+                        : "text-gray-600 dark:text-slate-300",
                     )}
                   >
                     {lang}
@@ -789,7 +822,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         return (
           <div className="animate-in slide-in-from-right-4 fade-in duration-200">
             {/* Mobile Only: Profile Entry Point */}
-            <div className="md:hidden mb-8 bg-blue-50 rounded-lg p-3">
+            <div className="md:hidden mb-8 bg-blue-50 dark:bg-slate-800 rounded-lg p-3">
               <MenuItem
                 icon={User}
                 label="Edit Profile"
@@ -800,10 +833,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
             {/* Account Settings */}
             <div className="mb-8">
-              <h3 className="text-base font-semibold text-black uppercase mb-2">
+              <h3 className="text-base font-semibold text-black dark:text-slate-100 uppercase mb-2">
                 Account Settings
               </h3>
-              <div className="bg-white rounded-lg py-3 px-2">
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-3 px-2 border border-transparent dark:border-slate-800">
                 <MenuItem
                   icon={Mail}
                   label="Email"
@@ -868,10 +901,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
             {/* Notification */}
             <div className="mb-8">
-              <h3 className="text-base font-semibold text-black uppercase mb-2">
+              <h3 className="text-base font-semibold text-black dark:text-slate-100 uppercase mb-2">
                 Notification
               </h3>
-              <div className="bg-white rounded-lg py-3 px-2">
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-3 px-2 border border-transparent dark:border-slate-800">
                 <MenuItem
                   icon={Bell}
                   label="Push Notification"
@@ -893,29 +926,29 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
             {/* Appearance & Display (UPDATED) */}
             <div className="mb-8">
-              <h3 className="text-base font-semibold text-black uppercase mb-2">
+              <h3 className="text-base font-semibold text-black dark:text-slate-100 uppercase mb-2">
                 Appearance & Display
               </h3>
 
               {/* Selection Items */}
-              <div className="bg-white rounded-lg py-3 px-2">
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-3 px-2 border border-transparent dark:border-slate-800">
                 <MenuItem
                   label="System Theme"
                   isSelected={theme === "system"}
                   hasChevron={false}
-                  onClick={() => setTheme("system")}
+                  onClick={() => handleThemeChange("system")}
                 />
                 <MenuItem
                   label="Light Mode"
                   isSelected={theme === "light"}
                   hasChevron={false}
-                  onClick={() => setTheme("light")}
+                  onClick={() => handleThemeChange("light")}
                 />
                 <MenuItem
                   label="Dark Mode"
                   isSelected={theme === "dark"}
                   hasChevron={false}
-                  onClick={() => setTheme("dark")}
+                  onClick={() => handleThemeChange("dark")}
                 />
               </div>
 
@@ -931,10 +964,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
             {/* Help & Support */}
             <div className="mb-8">
-              <h3 className="text-base font-semibold text-black uppercase mb-2">
+              <h3 className="text-base font-semibold text-black dark:text-slate-100 uppercase mb-2">
                 Help & Support
               </h3>
-              <div className="bg-white rounded-lg py-2 px-2">
+              <div className="bg-white dark:bg-slate-900 rounded-lg py-2 px-2 border border-transparent dark:border-slate-800">
                 <MenuItem
                   label="Help & Support"
                   isExternal={true}
@@ -946,11 +979,11 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="mt-12 border-t border-gray-100 pt-4 space-y-1">
+            <div className="mt-12 border-t border-gray-100 dark:border-slate-800 pt-4 space-y-1">
               <button
                 onClick={() => logout()}
                 disabled={isPending}
-                className="w-full flex items-center bg-white hover:bg-gray-50 justify-center py-3 text-gray-900 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
+                className="w-full flex items-center bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 justify-center py-3 text-gray-900 dark:text-slate-100 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
               >
                 {isPending ? "Logging out..." : "Log out"}
               </button>
@@ -959,7 +992,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               </div>
               <button
                 onClick={() => setDeleteAccountModalOpen(true)}
-                className="w-full flex items-center bg-white hover:bg-gray-50 justify-center py-3 text-red-500 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
+                className="w-full flex items-center bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 justify-center py-3 text-red-500 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
               >
                 Delete Account
               </button>
@@ -970,7 +1003,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   };
 
   return (
-    <div className="font-monts w-full h-full p-3 overflow-y-auto scroll-smooth">
+    <div className="font-monts w-full h-full p-3 overflow-y-auto scroll-smooth text-gray-900 dark:text-slate-100">
       <div className="mb-8 text-primary-500">
         <ChevronsUp size={32} />
       </div>
@@ -983,15 +1016,15 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         }}
         className="w-full max-w-md p-6 rounded-2xl top-1/2 -translate-y-1/2"
       >
-        <h2 className="text-lg font-semibold text-gray-900">Delete Account</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Delete Account</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
           Tell us why you are leaving. This action is permanent.
         </p>
         <textarea
           value={deleteReason}
           onChange={(e) => setDeleteReason(e.target.value)}
           placeholder="Reason for deleting your account..."
-          className="w-full mt-4 h-28 p-3 bg-gray-50 rounded-xl border border-gray-200 resize-none text-sm focus:ring-2 focus:ring-blue-100 focus:outline-none"
+          className="w-full mt-4 h-28 p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 resize-none text-sm text-gray-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-100 focus:outline-none"
           disabled={isDeletingAccount}
         />
         <div className="flex gap-3 mt-4">
@@ -1047,10 +1080,10 @@ export const SettingsPage = () => {
   );
 
   return (
-    <div className="flex w-full h-[92vh] overflow-hidden bg-white relative">
+    <div className="flex w-full h-[92vh] overflow-hidden bg-white dark:bg-slate-950 relative">
       <div
         className={cn(
-          "w-full md:w-92 h-full border-r border-gray-200 bg-white transition-all",
+          "w-full md:w-92 h-full border-r border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all overflow-y-auto",
           mobileView === "sidebar" ? "block" : "hidden md:block",
         )}
       >
@@ -1065,9 +1098,9 @@ export const SettingsPage = () => {
       */}
       <div
         className={cn(
-          "flex-1 bg-white h-full overflow-hidden",
+          "flex-1 bg-white dark:bg-slate-900 h-full overflow-y-auto",
           mobileView === "profile"
-            ? "fixed inset-0 z-50 bg-white w-full md:static md:z-auto"
+            ? "fixed inset-0 z-50 bg-white dark:bg-slate-900 w-full md:static md:z-auto"
             : "hidden md:block",
         )}
       >

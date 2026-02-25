@@ -65,7 +65,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
 
   if (isLoading) {
     return (
-      <div className="p-10 text-center text-gray-500">Finding buddies...</div>
+      <div className="p-10 text-center text-gray-500 dark:text-slate-400">Finding buddies...</div>
     );
   }
 
@@ -82,13 +82,13 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-200 rounded-xl"
+        className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl"
       >
-        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-          <SearchX size={32} className="text-gray-400" />
+        <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+          <SearchX size={32} className="text-gray-400 dark:text-slate-500" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900">No buddies found</h3>
-        <p className="text-gray-500 max-w-xs mt-1">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">No buddies found</h3>
+        <p className="text-gray-500 dark:text-slate-400 max-w-xs mt-1">
           {normalizedQuery
             ? "No results match your search. Try another keyword."
             : "We couldn't find anyone matching your current interests. Try updating your profile or checking back later."}

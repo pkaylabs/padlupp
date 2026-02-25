@@ -34,24 +34,24 @@ export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const Icon = mode === "focus" ? Brain : Coffee;
   const theme = {
     focus: {
-      bg: "bg-white",
-      tagBg: "bg-[#4E92F426] boder-gray-900",
-      tagText: "text-gray-700",
-      tagIcon: "text-gray-900 ",
-      buttonBg: "bg-blue-100",
-      buttonIcon: "text-blue-600",
+      bg: "bg-white dark:bg-slate-900",
+      tagBg: "bg-[#4E92F426] dark:bg-blue-500/20 border-gray-900 dark:border-slate-600",
+      tagText: "text-gray-700 dark:text-slate-200",
+      tagIcon: "text-gray-900 dark:text-slate-200",
+      buttonBg: "bg-blue-100 dark:bg-slate-800",
+      buttonIcon: "text-blue-600 dark:text-blue-300",
       buttonLarge: "bg-blue-500 hover:bg-blue-600",
-      timeText: "text-green-900",
+      timeText: "text-green-900 dark:text-green-300",
     },
     shortBreak: {
-      bg: "bg-green-50",
-      tagBg: "bg-green-200/50 border-green-900",
-      tagText: "text-green-800",
-      tagIcon: "text-green-700",
-      buttonBg: "bg-green-200/50",
-      buttonIcon: "text-green-700",
+      bg: "bg-green-50 dark:bg-slate-900",
+      tagBg: "bg-green-200/50 dark:bg-green-900/20 border-green-900 dark:border-green-700",
+      tagText: "text-green-800 dark:text-green-300",
+      tagIcon: "text-green-700 dark:text-green-300",
+      buttonBg: "bg-green-200/50 dark:bg-slate-800",
+      buttonIcon: "text-green-700 dark:text-green-300",
       buttonLarge: "bg-green-500 hover:bg-green-600",
-      timeText: "text-green-900",
+      timeText: "text-green-900 dark:text-green-300",
     },
     longBreak: {},
   }[mode as "focus" | "shortBreak"];
@@ -72,7 +72,7 @@ export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-20"
+        className="absolute top-4 right-4 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 z-20"
       >
         <X size={24} />
       </button>
@@ -131,7 +131,7 @@ const TimerView: React.FC<any> = ({
 }) => {
   const [optionsOpen, setOptionsOpen] = useState(false);
 
-  const keyStyle = "border border-gray-400 rounded-sm px-0.5";
+    const keyStyle = "border border-gray-400 dark:border-slate-600 rounded-sm px-0.5";
 
   return (
     <motion.div
@@ -207,21 +207,21 @@ const TimerView: React.FC<any> = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute bottom-16 -left-10 w-58 bg-white rounded-lg  shadow-lg border border-gray-200 p-2 z-10"
+              className="absolute bottom-16 -left-10 w-58 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 p-2 z-10"
             >
               <button
                 onClick={() => {
                   onShowSettings();
                   setOptionsOpen(false);
                 }}
-                className="flex justify-between items-center w-full text-sm p-2 hover:bg-gray-100 rounded"
+                className="flex justify-between items-center w-full text-sm p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
               >
-                <div className="flex items-center text-sm text-dark-blue-normal gap-1">
+                <div className="flex items-center text-sm text-dark-blue-normal dark:text-slate-200 gap-1">
                   <Setting2 size="20" color="#153047" variant="Bold" />
                   <span>Preferences</span>
                 </div>
 
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-gray-400 dark:text-slate-500">
                   <span className={keyStyle}>Ctrl</span> +
                   <span className={keyStyle}>P</span>
                 </div>
@@ -231,14 +231,14 @@ const TimerView: React.FC<any> = ({
                   onRestart();
                   setOptionsOpen(false);
                 }}
-                className="flex justify-between items-center w-full text-sm p-2 hover:bg-gray-100 rounded"
+                className="flex justify-between items-center w-full text-sm p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
               >
-                <div className="flex items-center text-sm text-dark-blue-normal gap-1">
+                <div className="flex items-center text-sm text-dark-blue-normal dark:text-slate-200 gap-1">
                   <PiKeyReturnFill size={20} />
                   <span>Restart</span>
                 </div>
 
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-gray-400 dark:text-slate-500">
                   <span className={keyStyle}>Ctrl</span> +{" "}
                   <span className={keyStyle}>Alt</span> +{" "}
                   <span className={keyStyle}>Del</span>
@@ -263,7 +263,7 @@ const TimerSettings: React.FC<any> = ({ config, onSave, onClose }) => {
     children: React.ReactNode;
   }> = ({ label, children }) => (
     <div className="flex justify-between items-center">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</label>
       {children}
     </div>
   );
@@ -273,13 +273,13 @@ const TimerSettings: React.FC<any> = ({ config, onSave, onClose }) => {
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 50 }}
-      className="absolute top-18 z-10 bg-[#F2F9FF] rounded-2xl w-md p-5 shadow-2xl"
+      className="absolute top-18 z-10 bg-[#F2F9FF] dark:bg-slate-800 rounded-2xl w-md p-5 shadow-2xl border border-transparent dark:border-slate-700"
     >
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-semibold text-[#153047]">Settings</h3>
+        <h3 className="text-2xl font-semibold text-[#153047] dark:text-slate-100">Settings</h3>
         <button
           onClick={onClose}
-          className="text-[#153047] hover:text-gray-600"
+          className="text-[#153047] dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-100"
         >
           <X size={20} />
         </button>

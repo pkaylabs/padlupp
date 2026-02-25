@@ -11,16 +11,16 @@ const FloatingCard: React.FC<{
   className?: string;
 }> = ({ title, items, className }) => (
   <div
-    className={`bg-white rounded-lg shadow-xl p-4 w-60 text-gray-900 ${className}`}
+    className={`bg-white/95 dark:bg-slate-900/95 rounded-lg shadow-xl p-4 w-60 text-gray-900 dark:text-slate-100 border border-transparent dark:border-slate-700 ${className}`}
   >
-    <h3 className="text-xs font-medium text-gray-600 mb-3">{title}</h3>
+    <h3 className="text-xs font-medium text-gray-600 dark:text-slate-300 mb-3">{title}</h3>
     <div className="space-y-2">
       {items.map((item, index) => (
         <div key={index} className="flex items-center space-x-2">
-          <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+          <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center">
             <span className="text-xs">{item}</span>
           </div>
-          <div className="flex-1 h-2 bg-gray-100 rounded-full" />
+          <div className="flex-1 h-2 bg-gray-100 dark:bg-slate-700 rounded-full" />
         </div>
       ))}
     </div>
@@ -30,7 +30,7 @@ const FloatingCard: React.FC<{
 export const AuthLeftPanel: React.FC = () => {
   return (
     // The main container with the gradient and relative positioning
-    <div className="relative flex flex-col justify-start w-full h-full bg-linear-to-b from-[#A3CBFA] to-[#4E92F4] text-white p-12 overflow-hidden">
+    <div className="relative flex flex-col justify-start w-full h-full bg-linear-to-b from-[#A3CBFA] to-[#4E92F4] dark:from-slate-900 dark:to-slate-800 text-white p-12 overflow-hidden">
       {/* Logo */}
       <img src={logo} alt="logo" className="w-auto h-14 object-contain" />
 

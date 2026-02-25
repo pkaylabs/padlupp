@@ -18,7 +18,7 @@ export const StyledSwitch: React.FC<StyledSwitchProps> = ({
       onClick={() => onChange(!checked)}
       className={cn(
         "relative inline-flex w-10 h-5 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-        checked ? "bg-blue-500" : "bg-gray-300"
+        checked ? "bg-blue-500" : "bg-gray-300 dark:bg-slate-600"
       )}
     >
       <motion.span

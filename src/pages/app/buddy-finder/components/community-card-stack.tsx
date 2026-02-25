@@ -34,8 +34,8 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           <div className="rounded-xl p-4 sm:p-6 pt-0 flex flex-col gap-3 items-center h-full">
-            <div className="w-full flex gap-1.5 items-center bg-white shadow-md p-4 sm:p-6 rounded-lg">
-              <span className="font-semibold text-[#3D3D3D]">{goal.title}</span>
+            <div className="w-full flex gap-1.5 items-center bg-white dark:bg-slate-900 shadow-md p-4 sm:p-6 rounded-lg border border-transparent dark:border-slate-800">
+              <span className="font-semibold text-[#3D3D3D] dark:text-slate-100">{goal.title}</span>
             </div>
 
             <div className="relative ">
@@ -50,23 +50,23 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
               </div>
             </div>
 
-            <span className="text-base text-[#636363] mt-3">
+            <span className="text-base text-[#636363] dark:text-slate-300 mt-3">
               {goal.members} Members
             </span>
-            <span className="text-base text-[#636363]">
+            <span className="text-base text-[#636363] dark:text-slate-300">
               Progress level:{" "}
               <span className="text-base text-green-600 ">
                 {goal.progress}%
               </span>
             </span>
 
-            <div className="relative w-full p-4 sm:p-6 py-8 bg-white rounded-lg shadow-md text-sm text-gray-700 my-4">
-              <h4 className="font-semibold text-dark-gray mb-5">Overview</h4>
+            <div className="relative w-full p-4 sm:p-6 py-8 bg-white dark:bg-slate-900 rounded-lg shadow-md text-sm text-gray-700 dark:text-slate-300 my-4 border border-transparent dark:border-slate-800">
+              <h4 className="font-semibold text-dark-gray dark:text-slate-100 mb-5">Overview</h4>
 
               <div className="flex flex-col gap-5">
                 <div>
-                  <p className="text-sm text-gray-700">Subtask</p>
-                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-slate-300">Subtask</p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400 mt-1">
                     <div className="flex text-primary-500 items-center gap-1">
                       <Calendar size={14} /> Due date
                     </div>
@@ -78,8 +78,8 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
 
                 {goal.subtasks.map((task, i) => (
                   <div key={i}>
-                    <p className="text-sm text-gray-700">{task.text}</p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                    <p className="text-sm text-gray-700 dark:text-slate-300">{task.text}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <div className="flex text-primary-500 items-center gap-1">
                         <Calendar size={14} /> {task.due}
                       </div>
@@ -108,13 +108,13 @@ export const CommunityCardStack: React.FC<CommunityCardStackProps> = ({
       {/* Navigation Arrows */}
       <button
         onClick={() => paginate(-1)}
-        className="absolute left-6 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
+        className="absolute left-6 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
       >
         <ArrowLeft2 variant="Bold" size={30} />
       </button>
       <button
         onClick={() => paginate(1)}
-        className="absolute right-6 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100"
+        className="absolute right-6 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
       >
         <ArrowRight2 variant="Bold" size={30} />
       </button>

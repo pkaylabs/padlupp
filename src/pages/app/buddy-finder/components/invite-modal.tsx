@@ -42,15 +42,15 @@ export const InviteModal: React.FC<InviteModalProps> = ({
       className="w-md top-1/2 -translate-y-1/2"
     >
       <div className="p-6 w-full ">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Note</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Note</h3>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={maxLength}
           placeholder={`Send a note to ${person?.name || "them"}... (Optional)`}
-          className="w-full h-32 p-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+          className="w-full h-32 p-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:border-blue-500 focus:ring-blue-500"
         />
-        <div className="text-right text-sm text-gray-500 mt-1">
+        <div className="text-right text-sm text-gray-500 dark:text-slate-400 mt-1">
           {note.length}/{maxLength}
         </div>
         {/* <div className="mt-4 text-xs text-gray-400 italic">

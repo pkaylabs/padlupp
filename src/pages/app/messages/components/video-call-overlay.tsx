@@ -43,16 +43,16 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 bg-gray-50 flex flex-col h-dvh">
+    <div className="fixed inset-0 z-100 bg-gray-50 dark:bg-slate-950 flex flex-col h-dvh text-gray-900 dark:text-slate-100">
       {/* --- HEADER --- */}
-      <div className="h-12 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
+      <div className="h-12 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-2 text-blue-600 font-medium text-sm md:text-base">
           <span>Ongoing video call</span>
           <Headphones size={16} />
         </div>
         <button
           onClick={onMinimize}
-          className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-500 dark:text-slate-400"
         >
           <Minimize2 size={20} />
         </button>
@@ -171,7 +171,7 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
         */}
         <div
           className={cn(
-            "bg-white border-l border-gray-200 flex-col transition-all duration-300",
+            "bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 flex-col transition-all duration-300",
             // Mobile Styles
             "fixed inset-0 z-50 w-full h-full",
             isMobileChatOpen ? "flex" : "hidden",
@@ -180,19 +180,19 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
           )}
         >
           {/* Mobile Chat Header (Close Button) */}
-          <div className="flex md:hidden items-center justify-between p-4 border-b border-gray-100">
-            <span className="font-semibold text-gray-800">
+          <div className="flex md:hidden items-center justify-between p-4 border-b border-gray-100 dark:border-slate-800">
+            <span className="font-semibold text-gray-800 dark:text-slate-100">
               In-call messages
             </span>
             <button
               onClick={() => setIsMobileChatOpen(false)}
-              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
+              className="p-2 bg-gray-100 dark:bg-slate-800 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} className="text-gray-600 dark:text-slate-300" />
             </button>
           </div>
 
-          <div className="hidden md:block p-4 border-b border-gray-100 font-semibold text-gray-800">
+          <div className="hidden md:block p-4 border-b border-gray-100 dark:border-slate-800 font-semibold text-gray-800 dark:text-slate-100">
             Thread
           </div>
 
@@ -226,12 +226,12 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-100 bg-white pb-safe">
+          <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 pb-safe">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Type a message"
-                className="w-full pl-4 pr-10 py-3 bg-gray-50 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-slate-100 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200">
                 <Send size={16} />
@@ -280,7 +280,7 @@ const ChatMessage = ({ sender, time, text, isMe }: any) => (
         <span className="font-semibold text-sm text-gray-900">{sender}</span>
         <span className="text-xs text-gray-400">{time}</span>
       </div>
-      <p className="text-sm text-gray-600 leading-relaxed">{text}</p>
+      <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed">{text}</p>
     </div>
   </div>
 );
@@ -291,35 +291,35 @@ const SettingsMenu = ({ onClose }: { onClose: () => void }) => (
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 10 }}
-    className="absolute bottom-14 left-1/2 -translate-x-1/2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden text-sm font-medium text-gray-700 z-60"
+    className="absolute bottom-14 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 py-2 overflow-hidden text-sm font-medium text-gray-700 dark:text-slate-300 z-60"
   >
-    <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center gap-3">
+    <button className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 text-left flex items-center gap-3">
       <Users size={16} /> Invite people
     </button>
-    <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center gap-3">
+    <button className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 text-left flex items-center gap-3">
       <Copy size={16} /> Copy call link
     </button>
 
     {/* Section 2 */}
-    <div className="py-1 border-b border-gray-100 border-t mt-1">
-      <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center justify-between">
+    <div className="py-1 border-b border-gray-100 dark:border-slate-700 border-t mt-1">
+      <button className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 text-left flex items-center justify-between">
         <span className="flex items-center gap-3">
           <Captions size={16} /> Show captions
         </span>
-        <ChevronRight size={14} className="text-gray-400" />
+        <ChevronRight size={14} className="text-gray-400 dark:text-slate-500" />
       </button>
-      <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left flex items-center justify-between">
+      <button className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 text-left flex items-center justify-between">
         <span className="flex items-center gap-3">
           <Globe size={16} /> Choose language
         </span>
-        <ChevronRight size={14} className="text-gray-400" />
+        <ChevronRight size={14} className="text-gray-400 dark:text-slate-500" />
       </button>
     </div>
 
-    <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left text-gray-500 font-normal">
+    <button className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 text-left text-gray-500 dark:text-slate-400 font-normal">
       Hide self-view
     </button>
-    <button className="w-full px-4 py-2.5 hover:bg-gray-50 text-left text-gray-500 font-normal">
+    <button className="w-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 text-left text-gray-500 dark:text-slate-400 font-normal">
       Video background
     </button>
   </motion.div>

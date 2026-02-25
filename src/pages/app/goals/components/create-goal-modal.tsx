@@ -45,6 +45,7 @@ import Button from "@/components/core/buttons";
 import { useCreateGoal } from "../hooks/useCreateGoal";
 import ButtonLoader from "@/components/loaders/button";
 import { useCreateTask } from "../hooks/useTasks";
+import { useNavigate } from "@tanstack/react-router";
 
 interface CreateGoalModalProps {
   isOpen: boolean;
@@ -91,6 +92,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const navigate = useNavigate();
   const { mutateAsync: createGoal, isPending: isCreatingGoal } =
     useCreateGoal();
   const { mutateAsync: createTask, isPending: isCreatingTask } =
@@ -166,6 +168,9 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
+        if (isShared) {
+          void navigate({ to: "/buddy-finder" });
+        }
         // Reset Form
         setTitle("");
         setDescription("");
@@ -240,14 +245,14 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       className="max-w-xl w-full p-8 overflow-visible top-1/2 -translate-y-1/2"
     >
       <div className="relative">
-        <h2 className="text-xl font-bold text-gray-900 text-center mb-8">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 text-center mb-8">
           Create goal
         </h2>
 
         <div className="space-y-6">
           {/* Title & Desc */}
           <div className="space-y-1">
-            <label className="text-lg font-semibold text-gray-900">
+            <label className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Title...
             </label>
             <input
@@ -255,7 +260,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               value={title}
               disabled={isPending}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border-b border-gray-200 pb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full border-b border-gray-200 dark:border-slate-700 pb-2 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
               placeholder="e.g. Learn React Hooks"
             />
           </div>
@@ -265,7 +270,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               value={description}
               disabled={isPending}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border-none p-2 text-sm text-gray-600 placeholder:text-gray-400  outline-none focus:outline-none"
+              className="w-full border-none p-2 text-sm text-gray-600 dark:text-slate-300 placeholder:text-gray-400 dark:placeholder:text-slate-500 outline-none focus:outline-none bg-transparent"
               placeholder="Description"
             />
           </div>
@@ -279,7 +284,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 onClick={() =>
                   setActivePopover(activePopover === "date" ? null : "date")
                 }
-                className="flex items-center gap-3 text-gray-500 hover:text-gray-800 text-sm font-medium"
+                className="flex items-center gap-3 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 text-sm font-medium"
               >
                 <Calendar size={18} />{" "}
                 {dateRange.start
@@ -310,7 +315,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 onClick={() =>
                   setActivePopover(activePopover === "time" ? null : "time")
                 }
-                className="flex items-center gap-3 text-gray-500 hover:text-gray-800 text-sm font-medium"
+                className="flex items-center gap-3 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 text-sm font-medium"
               >
                 <Clock size={18} /> {time || "Add time"}
               </button>
@@ -334,16 +339,16 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             {subtasks.map((task, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-2 text-sm text-gray-700 group"
+                className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 group"
               >
-                <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
+                <div className="w-4 h-4 border-2 border-gray-300 dark:border-slate-600 rounded-full" />
                 <span className="flex-1">{task}</span>
                 <button
                   disabled={isPending}
                   onClick={() =>
                     setSubtasks(subtasks.filter((_, i) => i !== idx))
                   }
-                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100"
+                  className="text-gray-400 dark:text-slate-500 hover:text-red-500 opacity-0 group-hover:opacity-100"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -355,7 +360,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 <input
                   autoFocus
                   type="text"
-                  className="flex-1 text-sm border-b border-blue-500 focus:outline-none py-1"
+                  className="flex-1 text-sm border-b border-blue-500 focus:outline-none py-1 bg-transparent text-gray-800 dark:text-slate-200"
                   placeholder="Enter subtask..."
                   disabled={isPending}
                   value={newSubtask}
@@ -374,7 +379,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               <button
                 disabled={isPending}
                 onClick={() => setIsAddingSubtask(true)}
-                className="flex items-center gap-2 text-gray-400 hover:text-gray-600 text-sm"
+                className="flex items-center gap-2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-sm"
               >
                 <Plus size={16} /> Add subtask
               </button>
@@ -467,7 +472,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
 
           {/* Share Toggle */}
           <div className="flex items-center gap-3 py-2">
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 dark:text-slate-300">
               Share goal with someone
             </span>
             <StyledSwitch checked={isShared} onChange={setIsShared} />
@@ -610,10 +615,10 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute top-8 left-0 z-50 bg-white shadow-xl rounded-xl border border-gray-100 flex overflow-hidden w-[600px]"
+      className="absolute top-8 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 flex overflow-hidden w-[600px]"
     >
       {/* Sidebar */}
-      <div className="w-40 bg-gray-50 p-4 flex flex-col gap-2 border-r border-gray-100">
+      <div className="w-40 bg-gray-50 dark:bg-slate-800 p-4 flex flex-col gap-2 border-r border-gray-100 dark:border-slate-700">
         {(
           [
             "Today",
@@ -626,7 +631,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
           <button
             key={label}
             onClick={() => handlePresetClick(label)}
-            className="text-left text-sm text-gray-600 hover:bg-gray-200 hover:text-gray-900 px-3 py-2 rounded transition-colors font-medium"
+            className="text-left text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-slate-100 px-3 py-2 rounded transition-colors font-medium"
           >
             {label}
           </button>
@@ -639,24 +644,24 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
           <button
             onClick={() => setCurrentMonth((d) => addMonths(d, -1))}
             disabled={currentMonthStart <= todayMonthStart}
-            className="p-1 hover:bg-gray-100 rounded-full text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={16} />
           </button>
 
-          <span className="font-semibold text-sm text-gray-800">
+          <span className="font-semibold text-sm text-gray-800 dark:text-slate-100">
             {format(currentMonth, "MMM yyyy")}
           </span>
 
           <button
             onClick={() => setCurrentMonth((d) => addMonths(d, 1))} // Changed to addMonths
-            className="p-1 hover:bg-gray-100 rounded-full text-gray-500"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400"
           >
             <ChevronRight size={16} />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400 font-medium">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400 dark:text-slate-500 font-medium">
           {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
             <span key={d}>{d}</span>
           ))}
@@ -687,10 +692,10 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
                   isSelected
                     ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
                     : isInRange && !isSelected
-                      ? "bg-blue-50 text-blue-600"
+                      ? "bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-300"
                       : isPastDate
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-700 hover:bg-gray-100",
+                        ? "text-gray-300 dark:text-slate-600 cursor-not-allowed"
+                        : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700",
                 )}
               >
                 {format(day, "d")}
@@ -736,7 +741,7 @@ const TimeInput = ({ value, onChange, max }: TimeInputProps) => {
       value={value}
       onChange={handleChange}
       onBlur={handleBlur}
-      className="w-12 h-12 border border-gray-200 rounded-lg text-center text-xl font-medium text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+      className="w-12 h-12 border border-gray-200 dark:border-slate-600 rounded-lg text-center text-xl font-medium text-gray-700 dark:text-slate-100 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
       placeholder="00"
     />
   );
@@ -782,32 +787,32 @@ export const TimePickerView = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute top-8 left-0 z-50 bg-white shadow-xl rounded-xl border border-gray-100 p-6 w-auto min-w-[280px]"
+      className="absolute top-8 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-6 w-auto min-w-[280px]"
     >
       <div className="flex items-center justify-center gap-2 mb-6">
         {/* Hours */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+          <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">
             Hr
           </span>
           <TimeInput value={hours} onChange={setHours} max={23} />
         </div>
 
-        <span className="text-2xl font-medium text-gray-300 mt-4">:</span>
+        <span className="text-2xl font-medium text-gray-300 dark:text-slate-600 mt-4">:</span>
 
         {/* Minutes */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+          <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">
             Min
           </span>
           <TimeInput value={minutes} onChange={setMinutes} max={59} />
         </div>
 
-        <span className="text-2xl font-medium text-gray-300 mt-4">:</span>
+        <span className="text-2xl font-medium text-gray-300 dark:text-slate-600 mt-4">:</span>
 
         {/* Seconds */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+          <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">
             Sec
           </span>
           <TimeInput value={seconds} onChange={setSeconds} max={59} />
@@ -834,13 +839,13 @@ const SelectionPopover = ({
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-      className="absolute bottom-full mb-2 left-0 z-50 bg-white shadow-xl rounded-xl border border-gray-100 p-2 w-48"
+      className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-2 w-48"
     >
       {options.map((opt: string, idx: number) => (
         <button
           key={opt}
           onClick={() => onSelect(opt)}
-          className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg flex items-center justify-between text-sm"
+          className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg flex items-center justify-between text-sm"
         >
           <span className="flex items-center gap-2">
             {icons ? (
@@ -871,7 +876,7 @@ const CategoryPopover = ({ selected, onSelect }: any) => {
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-      className="absolute bottom-full mb-2 left-0 z-50 bg-white shadow-2xl rounded-2xl border border-gray-100 p-4 w-80"
+      className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-gray-100 dark:border-slate-700 p-4 w-80"
     >
       <div className="grid grid-cols-3 gap-4">
         {CATEGORIES.map((cat) => (
@@ -891,7 +896,7 @@ const CategoryPopover = ({ selected, onSelect }: any) => {
             >
               <cat.icon size={20} />
             </div>
-            <span className="text-[10px] text-gray-500 text-center leading-tight">
+            <span className="text-[10px] text-gray-500 dark:text-slate-400 text-center leading-tight">
               {cat.label}
             </span>
           </button>

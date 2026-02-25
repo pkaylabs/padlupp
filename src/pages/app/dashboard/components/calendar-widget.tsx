@@ -8,13 +8,11 @@ import {
   eachDayOfInterval,
   getDay,
   isSameDay,
-  isToday,
   addMonths,
   subMonths,
   isSameMonth,
   subDays,
   addDays,
-  isBefore,
   startOfToday,
 } from "date-fns";
 import { cn } from "@/utils/cs";
@@ -22,7 +20,7 @@ import { cn } from "@/utils/cs";
 const WEEK_DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 interface CalendarWidgetProps {
-  selectedDate: Date;
+  selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
 }
 
@@ -30,7 +28,9 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
   selectedDate,
   onDateSelect,
 }) => {
-  const [displayMonth, setDisplayMonth] = useState(startOfMonth(selectedDate));
+  const [displayMonth, setDisplayMonth] = useState(
+    startOfMonth(selectedDate ?? startOfToday()),
+  );
 
   // This is the *real* today
   const today = startOfToday();
@@ -59,49 +59,43 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
   };
 
   const getDayClass = (day: Date): string => {
-    const isPast = isBefore(day, today);
     const isCurrent = isSameDay(day, today);
-    const isSelected = isSameDay(day, selectedDate);
+    const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
 
     if (isSelected) {
-      // The selected day (like "24" in screenshot)
       return "bg-primary-500 text-white rounded-full";
     }
-    if (isPast && !isCurrent) {
-      // Disabled past days
-      return "text-gray-300 cursor-not-allowed";
-    }
     if (!isSameMonth(day, displayMonth)) {
-      // Days from other months
-      return "text-gray-300";
+      return "text-gray-300 dark:text-slate-600";
     }
     if (isCurrent) {
-      // Today (if not selected)
-      return "text-blue-600 font-bold hover:bg-gray-100 rounded-full";
+      // Today stays lightly highlighted when date filter is not active.
+      return selectedDate
+        ? "text-blue-600 font-bold hover:bg-gray-100 rounded-full"
+        : "text-blue-500/70 font-semibold bg-blue-50/70 dark:bg-slate-700 rounded-full";
     }
-    // Future, clickable days
-    return "text-gray-700 hover:bg-gray-100 rounded-full";
+    return "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full";
   };
 
   return (
-    <div className="sticky top-18 w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+    <div className="sticky top-18 w-full bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-4">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <span className="font-monts font-semibold text-gray-800">
+        <span className="font-monts font-semibold text-gray-800 dark:text-slate-100">
           {format(displayMonth, "MMM yyyy")}
         </span>
         <div className="flex">
           <button
             onClick={handlePrevMonth}
-            className="p-1 hover:bg-gray-100 rounded-full"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-500" />
+            <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-slate-400" />
           </button>
           <button
             onClick={handleNextMonth}
-            className="p-1 hover:bg-gray-100 rounded-full"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
           >
-            <ChevronRight className="w-5 h-5 text-gray-500" />
+            <ChevronRight className="w-5 h-5 text-gray-500 dark:text-slate-400" />
           </button>
         </div>
       </div>
@@ -110,31 +104,25 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
       <div className="grid grid-cols-7 gap-y-2 text-center">
         {/* Week Days */}
         {WEEK_DAYS.map((day) => (
-          <div key={day} className="text-xs font-medium text-gray-400">
+          <div key={day} className="text-xs font-medium text-gray-400 dark:text-slate-500">
             {day}
           </div>
         ))}
 
         {/* Dates */}
-        {allDays.map((day, index) => {
-          const isPast = isBefore(day, today);
-          const isTodayFlag = isSameDay(day, today);
-
-          return (
-            <div key={index} className="flex justify-center items-center h-8">
-              <button
-                onClick={() => onDateSelect(day)}
-                disabled={isPast && !isTodayFlag} // Can't click past days
-                className={cn(
-                  "w-8 h-8 flex items-center justify-center text-sm",
-                  getDayClass(day)
-                )}
-              >
-                {format(day, "d")}
-              </button>
-            </div>
-          );
-        })}
+        {allDays.map((day, index) => (
+          <div key={index} className="flex justify-center items-center h-8">
+            <button
+              onClick={() => onDateSelect(day)}
+              className={cn(
+                "w-8 h-8 flex items-center justify-center text-sm",
+                getDayClass(day),
+              )}
+            >
+              {format(day, "d")}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

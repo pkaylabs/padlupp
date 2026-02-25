@@ -20,18 +20,18 @@ export const StyledNumberInput: React.FC<StyledNumberInputProps> = ({
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-16 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-blue-500"
+        className="w-16 rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-800 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-blue-500"
       />
       <div className="flex flex-col ml-2">
         <button
           onClick={increment}
-          className="w-6 h-5 flex items-center justify-center rounded-t border border-gray-300 bg-gray-50 hover:bg-gray-100"
+          className="w-6 h-5 flex items-center justify-center rounded-t border border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
         >
           <ChevronUp size={14} />
         </button>
         <button
           onClick={decrement}
-          className="w-6 h-5 flex items-center justify-center rounded-b border border-b-gray-300 border-l-gray-300 border-r-gray-300 bg-gray-50 hover:bg-gray-100"
+          className="w-6 h-5 flex items-center justify-center rounded-b border border-b-gray-300 border-l-gray-300 border-r-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
         >
           <ChevronDown size={14} />
         </button>

@@ -151,21 +151,21 @@ export const MessagesPage = () => {
 
   return (
     <>
-      <div className="font-monts w-full flex h-[92vh] bg-white overflow-hidden relative">
+      <div className="font-monts w-full flex h-[92vh] bg-white dark:bg-slate-950 overflow-hidden relative text-gray-900 dark:text-slate-100">
         <div
           className={cn(
-            "w-full md:w-96 border-r overflow-y-auto border-gray-200 flex-col bg-white",
+            "w-full md:w-96 border-r overflow-y-auto border-gray-200 dark:border-slate-800 flex-col bg-white dark:bg-slate-900",
             showMobileChat ? "hidden md:flex" : "flex",
           )}
         >
-          <div className="h-16 flex items-center px-4 text-gray-500 text-sm font-medium">
+          <div className="h-16 flex items-center px-4 text-gray-500 dark:text-slate-400 text-sm font-medium">
             <ArrowLeft2 size="16" color="#636363" />
             <ArrowRight2 size="16" color="#636363" className="mx-2" />
-            <span className="cursor-pointer hover:text-gray-900">Goals</span>
+            <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">Goals</span>
             <span className="mx-2">/</span>
-            <span className="cursor-pointer hover:text-gray-900">Invitation</span>
+            <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">Invitation</span>
             <span className="mx-2">/</span>
-            <span className="text-gray-900">Messages</span>
+            <span className="text-gray-900 dark:text-slate-100">Messages</span>
           </div>
 
           <div className="px-4 mb-2">
@@ -179,12 +179,12 @@ export const MessagesPage = () => {
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="Search"
-                className="w-full pl-10 pr-4 py-3 bg-white border border-[#CDDAE9] rounded-xl text-sm focus:outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-[#CDDAE9] dark:border-slate-700 rounded-xl text-sm text-gray-800 dark:text-slate-200 focus:outline-none transition-colors"
               />
             </div>
           </div>
 
-          <div className="px-4 pb-2 text-xs text-gray-500">
+          <div className="px-4 pb-2 text-xs text-gray-500 dark:text-slate-400">
             Conversations socket: {conversationsConnectionState}
           </div>
 
@@ -207,8 +207,8 @@ export const MessagesPage = () => {
                     setShowMobileChat(true);
                   }}
                   className={cn(
-                    "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative",
-                    isActive ? "bg-primary-100/50" : "",
+                    "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors relative",
+                    isActive ? "bg-primary-100/50 dark:bg-slate-800" : "",
                   )}
                 >
                   <div className="relative mr-3 shrink-0">
@@ -227,17 +227,17 @@ export const MessagesPage = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between mb-1">
-                      <h3 className="text-sm font-medium text-dark-gray truncate">
+                      <h3 className="text-sm font-medium text-dark-gray dark:text-slate-100 truncate">
                         {name}
                       </h3>
                     </div>
-                    <p className="text-sm font-medium text-[#616161] truncate">
+                    <p className="text-sm font-medium text-[#616161] dark:text-slate-400 truncate">
                       {lastText}
                     </p>
                   </div>
 
                   <div className="flex flex-col gap-1.5 items-end">
-                    <span className="font-sans text-sm text-[#929191]">{timeText}</span>
+                    <span className="font-sans text-sm text-[#929191] dark:text-slate-500">{timeText}</span>
                     {conversation.unread_count > 0 && (
                       <div className="bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
                         {conversation.unread_count}
@@ -249,20 +249,20 @@ export const MessagesPage = () => {
             })}
 
             {filteredConversations.length === 0 && (
-              <div className="px-4 py-8 text-sm text-gray-500">No conversations found.</div>
+              <div className="px-4 py-8 text-sm text-gray-500 dark:text-slate-400">No conversations found.</div>
             )}
           </div>
         </div>
 
         <div
           className={cn(
-            "flex-col bg-white",
+            "flex-col bg-white dark:bg-slate-900",
             showMobileChat
               ? "fixed inset-0 z-50 flex w-full h-full md:static md:flex-1"
               : "hidden md:flex md:flex-1 md:relative",
           )}
         >
-          <div className="border-b border-gray-200 flex items-center justify-between py-2.5 px-4 md:px-6">
+          <div className="border-b border-gray-200 dark:border-slate-800 flex items-center justify-between py-2.5 px-4 md:px-6">
             <div className="flex items-center">
               <button
                 onClick={() => setShowMobileChat(false)}
@@ -292,7 +292,7 @@ export const MessagesPage = () => {
               </div>
 
               <div>
-                <h2 className="font-semibold text-[#666668] text-sm">
+                <h2 className="font-semibold text-[#666668] dark:text-slate-200 text-sm">
                   {activeConversation
                     ? getConversationName(activeConversation)
                     : hasConversations
@@ -305,64 +305,64 @@ export const MessagesPage = () => {
                     {onlineUserIds.length > 0 && ` • ${onlineUserIds.length} online`}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400 flex items-center">
+                  <p className="text-xs text-gray-400 dark:text-slate-500 flex items-center">
                     Choose a chat from the left to start messaging.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center text-gray-400 gap-1 md:gap-0">
+            <div className="flex items-center text-gray-400 dark:text-slate-500 gap-1 md:gap-0">
               <div
                 onClick={() => hasActiveConversation && setVidCall(true)}
                 className={cn(
-                  "size-10 md:size-12 flex justify-center items-center bg-white rounded-md",
+                  "size-10 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
                   hasActiveConversation
-                    ? "cursor-pointer hover:bg-[#4E92F421]"
+                    ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
                     : "cursor-not-allowed opacity-40",
                 )}
               >
                 <CallCalling
                   size={20}
-                  className="hover:text-gray-600 text-[#130F26] cursor-pointer"
+                  className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
                 />
               </div>
               <div
                 onClick={() => hasActiveConversation && setVidCall(true)}
                 className={cn(
-                  "size-10 md:size-12 flex justify-center items-center bg-white rounded-md",
+                  "size-10 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
                   hasActiveConversation
-                    ? "cursor-pointer hover:bg-[#4E92F421]"
+                    ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
                     : "cursor-not-allowed opacity-40",
                 )}
               >
                 <Video
                   size={24}
                   strokeWidth={1.5}
-                  className="hover:text-gray-600 text-[#130F26] cursor-pointer"
+                  className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
                 />
               </div>
               <div
                 className={cn(
-                  "size-10 md:size-12 flex justify-center items-center bg-white rounded-md",
+                  "size-10 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
                   hasActiveConversation
-                    ? "cursor-pointer hover:bg-[#4E92F421]"
+                    ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
                     : "cursor-not-allowed opacity-40",
                 )}
               >
                 <Search
                   size={20}
-                  className="hover:text-gray-600 text-[#130F26] cursor-pointer"
+                  className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
                 />
               </div>
             </div>
           </div>
 
-          <div className="sticky top-2.5 flex gap-6 px-6 py-4 text-sm font-medium bg-bg-gray">
+          <div className="sticky top-2.5 flex gap-6 px-6 py-4 text-sm font-medium bg-bg-gray dark:bg-slate-950">
             <button
               onClick={() => setActiveTab("Activities")}
               className={
-                activeTab === "Activities" ? "text-gray-900" : "text-gray-400"
+                activeTab === "Activities" ? "text-gray-900 dark:text-slate-100" : "text-gray-400 dark:text-slate-500"
               }
             >
               Activities
@@ -370,22 +370,22 @@ export const MessagesPage = () => {
             <button
               disabled
               title="Shared files coming soon"
-              className="text-gray-300 cursor-not-allowed"
+              className="text-gray-300 dark:text-slate-600 cursor-not-allowed"
             >
               Shared
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray relative">
+          <div className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray dark:bg-slate-950 relative">
             {activeTab === "Shared" ? (
-              <div className="text-center text-gray-500">
+              <div className="text-center text-gray-500 dark:text-slate-400">
                 <SharedFilesView />
               </div>
             ) : (
               <div className="h-full p-4 md:p-6 space-y-6">
                 {hasActiveConversation ? (
                   <div className="w-full flex flex-col justify-center items-center">
-                    <p className="border border-dashed border-[#CDDAE9] rounded-lg p-3 bg-white text-sm text-gray-600 w-fit">
+                    <p className="border border-dashed border-[#CDDAE9] dark:border-slate-700 rounded-lg p-3 bg-white dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-300 w-fit">
                       Real-time chat connected with optimistic message send and reconnect handling.
                     </p>
                   </div>
@@ -394,12 +394,12 @@ export const MessagesPage = () => {
                     <div className="size-16 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xl font-semibold mb-4">
                       {hasConversations ? "CH" : "NC"}
                     </div>
-                    <p className="text-base text-gray-700 font-medium">
+                    <p className="text-base text-gray-700 dark:text-slate-200 font-medium">
                       {hasConversations
                         ? "Select a conversation to start chatting"
                         : "You don't have any conversations yet"}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                       {hasConversations
                         ? "Pick a chat from the list on the left."
                         : "When you connect with a buddy, chats will appear here."}
@@ -408,7 +408,7 @@ export const MessagesPage = () => {
                 )}
 
                 {loadingHistory && hasActiveConversation && (
-                  <div className="text-sm text-gray-500">Loading messages...</div>
+                  <div className="text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
                 )}
 
                 {messages.map((message) => (
@@ -423,7 +423,7 @@ export const MessagesPage = () => {
                 ))}
 
                 {isPeerTyping && hasActiveConversation && (
-                  <div className="text-xs text-gray-500">The other user is typing...</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">The other user is typing...</div>
                 )}
               </div>
             )}
@@ -435,7 +435,7 @@ export const MessagesPage = () => {
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="absolute inset-0 z-20 bg-white"
+                  className="absolute inset-0 z-20 bg-white dark:bg-slate-900"
                 >
                   {sideView === "profile" && (
                     <UserProfileView
@@ -458,27 +458,27 @@ export const MessagesPage = () => {
             </AnimatePresence>
           </div>
 
-          <div className="p-4 bg-white border-t border-gray-200">
+          <div className="p-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
             <AnimatePresence>
               {inputPopoverOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute bottom-16 left-4 bg-white shadow shadow-[#A3CBFA26] rounded-lg border border-[#CDDAE9] p-2 w-40 z-10"
+                  className="absolute bottom-16 left-4 bg-white dark:bg-slate-800 shadow shadow-[#A3CBFA26] rounded-lg border border-[#CDDAE9] dark:border-slate-700 p-2 w-40 z-10"
                 >
                   <button
                     onClick={() => {
                       setInputPopoverOpen(false);
                       setActiveModal("create_goal");
                     }}
-                    className="flex items-center w-full p-2 hover:bg-gray-50 text-sm text-gray-700 rounded-md text-left"
+                    className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left"
                   >
                     <CheckCircle size={16} className="text-blue-500 mr-2" />
                     Create goal
                   </button>
-                  <button className="flex items-center w-full p-2 hover:bg-gray-50 text-sm text-gray-700 rounded-md text-left">
-                    <FileText size={16} className="text-gray-500 mr-2" /> File
+                  <button className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left">
+                    <FileText size={16} className="text-gray-500 dark:text-slate-400 mr-2" /> File
                   </button>
                 </motion.div>
               )}
@@ -490,11 +490,11 @@ export const MessagesPage = () => {
                   hasActiveConversation && setInputPopoverOpen(!inputPopoverOpen)
                 }
                 disabled={!hasActiveConversation}
-                className="p-2 bg-gray-100 rounded-lg text-[#3D3D3D] hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg text-[#3D3D3D] dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus size={20} />
               </button>
-              <button className="text-[#3D3D3D] hover:text-gray-600 hidden md:block">
+              <button className="text-[#3D3D3D] dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-200 hidden md:block">
                 <Mic strokeWidth={1.5} size={20} />
               </button>
               <input
@@ -511,12 +511,12 @@ export const MessagesPage = () => {
                 placeholder={
                   activeConversationId ? "Type a message" : "Select a conversation"
                 }
-                className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 placeholder:text-gray-400 disabled:text-gray-400"
+                className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500"
               />
               <button
                 disabled={!activeConversationId || sending}
                 onClick={() => void handleSend()}
-                className="p-2 bg-blue-200 rounded-lg text-[#3D3D3D] hover:bg-[#B6D8FF] transition-colors disabled:opacity-60"
+                className="p-2 bg-blue-200 dark:bg-blue-900/40 rounded-lg text-[#3D3D3D] dark:text-slate-100 hover:bg-[#B6D8FF] dark:hover:bg-blue-900/60 transition-colors disabled:opacity-60"
               >
                 <Send size={20} className="ml-0.5" />
               </button>
@@ -562,13 +562,13 @@ const MessageBubble = ({
       </div>
       <div>
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="font-semibold text-sm text-gray-900">
+          <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">
             {isMe ? "Me" : senderName}
           </span>
-          <span className="text-xs text-gray-400">{timestamp}</span>
-          {pending && <span className="text-xs text-gray-400">sending...</span>}
+          <span className="text-xs text-gray-400 dark:text-slate-500">{timestamp}</span>
+          {pending && <span className="text-xs text-gray-400 dark:text-slate-500">sending...</span>}
         </div>
-        <div className="text-sm text-gray-800">{text}</div>
+        <div className="text-sm text-gray-800 dark:text-slate-200">{text}</div>
       </div>
     </div>
   );

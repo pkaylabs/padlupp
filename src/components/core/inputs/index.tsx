@@ -2,6 +2,7 @@
 import _ from "lodash";
 import type {
   ChangeEventHandler,
+  CSSProperties,
   FC,
   FocusEventHandler,
   InputHTMLAttributes,
@@ -20,7 +21,7 @@ const labelVariants = {
     fontSize: "0.75rem",
     paddingLeft: "0.25rem",
     paddingRight: "0.25rem",
-    backgroundColor: "#ffffff",
+    backgroundColor: "var(--input-label-bg, #ffffff)",
   },
   resting: {
     top: "0.75rem",
@@ -121,6 +122,11 @@ export const TextInput: FC<TextInputProps> = ({
     type === "password" ? (isPasswordVisible ? "text" : "password") : type;
 
   const labelColor = hasError ? "#EF4444" : isFocused ? "#3B82F6" : "#6B7280";
+  const labelBg = isFloating
+    ? document.documentElement.classList.contains("dark")
+      ? "#0f172a"
+      : "#ffffff"
+    : "#00000000";
 
   return (
     <div className={cn("relative w-full", className)}>
@@ -145,7 +151,12 @@ export const TextInput: FC<TextInputProps> = ({
             initial={isFloating ? "floating" : "resting"}
             animate={isFloating ? "floating" : "resting"}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ color: labelColor }}
+            style={
+              {
+                color: labelColor,
+                "--input-label-bg": labelBg,
+              } as CSSProperties
+            }
           >
             {label}
           </motion.label>
@@ -166,7 +177,7 @@ export const TextInput: FC<TextInputProps> = ({
             onFocus={handleInputFocus}
             onBlur={handleInputBlurWrapper}
             placeholder={isFloating ? placeholder : ""}
-            className="w-full border-none bg-transparent p-0 text-base text-gray-900 outline-none ring-0 focus:ring-0"
+            className="w-full border-none bg-transparent p-0 text-base text-gray-900 dark:text-slate-100 outline-none ring-0 focus:ring-0"
           />
         </div>
 
@@ -175,7 +186,7 @@ export const TextInput: FC<TextInputProps> = ({
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="px-4 text-gray-500"
+            className="px-4 text-gray-500 dark:text-slate-400"
           >
             <AnimatePresence mode="wait">
               <motion.div

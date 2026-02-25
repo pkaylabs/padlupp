@@ -29,7 +29,7 @@ export const CategoryGridView: React.FC<CategoryGridViewProps> = ({
 }) => {
   return (
     <>
-      <p className="-mt-1.5 mr-1.5 mb-3 text-sm font-medium text-gray-600">
+      <p className="-mt-1.5 mr-1.5 mb-3 text-sm font-medium text-gray-600 dark:text-slate-300">
         Categories
       </p>
       <motion.div
@@ -43,7 +43,7 @@ export const CategoryGridView: React.FC<CategoryGridViewProps> = ({
           <motion.button
             key={item.label}
             onClick={() => onSelectCategory(item.label)}
-            className="flex flex-col items-center gap-2 py-4 sm:p-4 rounded-xl hover:shadow transition-shadow"
+            className="flex flex-col items-center gap-2 py-4 sm:p-4 rounded-xl hover:shadow transition-shadow hover:bg-gray-50 dark:hover:bg-slate-900/50"
             variants={itemVariants}
             whileTap={{ scale: 0.95 }}
           >
@@ -55,7 +55,7 @@ export const CategoryGridView: React.FC<CategoryGridViewProps> = ({
             >
               <item.icon size={24} className={item.icon_color} />
             </div>
-            <span className="text-sm font-medium text-gray-600">
+            <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
               {item.label}
             </span>
           </motion.button>

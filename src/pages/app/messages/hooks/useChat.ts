@@ -136,7 +136,7 @@ export const useChat = (): UseChatState => {
         );
         return {
           ...prev,
-          [conversationId]: dedupeMessages(sortByCreatedAt(replaced)),
+          [conversationId]: dedupeMessages(replaced),
         };
       });
       clearFallbackTimer(tempId);
@@ -188,15 +188,16 @@ export const useChat = (): UseChatState => {
           clearFallbackTimer(matchedTempId);
           return {
             ...prev,
-            [conversationId]: dedupeMessages(sortByCreatedAt(withPossibleReplacement)),
+            [conversationId]: dedupeMessages(withPossibleReplacement),
           };
         }
 
         return {
           ...prev,
-          [conversationId]: dedupeMessages(
-            sortByCreatedAt([...withPossibleReplacement, { ...message, optimistic: false }]),
-          ),
+          [conversationId]: dedupeMessages([
+            ...withPossibleReplacement,
+            { ...message, optimistic: false },
+          ]),
         };
       });
 
@@ -456,9 +457,10 @@ export const useChat = (): UseChatState => {
 
       setMessagesByConversation((prev) => ({
         ...prev,
-        [activeConversationId]: dedupeMessages(
-          sortByCreatedAt([...(prev[activeConversationId] ?? []), optimistic]),
-        ),
+        [activeConversationId]: dedupeMessages([
+          ...(prev[activeConversationId] ?? []),
+          optimistic,
+        ]),
       }));
 
       setSending(true);

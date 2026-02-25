@@ -19,10 +19,10 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     <button
       onClick={onToggle}
       // Using the exact dimensions from your screenshot
-      className="relative hidden sm:flex items-center w-17 h-9 rounded-full bg-gray-100 p-1"
+      className="relative hidden sm:flex items-center w-17 h-9 rounded-full bg-gray-100 dark:bg-slate-800 p-1"
     >
       <motion.div
-        className="absolute top-1 left-1 w-7 h-7 bg-white rounded-full shadow"
+        className="absolute top-1 left-1 w-7 h-7 bg-white dark:bg-slate-200 rounded-full shadow"
         animate={{ x: isDarkMode ? 0 : 35 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
       />

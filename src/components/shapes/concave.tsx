@@ -14,7 +14,7 @@ export const ConcaveShape: React.FC<ConcaveShapeProps> = ({
 }) => {
   return (
     <motion.div
-      className={cn("relative w-full h-30 bg-gray-100 shadow-xl", className)}
+      className={cn("relative w-full h-30 bg-gray-100 dark:bg-slate-800 shadow-xl", className)}
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
