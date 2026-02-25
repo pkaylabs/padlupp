@@ -238,7 +238,7 @@ function AppLayout() {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className=" p-2 text-dark-blue-normal lg:hidden"
+              className=" p-2 lg:hidden"
             >
               <span className="sr-only">Open sidebar</span>
               <Bars3Icon aria-hidden="true" className="size-6" />
