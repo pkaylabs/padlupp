@@ -8,6 +8,7 @@ import {
   Users,
   ArrowLeft,
   Check,
+  UserPlus,
 } from "lucide-react";
 import { useClickAway } from "react-use";
 import { Breadcrumb } from "@/components/core/breadcrump";
@@ -17,6 +18,7 @@ import { DetailsView } from "./components/details-view";
 import { InvitationsView } from "./components/invitations-view";
 import { InviteModal } from "./components/invite-modal";
 import { ViewGoalModal } from "./components/view-goal-modal";
+import { PlatformInviteModal } from "./components/platform-invite-modal";
 import { cn } from "@/utils/cs";
 import {
   CATEGORIES_MOCK,
@@ -41,6 +43,7 @@ export const BuddyFinderPage = () => {
   // --- Modal States ---
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [viewGoalModalOpen, setViewGoalModalOpen] = useState(false);
+  const [platformInviteModalOpen, setPlatformInviteModalOpen] = useState(false);
 
   // Data to pass to modals
   const [personToInvite, setPersonToInvite] = useState<Person | null>(null);
@@ -99,6 +102,17 @@ export const BuddyFinderPage = () => {
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (mainTab !== "explore") {
+      return;
+    }
+
+    if (debouncedSearchQuery.trim().length > 0) {
+      setExploreView("details");
+      setDetailsTab("People");
+    }
+  }, [debouncedSearchQuery, mainTab]);
+
   return (
     <>
       <div className="font-monts w-full flex flex-col text-gray-900 dark:text-slate-100">
@@ -130,6 +144,14 @@ export const BuddyFinderPage = () => {
                 className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 text-gray-800 dark:text-slate-200 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
+
+            <button
+              onClick={() => setPlatformInviteModalOpen(true)}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+            >
+              <UserPlus size={16} />
+              Invite
+            </button>
 
             <div className="relative" ref={filterPopoverRef}>
               <button
@@ -232,6 +254,11 @@ export const BuddyFinderPage = () => {
         isOpen={viewGoalModalOpen}
         onClose={() => setViewGoalModalOpen(false)}
         invitation={selectedInvitation}
+      />
+
+      <PlatformInviteModal
+        isOpen={platformInviteModalOpen}
+        onClose={() => setPlatformInviteModalOpen(false)}
       />
     </>
   );

@@ -10,6 +10,8 @@ interface User {
   avatar: string;
   phone_verified: boolean;
   email_verified: boolean;
+  preferred_notification_email?: string;
+  preferred_notification_phone?: string;
 }
 
 // 1. Established Connection
@@ -48,6 +50,16 @@ export interface BuddyInvitation {
   updated_at: string;
 }
 
+export interface PlatformInvitePayload {
+  email: string;
+  name: string;
+}
+
+export interface PlatformInviteResponse {
+  detail: string;
+  waitlisted: boolean;
+}
+
 // --- API Functions ---
 
 // GET: My Connections
@@ -59,6 +71,14 @@ export const getConnections = async () => {
 // GET: Buddy Finder (Discovery)
 export const getBuddyFinder = async () => {
   const { data } = await api.get<PotentialBuddy[]>("/buddies/finder/");
+  return data;
+};
+
+// GET: Global Buddy Search
+export const searchBuddies = async (query: string) => {
+  const { data } = await api.get<BuddyConnection[]>("/buddies/search/", {
+    params: { query },
+  });
   return data;
 };
 
@@ -89,5 +109,11 @@ export const acceptInvitation = async (invitationId: string | number) => {
 // POST: Reject Request
 export const rejectInvitation = async (invitationId: string | number) => {
   const { data } = await api.post(`/buddies/${invitationId}/reject/`);
+  return data;
+};
+
+// POST: Invite user to platform
+export const inviteUserToPlatform = async (payload: PlatformInvitePayload) => {
+  const { data } = await api.post<PlatformInviteResponse>("/auth/invite/", payload);
   return data;
 };

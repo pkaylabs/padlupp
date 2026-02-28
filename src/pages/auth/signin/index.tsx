@@ -86,6 +86,15 @@ export const SignIn: React.FC = () => {
           handleBlur={formik.handleBlur}
         />
 
+        <div className="flex justify-end -mt-1">
+          <Link
+            to="/forgot-password"
+            className="text-sm font-medium text-[#4E92F4] hover:text-[#3278DE]"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
         <Button type="submit" variant="primary">
           {isEmailLoading ? <ButtonLoader title="Signing in..." /> : "Sign in"}
         </Button>

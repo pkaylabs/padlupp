@@ -4,7 +4,9 @@ import {
   getBuddyFinder,
   getConnections,
   getInvitations,
+  inviteUserToPlatform,
   rejectInvitation,
+  searchBuddies,
   sendConnectionRequest,
 } from "../api";
 import { toast } from "sonner";
@@ -22,6 +24,16 @@ export function useBuddyFinder() {
   return useQuery({
     queryKey: ["buddies", "finder"],
     queryFn: getBuddyFinder,
+  });
+}
+
+export function useBuddySearch(query: string) {
+  const normalizedQuery = query.trim();
+
+  return useQuery({
+    queryKey: ["buddies", "search", normalizedQuery],
+    queryFn: () => searchBuddies(normalizedQuery),
+    enabled: normalizedQuery.length > 0,
   });
 }
 
@@ -84,5 +96,20 @@ export function useRejectInvitation() {
       toast.success("Request ignored.");
     },
     onError: () => toast.error("Failed to reject request."),
+  });
+}
+
+// 4. Invite User To Platform
+export function usePlatformInvite() {
+  return useMutation({
+    mutationFn: ({ name, email }: { name: string; email: string }) =>
+      inviteUserToPlatform({ name, email }),
+    onSuccess: (data) => {
+      const fallbackMessage = data.waitlisted
+        ? "Invite sent. User has been added to waitlist."
+        : "Invitation sent.";
+      toast.success(data.detail || fallbackMessage);
+    },
+    onError: () => toast.error("Failed to send invite."),
   });
 }

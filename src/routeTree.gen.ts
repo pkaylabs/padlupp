@@ -15,6 +15,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignupRouteRouteImport } from './routes/_auth/signup/route'
 import { Route as AuthSigninRouteRouteImport } from './routes/_auth/signin/route'
+import { Route as AuthForgotPasswordRouteRouteImport } from './routes/_auth/forgot-password/route'
 import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/route'
 import { Route as AppProfileRouteRouteImport } from './routes/_app/profile/route'
 import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
@@ -22,6 +23,8 @@ import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/r
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
 import { Route as AppGoalsIdRouteImport } from './routes/_app/goals/$id'
+import { Route as AuthForgotPasswordVerifyOtpRouteRouteImport } from './routes/_auth/forgot-password/verify-otp/route'
+import { Route as AuthForgotPasswordResetPasswordRouteRouteImport } from './routes/_auth/forgot-password/reset-password/route'
 
 const OnboardingRouteRoute = OnboardingRouteRouteImport.update({
   id: '/onboarding',
@@ -49,6 +52,11 @@ const AuthSignupRouteRoute = AuthSignupRouteRouteImport.update({
 const AuthSigninRouteRoute = AuthSigninRouteRouteImport.update({
   id: '/signin',
   path: '/signin',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthForgotPasswordRouteRoute = AuthForgotPasswordRouteRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
@@ -86,6 +94,18 @@ const AppGoalsIdRoute = AppGoalsIdRouteImport.update({
   path: '/goals/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AuthForgotPasswordVerifyOtpRouteRoute =
+  AuthForgotPasswordVerifyOtpRouteRouteImport.update({
+    id: '/verify-otp',
+    path: '/verify-otp',
+    getParentRoute: () => AuthForgotPasswordRouteRoute,
+  } as any)
+const AuthForgotPasswordResetPasswordRouteRoute =
+  AuthForgotPasswordResetPasswordRouteRouteImport.update({
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => AuthForgotPasswordRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,8 +115,11 @@ export interface FileRoutesByFullPath {
   '/messages': typeof AppMessagesRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
+  '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
   '/signin': typeof AuthSigninRouteRoute
   '/signup': typeof AuthSignupRouteRoute
+  '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
+  '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
   '/goals': typeof AppGoalsIndexRoute
 }
@@ -108,8 +131,11 @@ export interface FileRoutesByTo {
   '/messages': typeof AppMessagesRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
+  '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
   '/signin': typeof AuthSigninRouteRoute
   '/signup': typeof AuthSignupRouteRoute
+  '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
+  '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
   '/goals': typeof AppGoalsIndexRoute
 }
@@ -124,8 +150,11 @@ export interface FileRoutesById {
   '/_app/messages': typeof AppMessagesRouteRoute
   '/_app/profile': typeof AppProfileRouteRoute
   '/_app/settings': typeof AppSettingsRouteRoute
+  '/_auth/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
   '/_auth/signin': typeof AuthSigninRouteRoute
   '/_auth/signup': typeof AuthSignupRouteRoute
+  '/_auth/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
+  '/_auth/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/_app/goals/$id': typeof AppGoalsIdRoute
   '/_app/goals/': typeof AppGoalsIndexRoute
 }
@@ -139,8 +168,11 @@ export interface FileRouteTypes {
     | '/messages'
     | '/profile'
     | '/settings'
+    | '/forgot-password'
     | '/signin'
     | '/signup'
+    | '/forgot-password/reset-password'
+    | '/forgot-password/verify-otp'
     | '/goals/$id'
     | '/goals'
   fileRoutesByTo: FileRoutesByTo
@@ -152,8 +184,11 @@ export interface FileRouteTypes {
     | '/messages'
     | '/profile'
     | '/settings'
+    | '/forgot-password'
     | '/signin'
     | '/signup'
+    | '/forgot-password/reset-password'
+    | '/forgot-password/verify-otp'
     | '/goals/$id'
     | '/goals'
   id:
@@ -167,8 +202,11 @@ export interface FileRouteTypes {
     | '/_app/messages'
     | '/_app/profile'
     | '/_app/settings'
+    | '/_auth/forgot-password'
     | '/_auth/signin'
     | '/_auth/signup'
+    | '/_auth/forgot-password/reset-password'
+    | '/_auth/forgot-password/verify-otp'
     | '/_app/goals/$id'
     | '/_app/goals/'
   fileRoutesById: FileRoutesById
@@ -224,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSigninRouteRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/forgot-password': {
+      id: '/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -273,6 +318,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_auth/forgot-password/verify-otp': {
+      id: '/_auth/forgot-password/verify-otp'
+      path: '/verify-otp'
+      fullPath: '/forgot-password/verify-otp'
+      preLoaderRoute: typeof AuthForgotPasswordVerifyOtpRouteRouteImport
+      parentRoute: typeof AuthForgotPasswordRouteRoute
+    }
+    '/_auth/forgot-password/reset-password': {
+      id: '/_auth/forgot-password/reset-password'
+      path: '/reset-password'
+      fullPath: '/forgot-password/reset-password'
+      preLoaderRoute: typeof AuthForgotPasswordResetPasswordRouteRouteImport
+      parentRoute: typeof AuthForgotPasswordRouteRoute
+    }
   }
 }
 
@@ -300,12 +359,32 @@ const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
   AppRouteRouteChildren,
 )
 
+interface AuthForgotPasswordRouteRouteChildren {
+  AuthForgotPasswordResetPasswordRouteRoute: typeof AuthForgotPasswordResetPasswordRouteRoute
+  AuthForgotPasswordVerifyOtpRouteRoute: typeof AuthForgotPasswordVerifyOtpRouteRoute
+}
+
+const AuthForgotPasswordRouteRouteChildren: AuthForgotPasswordRouteRouteChildren =
+  {
+    AuthForgotPasswordResetPasswordRouteRoute:
+      AuthForgotPasswordResetPasswordRouteRoute,
+    AuthForgotPasswordVerifyOtpRouteRoute:
+      AuthForgotPasswordVerifyOtpRouteRoute,
+  }
+
+const AuthForgotPasswordRouteRouteWithChildren =
+  AuthForgotPasswordRouteRoute._addFileChildren(
+    AuthForgotPasswordRouteRouteChildren,
+  )
+
 interface AuthRouteRouteChildren {
+  AuthForgotPasswordRouteRoute: typeof AuthForgotPasswordRouteRouteWithChildren
   AuthSigninRouteRoute: typeof AuthSigninRouteRoute
   AuthSignupRouteRoute: typeof AuthSignupRouteRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthForgotPasswordRouteRoute: AuthForgotPasswordRouteRouteWithChildren,
   AuthSigninRouteRoute: AuthSigninRouteRoute,
   AuthSignupRouteRoute: AuthSignupRouteRoute,
 }

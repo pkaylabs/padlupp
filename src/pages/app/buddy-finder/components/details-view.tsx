@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CommunityGoal, Person } from "@/constants/goals-data";
 import { PeopleCardStack } from "./people-card-stack";
 import { CommunityCardStack } from "./community-card-stack";
-import { useBuddyFinder } from "../hooks/useBuddies";
+import { useBuddyFinder, useBuddySearch } from "../hooks/useBuddies";
 import { SearchX } from "lucide-react";
 
 interface DetailsViewProps {
@@ -20,12 +20,19 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
   communityGoals,
   onInvite,
 }) => {
-  // 1. Fetch real data from Finder API
-  const { data: potentialBuddies, isLoading, isError } = useBuddyFinder();
+  const normalizedQuery = searchQuery.trim();
+  const isSearchMode = normalizedQuery.length > 0;
 
-  // 2. Map API data to UI 'Person' structure
-  // The API returns 'PotentialBuddy', the UI expects 'Person'
-  const people: any = (potentialBuddies || []).map((buddy) => ({
+  const { data: potentialBuddies, isLoading: isFinderLoading, isError: isFinderError } =
+    useBuddyFinder();
+  const { data: searchedBuddies, isLoading: isSearchLoading, isError: isSearchError } =
+    useBuddySearch(normalizedQuery);
+
+  const sourceBuddies = isSearchMode ? searchedBuddies : potentialBuddies;
+  const isLoading = isSearchMode ? isSearchLoading : isFinderLoading;
+  const isError = isSearchMode ? isSearchError : isFinderError;
+
+  const people: any = (sourceBuddies || []).map((buddy: any) => ({
     id: buddy.user.id.toString(), // Ensure ID matches
     name: buddy.user.name,
     role: buddy.experience || "Member", // Fallback
@@ -45,27 +52,11 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     status: buddy.connection_status === "connected" ? "connected" : "connect",
   }));
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredPeople =
-    normalizedQuery.length === 0
-      ? people
-      : people.filter((person: any) => {
-          const name = String(person.name || "").toLowerCase();
-          const seeking = String(person.seeking || "").toLowerCase();
-          const interests = (person.interests || [])
-            .map((item: any) => String(item.interest || "").toLowerCase())
-            .join(" ");
-
-          return (
-            name.includes(normalizedQuery) ||
-            seeking.includes(normalizedQuery) ||
-            interests.includes(normalizedQuery)
-          );
-        });
-
   if (isLoading) {
     return (
-      <div className="p-10 text-center text-gray-500 dark:text-slate-400">Finding buddies...</div>
+      <div className="p-10 text-center text-gray-500 dark:text-slate-400">
+        {isSearchMode ? "Searching buddies..." : "Finding buddies..."}
+      </div>
     );
   }
 
@@ -77,7 +68,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     );
   }
 
-  if (activeTab === "People" && filteredPeople.length === 0) {
+  if (activeTab === "People" && people.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -89,7 +80,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
         </div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">No buddies found</h3>
         <p className="text-gray-500 dark:text-slate-400 max-w-xs mt-1">
-          {normalizedQuery
+          {isSearchMode
             ? "No results match your search. Try another keyword."
             : "We couldn't find anyone matching your current interests. Try updating your profile or checking back later."}
         </p>
@@ -107,7 +98,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
         {activeTab === "People" ? (
           <PeopleCardStack
             key="people"
-            people={filteredPeople}
+            people={people}
             onInvite={onInvite}
           />
         ) : (
