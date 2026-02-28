@@ -7,7 +7,8 @@ import {
   getMessages,
 } from "../api";
 
-const WS_BASE_URL = "wss://api.padlupp.com";
+// const WS_BASE_URL = "wss://api.padlupp.com";
+const WS_BASE_URL = "ws://192.168.1.105:8000";
 const MAX_RETRIES = 8;
 const MAX_BACKOFF_MS = 20_000;
 const SEND_TIMEOUT_MS = 7_000;

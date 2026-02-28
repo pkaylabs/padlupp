@@ -40,7 +40,8 @@ export const userNavigation = [
   { name: "Sign out", href: "#" },
 ];
 
-export const BASE_URL = "https://api.padlupp.com/api-v1";
+// export const BASE_URL = "https://api.padlupp.com/api-v1";
+export const BASE_URL = "http://192.168.1.105:8000/api-v1";
 
 export const LANGUAGES = [
   "English",

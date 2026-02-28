@@ -41,6 +41,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     compatibility: 0,
     rating: 0,
     seeking: buddy.experience || "No experience added yet.",
+    bio: buddy.bio || "",
     interests: Array.isArray(buddy.interests)
       ? buddy.interests.map((interest: string) => ({
           interest,

@@ -20,8 +20,6 @@ import {
   School,
   Check,
   TrendingUp,
-  Circle,
-  Sparkles,
 } from "lucide-react";
 
 // --- Types ---
@@ -35,6 +33,7 @@ export interface Person {
   compatibility: number;
   rating: number;
   seeking: string;
+  bio?: string;
   interests: {
     icon: Icon;
     interest: string;

@@ -86,11 +86,11 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                   <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
                 </div>
                 <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
-                  Seeking for accountability on
+                  Buddy Bio
                 </span>
               </div>
               <span className="font-semibold text-base text-dark-gray dark:text-slate-200 pl-4">
-                {person?.seeking}
+                {person?.bio || "No bio provided."}
               </span>
             </div>
 
@@ -136,12 +136,14 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
       <button
         onClick={() => paginate(-1)}
         className="absolute left-6 sm:left-0 top-1/2 -translate-y-1/2 -translate-x-10 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
+        title="Previous buddy"
       >
         <ArrowLeft2 variant="Bold" size={30} />
       </button>
       <button
         onClick={() => paginate(1)}
         className="absolute right-6 sm:right-0 top-1/2 -translate-y-1/2 translate-x-10 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
+        title="Next buddy"
       >
         <ArrowRight2 variant="Bold" size={30} />
       </button>
