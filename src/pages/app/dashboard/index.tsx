@@ -7,6 +7,18 @@ import { TodayProgress } from "./components/progress";
 import { ClipboardList } from "lucide-react";
 import { useGoals } from "../goals/hooks/useGoals";
 import { Goal } from "../goals/api";
+import { StreaksView } from "./components/streaks-view";
+
+const formatGoalTime = (timeValue?: string | null) => {
+  if (!timeValue) return "";
+  const [h = "0", m = "0"] = timeValue.split(":");
+  const hours = Number(h);
+  const minutes = Number(m);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return timeValue;
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
 
 export const DashboardComponent = () => {
   const [activeTab, setActiveTab] = useState("All");
@@ -44,7 +56,11 @@ export const DashboardComponent = () => {
       const tabKey = activeTab.toLowerCase().replace(" ", "").replace("-", "");
 
       if (tabKey === "todo")
-        return normalizedStatus === "planned" || normalizedStatus === "todo";
+        return (
+          normalizedStatus === "planned" ||
+          normalizedStatus === "todo" ||
+          normalizedStatus === "to-do"
+        );
       if (tabKey === "inprogress")
         return (
           normalizedStatus === "in-progress" ||
@@ -71,20 +87,20 @@ export const DashboardComponent = () => {
       subtitle: goal.description || "No description",
       timeLeft: goal.status === "completed" ? "Done" : "Due today",
       status: uiStatus,
-      categories: ["Regular"],
+      categories: [goal.importance, goal.category].filter(
+        (tag): tag is string => Boolean(tag && tag.trim()),
+      ),
       // For display, we can use format/parseISO safely since it's just visual
       date: format(parseISO(goal.target_date), "dd MMM yyyy"),
-      time: "09:00 am",
+      time: formatGoalTime(goal.start_time),
     };
   };
 
   return (
     <div className="text-gray-900 dark:text-slate-100">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16 sm:mb-0">
-        {/* LEFT COLUMN: GOALS LIST */}
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-white dark:bg-slate-900 p-5 rounded-sm border border-gray-100 dark:border-slate-800">
-            {/* Pass mapped goals to Progress widget */}
             <TodayProgress
               goals={filteredGoals.map(mapGoalToCard)}
               selectedDate={selectedDate}
@@ -101,7 +117,6 @@ export const DashboardComponent = () => {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Loading State */}
               {isLoading && (
                 <>
                   {[1, 2, 3, 4].map((i) => (
@@ -113,14 +128,12 @@ export const DashboardComponent = () => {
                 </>
               )}
 
-              {/* Error State */}
               {isError && (
                 <div className="col-span-full p-6 text-center text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl">
                   Failed to load goals. Please refresh the page.
                 </div>
               )}
 
-              {/* Data State */}
               {!isLoading &&
                 !isError &&
                 filteredGoals.length > 0 &&
@@ -129,13 +142,17 @@ export const DashboardComponent = () => {
                   return <GoalCard key={goal.id} {...cardProps} />;
                 })}
 
-              {/* Empty State */}
               {!isLoading && !isError && filteredGoals.length === 0 && (
                 <div className="col-span-full flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 dark:bg-slate-900/60 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl">
                   <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mb-3">
-                    <ClipboardList className="text-gray-400 dark:text-slate-500" size={24} />
+                    <ClipboardList
+                      className="text-gray-400 dark:text-slate-500"
+                      size={24}
+                    />
                   </div>
-                  <p className="text-gray-900 dark:text-slate-100 font-medium">No goals found</p>
+                  <p className="text-gray-900 dark:text-slate-100 font-medium">
+                    No goals found
+                  </p>
                   <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                     {activeTab !== "All"
                       ? `You have no ${activeTab.toLowerCase()} goals for this date.`
@@ -147,7 +164,6 @@ export const DashboardComponent = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: CALENDAR */}
         <div className="lg:col-span-1">
           <CalendarWidget
             selectedDate={selectedDate}
@@ -155,6 +171,7 @@ export const DashboardComponent = () => {
           />
         </div>
       </div>
+      {/* <StreaksView />  <AwardsView /> */}
     </div>
   );
 };

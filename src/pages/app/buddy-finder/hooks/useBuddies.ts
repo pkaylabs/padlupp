@@ -58,8 +58,10 @@ export function useSendRequest() {
       queryClient.invalidateQueries({ queryKey: ["buddies", "finder"] });
       toast.success("Connection request sent!");
     },
-    onError: () => {
-      toast.error("Failed to send request.");
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.detail || "Failed to send request.",
+      );
     },
   });
 }

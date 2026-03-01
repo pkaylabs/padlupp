@@ -16,7 +16,11 @@ export interface ChatMessage {
   id: number;
   conversation: number;
   sender: ChatUser;
-  text: string;
+  text: string | null;
+  attachment: string | null;
+  attachment_name: string | null;
+  attachment_mime: string | null;
+  attachment_size: number | null;
   is_read: boolean;
   created_at: string;
   updated_at: string;

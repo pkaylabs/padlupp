@@ -46,10 +46,14 @@ import { useCreateGoal } from "../hooks/useCreateGoal";
 import ButtonLoader from "@/components/loaders/button";
 import { useCreateTask } from "../hooks/useTasks";
 import { useNavigate } from "@tanstack/react-router";
+import { createMessage } from "@/pages/app/messages/api";
+import { useAuthStore } from "@/features/auth/authStore";
+import { serializeGoalCreatedEvent } from "@/pages/app/messages/utils/goal-message";
 
 interface CreateGoalModalProps {
   isOpen: boolean;
   onClose: () => void;
+  conversationId?: number | null;
 }
 
 type PopoverType =
@@ -91,8 +95,10 @@ const CATEGORIES = [
 export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   isOpen,
   onClose,
+  conversationId,
 }) => {
   const navigate = useNavigate();
+  const authUser = useAuthStore((state) => state.user);
   const { mutateAsync: createGoal, isPending: isCreatingGoal } =
     useCreateGoal();
   const { mutateAsync: createTask, isPending: isCreatingTask } =
@@ -132,11 +138,15 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
         title,
         description,
         start_date: format(dateRange.start, "yyyy-MM-dd"),
+        start_time: time || undefined,
         target_date: dateRange.end
           ? format(dateRange.end, "yyyy-MM-dd")
           : format(dateRange.start, "yyyy-MM-dd"),
+        category,
+        importance: priority,
         status,
         is_active: true,
+        ...(conversationId ? { conversation: conversationId } : {}),
       };
 
       // We await the result to get the new Goal's ID
@@ -161,6 +171,18 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             }),
           ),
         );
+      }
+
+      if (conversationId && newGoal?.id) {
+        const creatorName = authUser?.name?.trim() || "Someone";
+        await createMessage({
+          conversation: conversationId,
+          text: serializeGoalCreatedEvent({
+            goalId: newGoal.id,
+            title: newGoal.title || title,
+            creatorName,
+          }),
+        });
       }
 
       // Step C: Success UI

@@ -46,7 +46,9 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                 {person?.name}
               </span>
               <span className="size-1 rounded-full bg-primary-600" />
-              <span className=" text-gray-500 dark:text-slate-400">{person?.age}</span>
+              <span className=" text-gray-500 dark:text-slate-400">
+                {person?.age}
+              </span>
             </div>
 
             <div className="relative">
@@ -66,7 +68,9 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
               {person?.compatibility}% compatible
             </span>
             <div className="flex items-center gap-1.5 my-2">
-              <span className="text-[#636363] dark:text-slate-300">Rating:</span>
+              <span className="text-[#636363] dark:text-slate-300">
+                Rating:
+              </span>
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
@@ -86,7 +90,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                   <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
                 </div>
                 <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
-                  Seeking for accountability on
+                  Personal Bio
                 </span>
               </div>
               <span className="font-semibold text-base text-dark-gray dark:text-slate-200 pl-4">

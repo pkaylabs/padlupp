@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  CreateGoalModal,
-  RateUserModal,
-  ReportUserModal,
-} from "./components/modals";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { RateUserModal, ReportUserModal } from "./components/modals";
 import {
   CheckCircle,
   FileText,
+  Image as ImageIcon,
+  PhoneCall,
   Mic,
   Plus,
   Search,
@@ -22,13 +20,26 @@ import {
   UserProfileView,
 } from "./components/chat-side-views";
 import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
-import { VideoCallOverlay } from "./components/video-call-overlay";
 import { useChat } from "./hooks/useChat";
 import { useAuthStore } from "@/features/auth/authStore";
 import type { Conversation } from "./api";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Modal } from "@/components/core/modal";
+import logo from "@/assets/images/logo.png";
+import { useClickAway } from "react-use";
+import { parseGoalCreatedEvent } from "./utils/goal-message";
 
 type SideView = "none" | "profile" | "progress";
-type ActiveModal = "none" | "create_goal" | "rate" | "report";
+type ActiveModal = "none" | "rate" | "report";
+type ComingSoonFeature = "none" | "voice_call" | "video_call";
+type AttachmentViewerState = {
+  url: string;
+  mime: string;
+  name: string;
+} | null;
+const OPEN_CREATE_GOAL_FROM_CHAT_KEY = "open_create_goal_from_chat";
+const CREATE_GOAL_CONVERSATION_ID_KEY = "create_goal_conversation_id";
 
 const formatMessageTime = (isoString?: string) => {
   if (!isoString) return "";
@@ -54,7 +65,39 @@ const getInitials = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
+const normalizeSearchText = (value?: string | null) =>
+  (value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+const getConversationPreview = (conversation: Conversation) => {
+  const goalEvent = parseGoalCreatedEvent(conversation.last_message?.text);
+  if (goalEvent) {
+    return {
+      hasImageAttachment: false,
+      hasVideoAttachment: false,
+      lastText: "Goal created",
+    };
+  }
+
+  const lastAttachmentMime = conversation.last_message?.attachment_mime ?? "";
+  const hasImageAttachment = lastAttachmentMime.startsWith("image/");
+  const hasVideoAttachment = lastAttachmentMime.startsWith("video/");
+  const lastText =
+    conversation.last_message?.text ||
+    (hasImageAttachment
+      ? "Image"
+      : hasVideoAttachment
+        ? "Video"
+        : "No messages yet");
+
+  return { hasImageAttachment, hasVideoAttachment, lastText };
+};
+
 export const MessagesPage = () => {
+  const navigate = useNavigate();
   const {
     conversations,
     messages,
@@ -62,12 +105,12 @@ export const MessagesPage = () => {
     setActiveConversationId,
     sendMessage,
     setTyping,
+    sendFile,
     markAllRead,
     loadingHistory,
     sending,
-    connectionState,
-    conversationsConnectionState,
     isPeerTyping,
+    peerTypingName,
     onlineUserIds,
   } = useChat();
 
@@ -81,20 +124,55 @@ export const MessagesPage = () => {
   const [sideView, setSideView] = useState<SideView>("none");
   const [activeModal, setActiveModal] = useState<ActiveModal>("none");
   const [inputPopoverOpen, setInputPopoverOpen] = useState(false);
-  const [vidCall, setVidCall] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [comingSoonFeature, setComingSoonFeature] =
+    useState<ComingSoonFeature>("none");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFilePreviewUrl, setSelectedFilePreviewUrl] = useState<
+    string | null
+  >(null);
+  const [attachmentViewer, setAttachmentViewer] =
+    useState<AttachmentViewerState>(null);
+  const messagesScrollRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const lastMessageCountRef = useRef(0);
+  const forceScrollOnLoadRef = useRef(false);
+  const previousConversationIdRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const inputPopoverRef = useRef<HTMLDivElement | null>(null);
+
+  useClickAway(inputPopoverRef, () => {
+    setInputPopoverOpen(false);
+  });
 
   const filteredConversations = useMemo(() => {
-    const trimmed = searchValue.trim().toLowerCase();
+    const trimmed = normalizeSearchText(searchValue);
     if (!trimmed) return conversations;
 
-    return conversations.filter((conversation) =>
-      getConversationName(conversation).toLowerCase().includes(trimmed),
-    );
+    return conversations.filter((conversation) => {
+      const name = normalizeSearchText(getConversationName(conversation));
+      const lastMessageText = normalizeSearchText(
+        conversation.last_message?.text,
+      );
+      const attachmentName = normalizeSearchText(
+        conversation.last_message?.attachment_name,
+      );
+      const attachmentMime = normalizeSearchText(
+        conversation.last_message?.attachment_mime,
+      );
+
+      return (
+        name.includes(trimmed) ||
+        lastMessageText.includes(trimmed) ||
+        attachmentName.includes(trimmed) ||
+        attachmentMime.includes(trimmed)
+      );
+    });
   }, [conversations, searchValue]);
 
   const activeConversation = useMemo(
-    () => conversations.find((conv) => conv.id === activeConversationId) ?? null,
+    () =>
+      conversations.find((conv) => conv.id === activeConversationId) ?? null,
     [activeConversationId, conversations],
   );
 
@@ -109,20 +187,85 @@ export const MessagesPage = () => {
         "https://placehold.co/120x120/E6F0FD/1F2937?text=U",
     };
   }, [activeConversation]);
+  const currentUserName = authUser?.name?.trim() || "Me";
 
   const hasConversations = conversations.length > 0;
   const hasActiveConversation = Boolean(activeConversation);
 
   useEffect(() => {
-    if (!activeConversationId && conversations.length > 0) {
-      setActiveConversationId(conversations[0].id);
-    }
-  }, [activeConversationId, conversations, setActiveConversationId]);
-
-  useEffect(() => {
     if (!activeConversationId) return;
     markAllRead();
   }, [activeConversationId, markAllRead]);
+
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      setInputPopoverOpen(false);
+      setSideView("none");
+      setComingSoonFeature("none");
+      setAttachmentViewer(null);
+      setActiveConversationId(null);
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [setActiveConversationId]);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+    const container = messagesScrollRef.current;
+    if (!container) return;
+    messagesEndRef.current?.scrollIntoView({
+      behavior,
+      block: "end",
+    });
+    container.scrollTo({ top: container.scrollHeight, behavior });
+  };
+
+  const isNearBottom = () => {
+    const container = messagesScrollRef.current;
+    if (!container) return true;
+    const threshold = 80;
+    return (
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      threshold
+    );
+  };
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+    if (previousConversationIdRef.current !== activeConversationId) {
+      previousConversationIdRef.current = activeConversationId;
+      forceScrollOnLoadRef.current = true;
+      lastMessageCountRef.current = 0;
+    }
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    if (activeConversationId) return;
+    previousConversationIdRef.current = null;
+    forceScrollOnLoadRef.current = false;
+    lastMessageCountRef.current = 0;
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+    const nextCount = messages.length;
+    const previousCount = lastMessageCountRef.current;
+    const hasNewMessage = nextCount > previousCount;
+
+    if (forceScrollOnLoadRef.current && nextCount > 0) {
+      // Force initial bottom position after history loads for the conversation.
+      window.requestAnimationFrame(() => scrollToBottom("auto"));
+      window.setTimeout(() => scrollToBottom("auto"), 80);
+      window.setTimeout(() => scrollToBottom("auto"), 180);
+      forceScrollOnLoadRef.current = false;
+    } else if (hasNewMessage && isNearBottom()) {
+      window.requestAnimationFrame(() => scrollToBottom("smooth"));
+    }
+
+    lastMessageCountRef.current = nextCount;
+  }, [activeConversationId, messages.length]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -142,12 +285,85 @@ export const MessagesPage = () => {
 
   const handleSend = async () => {
     const text = inputValue.trim();
-    if (!text) return;
+    if (!text && !selectedFile) return;
+
+    if (selectedFile) {
+      await sendFile(selectedFile, text || undefined);
+      setSelectedFile(null);
+      if (selectedFilePreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(selectedFilePreviewUrl);
+      }
+      setSelectedFilePreviewUrl(null);
+      setInputValue("");
+      setTyping(false);
+      return;
+    }
 
     await sendMessage(text);
     setInputValue("");
     setTyping(false);
   };
+
+  const handleCreateGoalFromChat = () => {
+    localStorage.setItem(OPEN_CREATE_GOAL_FROM_CHAT_KEY, "1");
+    if (activeConversationId) {
+      localStorage.setItem(
+        CREATE_GOAL_CONVERSATION_ID_KEY,
+        String(activeConversationId),
+      );
+    } else {
+      localStorage.removeItem(CREATE_GOAL_CONVERSATION_ID_KEY);
+    }
+    setInputPopoverOpen(false);
+    void navigate({ to: "/goals" });
+  };
+
+  const handlePickFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setInputPopoverOpen(false);
+
+    if (!file || !hasActiveConversation) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      toast.error("Only image and video files are supported.");
+      return;
+    }
+
+    const maxSizeBytes = 25 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      toast.error("File must be 25MB or less.");
+      return;
+    }
+
+    if (selectedFilePreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(selectedFilePreviewUrl);
+    }
+    setSelectedFile(file);
+    setSelectedFilePreviewUrl(URL.createObjectURL(file));
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    if (selectedFilePreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(selectedFilePreviewUrl);
+    }
+    setSelectedFilePreviewUrl(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (selectedFilePreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(selectedFilePreviewUrl);
+      }
+    };
+  }, [selectedFilePreviewUrl]);
 
   return (
     <>
@@ -161,9 +377,13 @@ export const MessagesPage = () => {
           <div className="h-16 flex items-center px-4 text-gray-500 dark:text-slate-400 text-sm font-medium">
             <ArrowLeft2 size="16" color="#636363" />
             <ArrowRight2 size="16" color="#636363" className="mx-2" />
-            <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">Goals</span>
+            <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">
+              Goals
+            </span>
             <span className="mx-2">/</span>
-            <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">Invitation</span>
+            <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">
+              Invitation
+            </span>
             <span className="mx-2">/</span>
             <span className="text-gray-900 dark:text-slate-100">Messages</span>
           </div>
@@ -184,18 +404,16 @@ export const MessagesPage = () => {
             </div>
           </div>
 
-          <div className="px-4 pb-2 text-xs text-gray-500 dark:text-slate-400">
-            Conversations socket: {conversationsConnectionState}
-          </div>
-
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.map((conversation) => {
               const isActive = activeConversationId === conversation.id;
               const name = getConversationName(conversation);
               const avatarUrl = getConversationAvatar(conversation);
-              const lastText = conversation.last_message?.text ?? "No messages yet";
+              const { hasImageAttachment, hasVideoAttachment, lastText } =
+                getConversationPreview(conversation);
               const timeText = formatMessageTime(
-                conversation.last_message?.created_at ?? conversation.updated_at,
+                conversation.last_message?.created_at ??
+                  conversation.updated_at,
               );
 
               return (
@@ -232,13 +450,27 @@ export const MessagesPage = () => {
                       </h3>
                     </div>
                     <p className="text-sm font-medium text-[#616161] dark:text-slate-400 truncate">
-                      {lastText}
+                      {hasImageAttachment ? (
+                        <span className="inline-flex items-center gap-1">
+                          <ImageIcon size={14} className="shrink-0" />
+                          {lastText}
+                        </span>
+                      ) : hasVideoAttachment ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Video size={14} className="shrink-0" />
+                          {lastText}
+                        </span>
+                      ) : (
+                        lastText
+                      )}
                     </p>
                   </div>
 
                   <div className="flex flex-col gap-1.5 items-end">
-                    <span className="font-sans text-sm text-[#929191] dark:text-slate-500">{timeText}</span>
-                    {conversation.unread_count > 0 && (
+                    <span className="font-sans text-sm text-[#929191] dark:text-slate-500">
+                      {timeText}
+                    </span>
+                    {conversation.unread_count > 0 && !isActive && (
                       <div className="bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
                         {conversation.unread_count}
                       </div>
@@ -249,7 +481,16 @@ export const MessagesPage = () => {
             })}
 
             {filteredConversations.length === 0 && (
-              <div className="px-4 py-8 text-sm text-gray-500 dark:text-slate-400">No conversations found.</div>
+              <div className="px-4 py-12">
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/30 p-5 text-center">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">
+                    No matching conversations
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                    Try a different name or clear your search.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -262,153 +503,170 @@ export const MessagesPage = () => {
               : "hidden md:flex md:flex-1 md:relative",
           )}
         >
-          <div className="border-b border-gray-200 dark:border-slate-800 flex items-center justify-between py-2.5 px-4 md:px-6">
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowMobileChat(false)}
-                className="mr-3 md:hidden p-1 -ml-2"
-              >
-                <ArrowLeft2 size="24" color="#636363" />
-              </button>
+          {hasActiveConversation && (
+            <div className="border-b border-gray-200 dark:border-slate-800 flex items-center justify-between py-2.5 px-3 md:px-6 gap-2">
+              <div className="flex items-center min-w-0 flex-1">
+                <button
+                  onClick={() => setShowMobileChat(false)}
+                  className="mr-3 md:hidden p-1 -ml-2"
+                >
+                  <ArrowLeft2 size="24" color="#636363" />
+                </button>
 
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-3",
-                  hasActiveConversation ? "cursor-pointer" : "cursor-not-allowed opacity-60",
-                )}
-                onClick={handleOpenProfile}
-              >
-                {activeConversation && getConversationAvatar(activeConversation) ? (
-                  <img
-                    src={getConversationAvatar(activeConversation)}
-                    alt={getConversationName(activeConversation)}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  getInitials(
-                    activeConversation ? getConversationName(activeConversation) : "Chat",
-                  )
-                )}
-              </div>
+                <div
+                  className={cn(
+                    "w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-2 md:mr-3 shrink-0",
+                    hasActiveConversation
+                      ? "cursor-pointer"
+                      : "cursor-not-allowed opacity-60",
+                  )}
+                  onClick={handleOpenProfile}
+                >
+                  {activeConversation &&
+                  getConversationAvatar(activeConversation) ? (
+                    <img
+                      src={getConversationAvatar(activeConversation)}
+                      alt={getConversationName(activeConversation)}
+                      className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    getInitials(
+                      activeConversation
+                        ? getConversationName(activeConversation)
+                        : "Chat",
+                    )
+                  )}
+                </div>
 
-              <div>
-                <h2 className="font-semibold text-[#666668] dark:text-slate-200 text-sm">
-                  {activeConversation
-                    ? getConversationName(activeConversation)
-                    : hasConversations
-                      ? "Select a conversation"
-                      : "No conversations yet"}
-                </h2>
+                <div className="min-w-0">
+                  <h2 className="font-semibold text-[#666668] dark:text-slate-200 text-sm truncate max-w-[42vw] md:max-w-none">
+                    {activeConversation
+                      ? getConversationName(activeConversation)
+                      : hasConversations
+                        ? "Select a conversation"
+                        : "No conversations yet"}
+                  </h2>
                 {hasActiveConversation ? (
-                  <p className="text-xs text-green-500 flex items-center">
-                    Chat socket: {connectionState}
-                    {onlineUserIds.length > 0 && ` • ${onlineUserIds.length} online`}
+                  <p className="text-[11px] md:text-xs text-green-500 flex items-center truncate max-w-[50vw] md:max-w-none">
+                    {isPeerTyping
+                      ? `${peerTypingName || "Someone"} is typing...`
+                      : onlineUserIds.length > 0
+                        ? "Online"
+                        : "Conversation active"}
                   </p>
-                ) : (
-                  <p className="text-xs text-gray-400 dark:text-slate-500 flex items-center">
-                    Choose a chat from the left to start messaging.
-                  </p>
-                )}
+                  ) : (
+                    <p className="text-[11px] md:text-xs text-gray-400 dark:text-slate-500 flex items-center truncate max-w-[50vw] md:max-w-none">
+                      Choose a chat from the left to start messaging.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center text-gray-400 dark:text-slate-500 gap-1 md:gap-0">
+                <div
+                  onClick={() =>
+                    hasActiveConversation && setComingSoonFeature("voice_call")
+                  }
+                  className={cn(
+                    "size-9 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
+                    hasActiveConversation
+                      ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
+                      : "cursor-not-allowed opacity-40",
+                  )}
+                >
+                  <CallCalling
+                    size={20}
+                    className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
+                  />
+                </div>
+                <div
+                  onClick={() =>
+                    hasActiveConversation && setComingSoonFeature("video_call")
+                  }
+                  className={cn(
+                    "size-9 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
+                    hasActiveConversation
+                      ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
+                      : "cursor-not-allowed opacity-40",
+                  )}
+                >
+                  <Video
+                    size={24}
+                    strokeWidth={1.5}
+                    className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
+                  />
+                </div>
+                <div
+                  className={cn(
+                    "hidden md:flex size-12 justify-center items-center bg-white dark:bg-slate-900 rounded-md",
+                    hasActiveConversation
+                      ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
+                      : "cursor-not-allowed opacity-40",
+                  )}
+                >
+                  <Search
+                    size={20}
+                    className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="flex items-center text-gray-400 dark:text-slate-500 gap-1 md:gap-0">
-              <div
-                onClick={() => hasActiveConversation && setVidCall(true)}
-                className={cn(
-                  "size-10 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
-                  hasActiveConversation
-                    ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
-                    : "cursor-not-allowed opacity-40",
-                )}
+          {hasActiveConversation && (
+            <div className="sticky top-2.5 flex gap-6 px-6 py-4 text-sm font-medium bg-bg-gray dark:bg-slate-950">
+              <button
+                onClick={() => setActiveTab("Activities")}
+                className={
+                  activeTab === "Activities"
+                    ? "text-gray-900 dark:text-slate-100"
+                    : "text-gray-400 dark:text-slate-500"
+                }
               >
-                <CallCalling
-                  size={20}
-                  className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
-                />
-              </div>
-              <div
-                onClick={() => hasActiveConversation && setVidCall(true)}
-                className={cn(
-                  "size-10 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
-                  hasActiveConversation
-                    ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
-                    : "cursor-not-allowed opacity-40",
-                )}
+                Activities
+              </button>
+              <button
+                disabled
+                title="Shared files coming soon"
+                className="text-gray-300 dark:text-slate-600 cursor-not-allowed"
               >
-                <Video
-                  size={24}
-                  strokeWidth={1.5}
-                  className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
-                />
-              </div>
-              <div
-                className={cn(
-                  "size-10 md:size-12 flex justify-center items-center bg-white dark:bg-slate-900 rounded-md",
-                  hasActiveConversation
-                    ? "cursor-pointer hover:bg-[#4E92F421] dark:hover:bg-slate-800"
-                    : "cursor-not-allowed opacity-40",
-                )}
-              >
-                <Search
-                  size={20}
-                  className="hover:text-gray-600 dark:hover:text-slate-200 text-[#130F26] dark:text-slate-300 cursor-pointer"
-                />
-              </div>
+                Shared
+              </button>
             </div>
-          </div>
+          )}
 
-          <div className="sticky top-2.5 flex gap-6 px-6 py-4 text-sm font-medium bg-bg-gray dark:bg-slate-950">
-            <button
-              onClick={() => setActiveTab("Activities")}
-              className={
-                activeTab === "Activities" ? "text-gray-900 dark:text-slate-100" : "text-gray-400 dark:text-slate-500"
-              }
-            >
-              Activities
-            </button>
-            <button
-              disabled
-              title="Shared files coming soon"
-              className="text-gray-300 dark:text-slate-600 cursor-not-allowed"
-            >
-              Shared
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray dark:bg-slate-950 relative">
-            {activeTab === "Shared" ? (
+          <div
+            ref={messagesScrollRef}
+            className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray dark:bg-slate-950 relative"
+          >
+            {activeTab === "Shared" && hasActiveConversation ? (
               <div className="text-center text-gray-500 dark:text-slate-400">
                 <SharedFilesView />
               </div>
             ) : (
-              <div className="h-full p-4 md:p-6 space-y-6">
-                {hasActiveConversation ? (
-                  <div className="w-full flex flex-col justify-center items-center">
-                    <p className="border border-dashed border-[#CDDAE9] dark:border-slate-700 rounded-lg p-3 bg-white dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-300 w-fit">
-                      Real-time chat connected with optimistic message send and reconnect handling.
+              <div className="h-full p-4 md:p-6 pb-8 md:pb-10 space-y-6">
+                {!hasActiveConversation ? (
+                  <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center px-6">
+                    <img
+                      src={logo}
+                      alt="Padlupp"
+                      className="w-24 h-auto mb-4 opacity-90"
+                    />
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                      {hasConversations
+                        ? "Select a conversation"
+                        : "No conversations yet"}
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-2 max-w-sm">
+                      {hasConversations
+                        ? "Choose a chat from the left to start messaging."
+                        : "Connect with buddies from Buddy Finder and your chats will appear here."}
                     </p>
                   </div>
-                ) : (
-                  <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center px-6">
-                    <div className="size-16 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xl font-semibold mb-4">
-                      {hasConversations ? "CH" : "NC"}
-                    </div>
-                    <p className="text-base text-gray-700 dark:text-slate-200 font-medium">
-                      {hasConversations
-                        ? "Select a conversation to start chatting"
-                        : "You don't have any conversations yet"}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                      {hasConversations
-                        ? "Pick a chat from the list on the left."
-                        : "When you connect with a buddy, chats will appear here."}
-                    </p>
-                  </div>
-                )}
+                ) : null}
 
                 {loadingHistory && hasActiveConversation && (
-                  <div className="text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
+                  <ChatLoadingShimmer />
                 )}
 
                 {messages.map((message) => (
@@ -417,118 +675,190 @@ export const MessagesPage = () => {
                     text={message.text}
                     senderName={message.sender?.name || "User"}
                     isMe={message.sender?.id === authUser?.id}
+                    myName={currentUserName}
                     timestamp={formatMessageTime(message.created_at)}
                     pending={Boolean(message.optimistic)}
+                    attachment={message.attachment}
+                    attachmentName={message.attachment_name}
+                    attachmentMime={message.attachment_mime}
+                    goalEvent={parseGoalCreatedEvent(message.text)}
+                    onAttachmentClick={(payload) =>
+                      setAttachmentViewer(payload)
+                    }
                   />
                 ))}
 
                 {isPeerTyping && hasActiveConversation && (
-                  <div className="text-xs text-gray-500 dark:text-slate-400">The other user is typing...</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">
+                    {peerTypingName || "Someone"} is typing...
+                  </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
             )}
 
             <AnimatePresence>
-              {sideView !== "none" && hasActiveConversation && activePartnerProfile && (
-                <motion.div
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="absolute inset-0 z-20 bg-white dark:bg-slate-900"
-                >
-                  {sideView === "profile" && (
-                    <UserProfileView
-                      person={activePartnerProfile}
-                      onBack={handleBackToChat}
-                      onRate={() => setActiveModal("rate")}
-                    />
-                  )}
-                  {sideView === "progress" && (
-                    <GoalProgressView
-                      personName={
-                        activeConversation ? getConversationName(activeConversation) : "User"
-                      }
-                      onBack={handleBackToChat}
-                      onReport={() => setActiveModal("report")}
-                    />
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="p-4 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
-            <AnimatePresence>
-              {inputPopoverOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute bottom-16 left-4 bg-white dark:bg-slate-800 shadow shadow-[#A3CBFA26] rounded-lg border border-[#CDDAE9] dark:border-slate-700 p-2 w-40 z-10"
-                >
-                  <button
-                    onClick={() => {
-                      setInputPopoverOpen(false);
-                      setActiveModal("create_goal");
-                    }}
-                    className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left"
+              {sideView !== "none" &&
+                hasActiveConversation &&
+                activePartnerProfile && (
+                  <motion.div
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "100%" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="absolute inset-0 z-20 bg-white dark:bg-slate-900"
                   >
-                    <CheckCircle size={16} className="text-blue-500 mr-2" />
-                    Create goal
-                  </button>
-                  <button className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left">
-                    <FileText size={16} className="text-gray-500 dark:text-slate-400 mr-2" /> File
-                  </button>
-                </motion.div>
-              )}
+                    {sideView === "profile" && (
+                      <UserProfileView
+                        person={activePartnerProfile}
+                        onBack={handleBackToChat}
+                        onRate={() => setActiveModal("rate")}
+                      />
+                    )}
+                    {sideView === "progress" && (
+                      <GoalProgressView
+                        personName={
+                          activeConversation
+                            ? getConversationName(activeConversation)
+                            : "User"
+                        }
+                        onBack={handleBackToChat}
+                        onReport={() => setActiveModal("report")}
+                      />
+                    )}
+                  </motion.div>
+                )}
             </AnimatePresence>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() =>
-                  hasActiveConversation && setInputPopoverOpen(!inputPopoverOpen)
-                }
-                disabled={!hasActiveConversation}
-                className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg text-[#3D3D3D] dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus size={20} />
-              </button>
-              <button className="text-[#3D3D3D] dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-200 hidden md:block">
-                <Mic strokeWidth={1.5} size={20} />
-              </button>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(event) => setInputValue(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                disabled={!activeConversationId}
-                placeholder={
-                  activeConversationId ? "Type a message" : "Select a conversation"
-                }
-                className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500"
-              />
-              <button
-                disabled={!activeConversationId || sending}
-                onClick={() => void handleSend()}
-                className="p-2 bg-blue-200 dark:bg-blue-900/40 rounded-lg text-[#3D3D3D] dark:text-slate-100 hover:bg-[#B6D8FF] dark:hover:bg-blue-900/60 transition-colors disabled:opacity-60"
-              >
-                <Send size={20} className="ml-0.5" />
-              </button>
-            </div>
           </div>
+
+          {hasActiveConversation && (
+            <div className="relative pt-2 px-4 pb-5 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
+              <AnimatePresence>
+                {inputPopoverOpen && (
+                  <motion.div
+                    ref={inputPopoverRef}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute left-4 bottom-[calc(100%+0.5rem)] bg-white dark:bg-slate-800 shadow shadow-[#A3CBFA26] rounded-lg border border-[#CDDAE9] dark:border-slate-700 p-2 w-44 max-w-[calc(100vw-2rem)] z-20"
+                  >
+                    <button
+                      onClick={handleCreateGoalFromChat}
+                      className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left"
+                    >
+                      <CheckCircle size={16} className="text-blue-500 mr-2" />
+                      Create goal
+                    </button>
+                    <button
+                      onClick={handlePickFile}
+                      className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left"
+                    >
+                      <FileText
+                        size={16}
+                        className="text-gray-500 dark:text-slate-400 mr-2"
+                      />
+                      File
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() =>
+                    hasActiveConversation &&
+                    setInputPopoverOpen(!inputPopoverOpen)
+                  }
+                  disabled={!hasActiveConversation}
+                  className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg text-[#3D3D3D] dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus size={20} />
+                </button>
+                <button
+                  disabled
+                  className="text-[#3D3D3D] disabled:opacity-30 dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-200 hidden md:block"
+                >
+                  <Mic strokeWidth={1.5} size={20} />
+                </button>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(event) => setInputValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  disabled={!activeConversationId}
+                  placeholder={
+                    activeConversationId
+                      ? selectedFile
+                        ? "Add a caption (optional)"
+                        : "Type a message"
+                      : "Select a conversation"
+                  }
+                  className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500"
+                />
+                <button
+                  disabled={!activeConversationId || sending}
+                  onClick={() => void handleSend()}
+                  className="p-2 bg-blue-200 dark:bg-blue-900/40 rounded-lg text-[#3D3D3D] dark:text-slate-100 hover:bg-[#B6D8FF] dark:hover:bg-blue-900/60 transition-colors disabled:opacity-60"
+                >
+                  <Send size={20} className="ml-0.5" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={(event) => void handleFileChange(event)}
+                />
+              </div>
+              {selectedFile && (
+                <div className="mt-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 p-3 flex items-center gap-3">
+                  {selectedFilePreviewUrl &&
+                  selectedFile.type.startsWith("image/") ? (
+                    <img
+                      src={selectedFilePreviewUrl}
+                      alt={selectedFile.name}
+                      className="w-12 h-12 rounded-md object-cover"
+                    />
+                  ) : selectedFilePreviewUrl &&
+                    selectedFile.type.startsWith("video/") ? (
+                    <video
+                      src={selectedFilePreviewUrl}
+                      className="w-12 h-12 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-md bg-white dark:bg-slate-900 flex items-center justify-center">
+                      <FileText
+                        size={18}
+                        className="text-gray-500 dark:text-slate-300"
+                      />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-800 dark:text-slate-100 truncate">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      Ready to send
+                    </p>
+                  </div>
+                  <button
+                    onClick={clearSelectedFile}
+                    className="text-xs px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <CreateGoalModal
-        isOpen={activeModal === "create_goal"}
-        onClose={() => setActiveModal("none")}
-      />
       <RateUserModal
         isOpen={activeModal === "rate"}
         onClose={() => setActiveModal("none")}
@@ -537,7 +867,70 @@ export const MessagesPage = () => {
         isOpen={activeModal === "report"}
         onClose={() => setActiveModal("none")}
       />
-      <VideoCallOverlay isOpen={vidCall} onMinimize={() => setVidCall(!vidCall)} />
+      <Modal
+        isOpen={comingSoonFeature !== "none"}
+        onClose={() => setComingSoonFeature("none")}
+        showCloseButton
+        className="max-w-sm w-full p-6 top-1/2 -translate-y-1/2"
+      >
+        <div className="text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-3">
+            {comingSoonFeature === "video_call" ? (
+              <Video size={22} className="text-blue-600 dark:text-blue-400" />
+            ) : (
+              <PhoneCall
+                size={22}
+                className="text-blue-600 dark:text-blue-400"
+              />
+            )}
+          </div>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+            Feature Coming Soon
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">
+            {comingSoonFeature === "video_call"
+              ? "Video calling will be available in an upcoming release."
+              : "Voice calling will be available in an upcoming release."}
+          </p>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={Boolean(attachmentViewer)}
+        onClose={() => setAttachmentViewer(null)}
+        showCloseButton
+        className="max-w-3xl w-[92vw] p-4 md:p-6 top-1/2 -translate-y-1/2"
+      >
+        {attachmentViewer && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-3 truncate pr-6">
+              {attachmentViewer.name}
+            </h3>
+            {attachmentViewer.mime.startsWith("image/") ? (
+              <img
+                src={attachmentViewer.url}
+                alt={attachmentViewer.name}
+                className="max-h-[70vh] w-full object-contain rounded-md"
+              />
+            ) : attachmentViewer.mime.startsWith("video/") ? (
+              <video
+                src={attachmentViewer.url}
+                controls
+                autoPlay
+                className="max-h-[70vh] w-full rounded-md"
+              />
+            ) : (
+              <a
+                href={attachmentViewer.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline"
+              >
+                Open file in new tab
+              </a>
+            )}
+          </div>
+        )}
+      </Modal>
     </>
   );
 };
@@ -546,30 +939,213 @@ const MessageBubble = ({
   text,
   senderName,
   isMe,
+  myName,
   timestamp,
   pending,
+  attachment,
+  attachmentName,
+  attachmentMime,
+  goalEvent,
+  onAttachmentClick,
 }: {
-  text: string;
+  text: string | null;
   senderName: string;
   isMe: boolean;
+  myName: string;
   timestamp: string;
   pending: boolean;
+  attachment?: string | null;
+  attachmentName?: string | null;
+  attachmentMime?: string | null;
+  goalEvent?: {
+    goalId: number;
+    title: string;
+    creatorName: string;
+  } | null;
+  onAttachmentClick?: (payload: {
+    url: string;
+    mime: string;
+    name: string;
+  }) => void;
 }) => {
-  return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold">
-        {getInitials(isMe ? "Me" : senderName)}
-      </div>
-      <div>
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">
-            {isMe ? "Me" : senderName}
-          </span>
-          <span className="text-xs text-gray-400 dark:text-slate-500">{timestamp}</span>
-          {pending && <span className="text-xs text-gray-400 dark:text-slate-500">sending...</span>}
+  const navigate = useNavigate();
+  const displayName = isMe ? myName : senderName;
+  const isImage = Boolean(attachment && attachmentMime?.startsWith("image/"));
+  const isVideo = Boolean(attachment && attachmentMime?.startsWith("video/"));
+
+  if (goalEvent) {
+    return (
+      <div className="w-full py-1">
+        <div className="mx-auto max-w-[88%] md:max-w-[72%] rounded-xl border border-dashed border-[#C7D7EA] bg-[#F8FBFF] px-4 py-3 text-sm">
+          <span className="text-[#4F8EE9] font-semibold">
+            @{goalEvent.creatorName}
+          </span>{" "}
+          <span className="text-[#3B3B3B]">just created a goal</span>{" "}
+          <button
+            type="button"
+            className="text-[#4F8EE9] underline underline-offset-2 font-medium"
+            onClick={() =>
+              void navigate({
+                to: "/goals/$id",
+                params: { id: String(goalEvent.goalId) },
+              })
+            }
+          >
+            Goal details
+          </button>
         </div>
-        <div className="text-sm text-gray-800 dark:text-slate-200">{text}</div>
       </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn("flex w-full mb-1", isMe ? "justify-end" : "justify-start")}
+    >
+      <div
+        className={cn(
+          "flex gap-2.5 max-w-[88%] md:max-w-[72%]",
+          isMe ? "flex-row-reverse" : "flex-row",
+        )}
+      >
+        <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold shrink-0 mt-1">
+          {getInitials(displayName)}
+        </div>
+        <div
+          className={cn("flex flex-col", isMe ? "items-end" : "items-start")}
+        >
+          <div
+            className={cn(
+              "rounded-2xl px-3.5 py-2.5 shadow-sm",
+              isMe
+                ? "bg-blue-500 text-white rounded-tr-md"
+                : "bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700 rounded-tl-md",
+            )}
+          >
+            {!isMe && (
+              <span className="font-semibold text-xs text-gray-500 dark:text-slate-400 block mb-1">
+                {displayName}
+              </span>
+            )}
+
+            {attachment && (
+              <div className={cn("mb-2", isMe ? "" : "")}>
+                {isImage ? (
+                  <img
+                    src={attachment}
+                    alt={attachmentName || "attachment"}
+                    className="max-w-[240px] rounded-lg object-cover cursor-zoom-in"
+                    onClick={() =>
+                      onAttachmentClick?.({
+                        url: attachment,
+                        mime: attachmentMime || "image/*",
+                        name: attachmentName || "image",
+                      })
+                    }
+                  />
+                ) : isVideo ? (
+                  <video
+                    src={attachment}
+                    controls
+                    className="max-w-[260px] rounded-lg cursor-pointer"
+                    onClick={() =>
+                      onAttachmentClick?.({
+                        url: attachment,
+                        mime: attachmentMime || "video/*",
+                        name: attachmentName || "video",
+                      })
+                    }
+                  />
+                ) : (
+                  <a
+                    href={attachment}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={cn(
+                      "text-sm underline",
+                      isMe
+                        ? "text-blue-100"
+                        : "text-blue-600 dark:text-blue-400",
+                    )}
+                  >
+                    {attachmentName || "Open attachment"}
+                  </a>
+                )}
+              </div>
+            )}
+
+            {text && (
+              <div
+                className={cn(
+                  "text-sm leading-relaxed whitespace-pre-wrap break-words",
+                  isMe ? "text-white" : "text-gray-800 dark:text-slate-100",
+                )}
+              >
+                {text}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 mt-1 px-1">
+            <span
+              className={cn(
+                "text-[11px]",
+                isMe
+                  ? "text-gray-400 dark:text-slate-500"
+                  : "text-gray-400 dark:text-slate-500",
+              )}
+            >
+              {timestamp}
+            </span>
+            {pending && (
+              <span className="text-[11px] text-gray-400 dark:text-slate-500">
+                sending...
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ChatLoadingShimmer = () => {
+  const items = [
+    { id: 1, align: "left", width: "w-44" },
+    { id: 2, align: "right", width: "w-56" },
+    { id: 3, align: "left", width: "w-36" },
+    { id: 4, align: "right", width: "w-48" },
+  ] as const;
+
+  return (
+    <div className="space-y-4 animate-pulse">
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className={cn(
+            "flex w-full",
+            item.align === "right" ? "justify-end" : "justify-start",
+          )}
+        >
+          <div
+            className={cn(
+              "flex gap-2.5 max-w-[88%] md:max-w-[72%]",
+              item.align === "right" ? "flex-row-reverse" : "flex-row",
+            )}
+          >
+            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0" />
+            <div className="space-y-2">
+              <div
+                className={cn(
+                  "h-10 rounded-2xl bg-gray-200 dark:bg-slate-700",
+                  item.width,
+                )}
+              />
+              <div className="h-2 w-16 rounded bg-gray-200 dark:bg-slate-700" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

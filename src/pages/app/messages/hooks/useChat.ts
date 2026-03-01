@@ -23,8 +23,9 @@ interface UseChatState {
   conversations: Conversation[];
   messages: ChatMessageUI[];
   activeConversationId: number | null;
-  setActiveConversationId: (id: number) => void;
+  setActiveConversationId: (id: number | null) => void;
   sendMessage: (text: string) => Promise<void>;
+  sendFile: (file: File, caption?: string) => Promise<void>;
   setTyping: (isTyping: boolean) => void;
   markAllRead: () => void;
   loadingHistory: boolean;
@@ -32,6 +33,7 @@ interface UseChatState {
   connectionState: ConnectionState;
   conversationsConnectionState: ConnectionState;
   isPeerTyping: boolean;
+  peerTypingName: string | null;
   onlineUserIds: number[];
 }
 
@@ -47,7 +49,7 @@ const isChatMessage = (payload: unknown): payload is ChatMessage => {
   return (
     typeof value.id === "number" &&
     typeof value.conversation === "number" &&
-    typeof value.text === "string" &&
+    (typeof value.text === "string" || value.text === null) &&
     typeof value.created_at === "string"
   );
 };
@@ -70,6 +72,39 @@ const dedupeMessages = (messages: ChatMessageUI[]) => {
   });
 };
 
+const normalizeOptionalText = (value: string | null | undefined) =>
+  (value ?? "").trim();
+
+const sortConversations = (items: Conversation[]) =>
+  [...items].sort((a, b) => {
+    const byUpdated =
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    if (byUpdated !== 0) return byUpdated;
+    return b.id - a.id;
+  });
+
+const hasConversationListChanged = (
+  prev: Conversation[],
+  next: Conversation[],
+) => {
+  if (prev.length !== next.length) return true;
+
+  for (let i = 0; i < prev.length; i += 1) {
+    const prevItem = prev[i];
+    const nextItem = next[i];
+    if (
+      prevItem.id !== nextItem.id ||
+      prevItem.updated_at !== nextItem.updated_at ||
+      prevItem.unread_count !== nextItem.unread_count ||
+      (prevItem.last_message?.id ?? null) !== (nextItem.last_message?.id ?? null)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const useChat = (): UseChatState => {
   const token = useAuthStore((state) => state.token);
   const authUserId = useAuthStore((state) => state.user?.id ?? null);
@@ -88,6 +123,7 @@ export const useChat = (): UseChatState => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [sending, setSending] = useState(false);
   const [isPeerTyping, setIsPeerTyping] = useState(false);
+  const [peerTypingName, setPeerTypingName] = useState<string | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<number[]>([]);
 
   const conversationsWsRef = useRef<WebSocket | null>(null);
@@ -98,24 +134,47 @@ export const useChat = (): UseChatState => {
   const sendFallbackTimersRef = useRef<Record<string, number>>({});
 
   const activeConversationIdRef = useRef<number | null>(null);
+  const conversationsRef = useRef<Conversation[]>([]);
   useEffect(() => {
     activeConversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  const createOptimisticSender = useCallback(
+    (userId: number) => ({
+      id: userId,
+      email: "",
+      phone: "",
+      name: "Me",
+      avatar: "",
+      phone_verified: false,
+      email_verified: false,
+      preferred_notification_email: "",
+      preferred_notification_phone: "",
+    }),
+    [],
+  );
 
   const upsertConversation = useCallback((conversation: Conversation) => {
+    const normalizedConversation =
+      activeConversationIdRef.current === conversation.id
+        ? { ...conversation, unread_count: 0 }
+        : conversation;
+
     setConversations((prev) => {
-      const exists = prev.some((item) => item.id === conversation.id);
+      const exists = prev.some((item) => item.id === normalizedConversation.id);
       if (!exists) {
-        return sortByCreatedAt([conversation, ...prev]).reverse();
+        return sortConversations([normalizedConversation, ...prev]);
       }
-      return prev
-        .map((item) =>
-          item.id === conversation.id ? { ...item, ...conversation } : item,
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-        );
+      return sortConversations(
+        prev.map((item) =>
+          item.id === normalizedConversation.id
+            ? { ...item, ...normalizedConversation }
+            : item,
+        ),
+      );
     });
   }, []);
 
@@ -131,6 +190,10 @@ export const useChat = (): UseChatState => {
     (conversationId: number, tempId: string, message: ChatMessage) => {
       setMessagesByConversation((prev) => {
         const current = prev[conversationId] ?? [];
+        const tempMessage = current.find((item) => item.id === tempId);
+        if (typeof tempMessage?.attachment === "string" && tempMessage.attachment.startsWith("blob:")) {
+          URL.revokeObjectURL(tempMessage.attachment);
+        }
         const replaced = current.map((item) =>
           item.id === tempId ? { ...message, optimistic: false } : item,
         );
@@ -148,6 +211,10 @@ export const useChat = (): UseChatState => {
     (conversationId: number, tempId: string) => {
       setMessagesByConversation((prev) => {
         const current = prev[conversationId] ?? [];
+        const tempMessage = current.find((item) => item.id === tempId);
+        if (typeof tempMessage?.attachment === "string" && tempMessage.attachment.startsWith("blob:")) {
+          URL.revokeObjectURL(tempMessage.attachment);
+        }
         return {
           ...prev,
           [conversationId]: current.filter((item) => item.id !== tempId),
@@ -170,11 +237,22 @@ export const useChat = (): UseChatState => {
 
         let matchedTempId: string | null = null;
         const withPossibleReplacement = current.map((item) => {
+          const senderMatches =
+            item.sender.id === message.sender.id || item.sender.id === 0;
+          const textMatches =
+            normalizeOptionalText(item.text) ===
+            normalizeOptionalText(message.text);
+          const attachmentMatches =
+            !item.attachment_name ||
+            !message.attachment_name ||
+            item.attachment_name === message.attachment_name;
+
           const isPotentialMatch =
             typeof item.id === "string" &&
             item.optimistic &&
-            item.sender.id === message.sender.id &&
-            item.text === message.text;
+            senderMatches &&
+            textMatches &&
+            attachmentMatches;
 
           if (!isPotentialMatch || matchedTempId) {
             return item;
@@ -201,7 +279,7 @@ export const useChat = (): UseChatState => {
         };
       });
 
-      const existingConversation = conversations.find(
+      const existingConversation = conversationsRef.current.find(
         (conversation) => conversation.id === conversationId,
       );
 
@@ -211,12 +289,15 @@ export const useChat = (): UseChatState => {
         partner_name: existingConversation?.partner_name ?? null,
         partner_avatar: existingConversation?.partner_avatar ?? null,
         last_message: message,
-        unread_count: existingConversation?.unread_count ?? 0,
+        unread_count:
+          activeConversationIdRef.current === conversationId
+            ? 0
+            : (existingConversation?.unread_count ?? 0),
         created_at: existingConversation?.created_at ?? message.created_at,
         updated_at: message.updated_at,
       });
     },
-    [clearFallbackTimer, conversations, upsertConversation],
+    [clearFallbackTimer, upsertConversation],
   );
 
   const fetchHistory = useCallback(async (conversationId: number) => {
@@ -269,24 +350,35 @@ export const useChat = (): UseChatState => {
 
       const data = payload as Record<string, unknown>;
       if (data.type === "conversations" && Array.isArray(data.conversations)) {
-        const next = data.conversations.filter(
-          (item): item is Conversation => !!item && typeof item === "object",
-        );
-        setConversations(
-          next.sort(
-            (a, b) =>
-              new Date(b.updated_at).getTime() -
-              new Date(a.updated_at).getTime(),
+        const next = sortConversations(
+          data.conversations.filter(
+            (item): item is Conversation => !!item && typeof item === "object",
           ),
+        ).map((conversation) =>
+          activeConversationIdRef.current === conversation.id
+            ? { ...conversation, unread_count: 0 }
+            : conversation,
         );
-        if (!activeConversationIdRef.current && next.length > 0) {
-          setActiveConversationIdState(next[0].id);
-        }
+        setConversations((prev) =>
+          hasConversationListChanged(prev, next) ? next : prev,
+        );
         return;
       }
 
       if (data.type === "conversation_update" && data.conversation) {
-        upsertConversation(data.conversation as Conversation);
+        const nextConversationRaw = data.conversation as Conversation;
+        const nextConversation =
+          activeConversationIdRef.current === nextConversationRaw.id
+            ? { ...nextConversationRaw, unread_count: 0 }
+            : nextConversationRaw;
+        upsertConversation(nextConversation);
+
+        if (
+          activeConversationIdRef.current === nextConversation.id &&
+          nextConversation.last_message
+        ) {
+          appendMessage(nextConversation.last_message);
+        }
       }
     };
 
@@ -303,7 +395,7 @@ export const useChat = (): UseChatState => {
     ws.onerror = () => {
       ws.close();
     };
-  }, [token, upsertConversation]);
+  }, [appendMessage, token, upsertConversation]);
 
   const connectChatSocket = useCallback(
     (conversationId: number) => {
@@ -341,8 +433,11 @@ export const useChat = (): UseChatState => {
         if (data.type === "typing") {
           const userId = typeof data.user_id === "number" ? data.user_id : null;
           const isTyping = Boolean(data.is_typing);
+          const userName =
+            typeof data.user_name === "string" ? data.user_name.trim() : "";
           if (userId && userId !== authUserId) {
             setIsPeerTyping(isTyping);
+            setPeerTypingName(isTyping ? userName || "Someone" : null);
           }
           return;
         }
@@ -363,6 +458,9 @@ export const useChat = (): UseChatState => {
 
           if (data.sender.id !== authUserId && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "delivered", message_id: data.id }));
+            if (activeConversationIdRef.current === conversationId) {
+              ws.send(JSON.stringify({ type: "read_all" }));
+            }
           }
           return;
         }
@@ -401,6 +499,7 @@ export const useChat = (): UseChatState => {
     if (!token || !activeConversationId) return;
 
     setIsPeerTyping(false);
+    setPeerTypingName(null);
     connectChatSocket(activeConversationId);
     fetchHistory(activeConversationId);
 
@@ -419,7 +518,7 @@ export const useChat = (): UseChatState => {
     [],
   );
 
-  const setActiveConversationId = useCallback((id: number) => {
+  const setActiveConversationId = useCallback((id: number | null) => {
     setActiveConversationIdState(id);
   }, []);
 
@@ -437,18 +536,12 @@ export const useChat = (): UseChatState => {
       const optimistic: ChatMessageUI = {
         id: tempId,
         conversation: activeConversationId,
-        sender: {
-          id: userId,
-          email: "",
-          phone: "",
-          name: "Me",
-          avatar: "",
-          phone_verified: false,
-          email_verified: false,
-          preferred_notification_email: "",
-          preferred_notification_phone: "",
-        },
+        sender: createOptimisticSender(userId),
         text: normalized,
+        attachment: null,
+        attachment_name: null,
+        attachment_mime: null,
+        attachment_size: null,
         is_read: false,
         created_at: nowISO,
         updated_at: nowISO,
@@ -470,16 +563,19 @@ export const useChat = (): UseChatState => {
       if (socketOpen) {
         ws?.send(JSON.stringify({ type: "message", text: normalized }));
 
-        sendFallbackTimersRef.current[tempId] = window.setTimeout(async () => {
-          try {
-            const created = await createMessage({
-              conversation: activeConversationId,
-              text: normalized,
-            });
-            replaceTempMessage(activeConversationId, tempId, created);
-          } catch {
-            removeTempMessage(activeConversationId, tempId);
-          }
+        // If no server echo arrives in time, clear optimistic UI instead of creating
+        // a second REST message that could duplicate the websocket event.
+        sendFallbackTimersRef.current[tempId] = window.setTimeout(() => {
+          setMessagesByConversation((prev) => {
+            const current = prev[activeConversationId] ?? [];
+            return {
+              ...prev,
+              [activeConversationId]: current.map((item) =>
+                item.id === tempId ? { ...item, optimistic: false } : item,
+              ),
+            };
+          });
+          clearFallbackTimer(tempId);
         }, SEND_TIMEOUT_MS);
 
         setSending(false);
@@ -498,7 +594,97 @@ export const useChat = (): UseChatState => {
         setSending(false);
       }
     },
-    [activeConversationId, authUserId, removeTempMessage, replaceTempMessage],
+    [activeConversationId, authUserId, createOptimisticSender, removeTempMessage, replaceTempMessage],
+  );
+
+  const sendFile = useCallback(
+    async (file: File, caption?: string) => {
+      if (!activeConversationId) return;
+
+      const fileToBase64 = async (inputFile: File) =>
+        await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = String(reader.result || "");
+            const base64 = result.includes(",") ? result.split(",")[1] : result;
+            resolve(base64);
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(inputFile);
+        });
+
+      const userId = authUserId ?? 0;
+      const tempId = `temp-file-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const nowISO = new Date().toISOString();
+      const localUrl = URL.createObjectURL(file);
+      const safeCaption = caption?.trim() || "";
+
+      const optimistic: ChatMessageUI = {
+        id: tempId,
+        conversation: activeConversationId,
+        sender: createOptimisticSender(userId),
+        text: safeCaption,
+        attachment: localUrl,
+        attachment_name: file.name,
+        attachment_mime: file.type || null,
+        attachment_size: file.size,
+        is_read: false,
+        created_at: nowISO,
+        updated_at: nowISO,
+        optimistic: true,
+      };
+
+      setMessagesByConversation((prev) => ({
+        ...prev,
+        [activeConversationId]: dedupeMessages([
+          ...(prev[activeConversationId] ?? []),
+          optimistic,
+        ]),
+      }));
+
+      setSending(true);
+      try {
+        const base64 = await fileToBase64(file);
+        const serialized = JSON.stringify({
+          type: "file",
+          filename: file.name,
+          content_type: file.type || "application/octet-stream",
+          data: base64,
+          text: safeCaption,
+        });
+
+        const ws = chatWsRef.current;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(serialized);
+
+          sendFallbackTimersRef.current[tempId] = window.setTimeout(() => {
+            setMessagesByConversation((prev) => {
+              const current = prev[activeConversationId] ?? [];
+              return {
+                ...prev,
+                [activeConversationId]: current.map((item) =>
+                  item.id === tempId ? { ...item, optimistic: false } : item,
+                ),
+              };
+            });
+            clearFallbackTimer(tempId);
+          }, SEND_TIMEOUT_MS);
+        } else {
+          pendingSendQueueRef.current.push(serialized);
+        }
+      } catch {
+        removeTempMessage(activeConversationId, tempId);
+      } finally {
+        setSending(false);
+      }
+    },
+    [
+      activeConversationId,
+      authUserId,
+      clearFallbackTimer,
+      createOptimisticSender,
+      removeTempMessage,
+    ],
   );
 
   const sendEvent = useCallback((payload: object) => {
@@ -535,6 +721,7 @@ export const useChat = (): UseChatState => {
     activeConversationId,
     setActiveConversationId,
     sendMessage,
+    sendFile,
     setTyping,
     markAllRead,
     loadingHistory,
@@ -542,6 +729,7 @@ export const useChat = (): UseChatState => {
     connectionState,
     conversationsConnectionState,
     isPeerTyping,
+    peerTypingName,
     onlineUserIds,
   };
 };

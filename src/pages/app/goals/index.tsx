@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { startOfToday, isSameDay, parseISO, format } from "date-fns";
 import { Target, Plus, ClipboardList } from "lucide-react"; // Added Icons
@@ -13,6 +13,17 @@ import Button from "@/components/core/buttons";
 import { useGoals } from "./hooks/useGoals";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
 import moment from "moment";
+
+const formatGoalTime = (timeValue?: string | null) => {
+  if (!timeValue) return "";
+  const [h = "0", m = "0"] = timeValue.split(":");
+  const hours = Number(h);
+  const minutes = Number(m);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return timeValue;
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
 
 // Initial Empty Board Structure
 const EMPTY_BOARD: BoardData = {
@@ -32,9 +43,34 @@ const EMPTY_BOARD: BoardData = {
 };
 
 export const GoalsPage = () => {
+  const OPEN_CREATE_GOAL_FROM_CHAT_KEY = "open_create_goal_from_chat";
+  const CREATE_GOAL_CONVERSATION_ID_KEY = "create_goal_conversation_id";
   const [activeTab, setActiveTab] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [chatConversationId, setChatConversationId] = useState<number | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (localStorage.getItem(OPEN_CREATE_GOAL_FROM_CHAT_KEY) === "1") {
+      const conversationRaw = localStorage.getItem(
+        CREATE_GOAL_CONVERSATION_ID_KEY,
+      );
+      const conversationParsed = Number(conversationRaw);
+      setChatConversationId(
+        Number.isFinite(conversationParsed) ? conversationParsed : null,
+      );
+      setIsModalOpen(true);
+      localStorage.removeItem(OPEN_CREATE_GOAL_FROM_CHAT_KEY);
+      localStorage.removeItem(CREATE_GOAL_CONVERSATION_ID_KEY);
+    }
+  }, []);
+
+  const handleCloseCreateModal = () => {
+    setIsModalOpen(false);
+    setChatConversationId(null);
+  };
 
   // 1. Fetch Goals
   const { data: goalsData, isLoading } = useGoals({ ordering: "target_date" });
@@ -63,13 +99,20 @@ export const GoalsPage = () => {
       // 3. Compare Strings directly
       if (selectedDateStr && goalDateStr !== selectedDateStr) return;
 
+      const normalizedImportance = goal.importance?.trim() || "Regular";
+      const normalizedStatus = goal.status?.trim() || "To-do";
+      const normalizedCategory = goal.category?.trim() || "";
+
       const item = {
         id: goal.id.toString(),
         title: goal.title,
         description: goal.description,
-        tags: ["Regular"],
+        tags: [normalizedImportance, normalizedStatus, normalizedCategory].filter(
+          (tag): tag is string => Boolean(tag && tag.trim()),
+        ),
         // For display, we can still parse it to look nice
         date: format(parseISO(goal.target_date), "dd MMM YYY"),
+        time: formatGoalTime(goal.start_time),
         timeLeft: moment(goal.target_date).endOf("day").fromNow(),
       };
 
@@ -250,7 +293,8 @@ export const GoalsPage = () => {
 
       <CreateGoalModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseCreateModal}
+        conversationId={chatConversationId}
       />
     </div>
   );

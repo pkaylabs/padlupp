@@ -23,14 +23,22 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
   const normalizedQuery = searchQuery.trim();
   const isSearchMode = normalizedQuery.length > 0;
 
-  const { data: potentialBuddies, isLoading: isFinderLoading, isError: isFinderError } =
-    useBuddyFinder();
-  const { data: searchedBuddies, isLoading: isSearchLoading, isError: isSearchError } =
-    useBuddySearch(normalizedQuery);
+  const {
+    data: potentialBuddies,
+    isLoading: isFinderLoading,
+    isError: isFinderError,
+  } = useBuddyFinder();
+  const {
+    data: searchedBuddies,
+    isLoading: isSearchLoading,
+    isError: isSearchError,
+  } = useBuddySearch(normalizedQuery);
 
   const sourceBuddies = isSearchMode ? searchedBuddies : potentialBuddies;
   const isLoading = isSearchMode ? isSearchLoading : isFinderLoading;
   const isError = isSearchMode ? isSearchError : isFinderError;
+
+  console.log(sourceBuddies, "buddies");
 
   const people: any = (sourceBuddies || []).map((buddy: any) => ({
     id: buddy.user.id.toString(), // Ensure ID matches
@@ -40,7 +48,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     age: 0,
     compatibility: 0,
     rating: 0,
-    seeking: buddy.experience || "No experience added yet.",
+    seeking: buddy.bio || "No bio added yet.",
     interests: Array.isArray(buddy.interests)
       ? buddy.interests.map((interest: string) => ({
           interest,
@@ -78,7 +86,9 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
         <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
           <SearchX size={32} className="text-gray-400 dark:text-slate-500" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">No buddies found</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+          No buddies found
+        </h3>
         <p className="text-gray-500 dark:text-slate-400 max-w-xs mt-1">
           {isSearchMode
             ? "No results match your search. Try another keyword."
@@ -96,11 +106,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     >
       <AnimatePresence mode="wait">
         {activeTab === "People" ? (
-          <PeopleCardStack
-            key="people"
-            people={people}
-            onInvite={onInvite}
-          />
+          <PeopleCardStack key="people" people={people} onInvite={onInvite} />
         ) : (
           <CommunityCardStack
             key="community"

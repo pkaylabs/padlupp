@@ -17,6 +17,7 @@ export default defineConfig({
         host: true,
         strictPort: true,
         port: 8080,
+        allowedHosts: ["nonnescient-nonprobably-heaven.ngrok-free.dev"],
     },
     resolve: {
         alias: [{ find: "@", replacement: path.resolve(__dirname, "src") }],

@@ -15,9 +15,13 @@ export interface User {
 export interface Goal {
   id: number;
   user: User;
+  partnership?: number | null;
   title: string;
+  category?: string | null;
+  importance?: string | null;
   description: string;
   start_date: string; // ISO Date string
+  start_time?: string | null;
   target_date: string; // ISO Date string
   is_active: boolean;
   status: string;
@@ -45,9 +49,13 @@ export interface CreateGoalPayload {
   title: string;
   description: string;
   start_date: string; // Format: YYYY-MM-DD
+  start_time?: string; // Format: HH:mm:ss
   target_date: string; // Format: YYYY-MM-DD
+  category?: string;
+  importance?: string;
   is_active: boolean;
   status: string;
+  conversation?: number;
 }
 
 export interface Task {

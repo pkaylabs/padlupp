@@ -1,7 +1,7 @@
 // src/components/goals/KanbanCard.tsx
 import React from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Clock, CheckCircle2 } from "lucide-react";
+import { AlarmClock, Clock, CheckCircle2 } from "lucide-react";
 import { cn } from "@/utils/cs";
 import { GoalStatus, Task } from "@/constants/kanban-data";
 import { Calendar } from "iconsax-reactjs";
@@ -18,6 +18,47 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   index,
   columnId,
 }) => {
+  const timeText = task.time?.trim() || "No time set";
+
+  const getTagClassName = (tag: string) => {
+    const normalized = tag.toLowerCase();
+    if (normalized.includes("career")) return "bg-pink-100 text-[#F56FAD]";
+    if (normalized.includes("high") || normalized.includes("urgent")) {
+      return "bg-red-50 text-[#C51616]";
+    }
+    if (
+      normalized.includes("in progress") ||
+      normalized.includes("in-progress")
+    ) {
+      return "bg-orange-50 text-[#EB612C]";
+    }
+    if (normalized.includes("completed")) return "bg-cyan-50 text-[#1DB9C3]";
+    if (normalized.includes("to-do") || normalized.includes("todo")) {
+      return "bg-blue-50 text-[#4E92F4]";
+    }
+    return "bg-green-50 text-[#60BF9D]";
+  };
+
+  const dateTimeFooter = (
+    <div className="pt-2 border-t border-gray-50 dark:border-slate-700 text-[#44424C] dark:text-slate-300">
+      <div className="bg-[#F5F6F8] dark:bg-slate-700 flex items-center justify-between gap-1.5 py-2.5 px-2 rounded-[10.25px]">
+        <div className="flex items-center gap-1.5 text-xs">
+          <div className="size-6 flex justify-center items-center bg-white dark:bg-slate-800 border border-[#D6D6D6] dark:border-slate-600 shadow rounded-full">
+            <Calendar color="#3D89FB" size={14} />
+          </div>
+
+          <span>{task.date}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs">
+          <div className="size-6 flex justify-center items-center bg-white dark:bg-slate-800 border border-[#D6D6D6] dark:border-slate-600 shadow rounded-full">
+            <AlarmClock size={14} className="text-[#F29268]" />
+          </div>
+          <span>{timeText}</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
@@ -71,11 +112,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                   key={tag}
                   className={cn(
                     "px-2.5 py-1 rounded-full text-[10px] font-medium",
-                    tag.includes("Career")
-                      ? "bg-pink-100 text-[#F56FAD] "
-                      : tag.includes("High")
-                        ? "bg-red-50 text-[#C51616] "
-                        : "bg-green-50 text-[#60BF9D] "
+                    getTagClassName(tag),
                   )}
                 >
                   {tag}
@@ -85,48 +122,38 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 
             {/* Footer: Progress Bar OR Date/Time */}
             {columnId === "inProgress" && typeof task.progress === "number" ? (
-              <div className="pt-2 border-t border-gray-50 dark:border-slate-700">
-                <div className=" bg-[#F5F6F8] dark:bg-slate-700 flex items-center justify-between gap-1.5 py-3.5 px-2 rounded-[10.25px] ">
-                  <div className="h-1.5 w-full bg-[#EEEEEE] dark:bg-slate-600 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-orange-500 rounded-full"
-                      style={{ width: `${task.progress}%` }}
-                    />
+              <>
+                <div className="pt-2 border-t border-gray-50 dark:border-slate-700">
+                  <div className=" bg-[#F5F6F8] dark:bg-slate-700 flex items-center justify-between gap-1.5 py-3.5 px-2 rounded-[10.25px] ">
+                    <div className="h-1.5 w-full bg-[#EEEEEE] dark:bg-slate-600 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-orange-500 rounded-full"
+                        style={{ width: `${task.progress}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <span className="text-xs font-bold text-gray-700 dark:text-slate-100">
+                        {task.progress}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-end">
-                    <span className="text-xs font-bold text-gray-700 dark:text-slate-100">
-                      {task.progress}%
+                </div>
+                {dateTimeFooter}
+              </>
+            ) : columnId === "completed" ? (
+              <>
+                <div className="pt-2 border-t border-gray-50 dark:border-slate-700">
+                  <div className="bg-[#F5F6F8] dark:bg-slate-700 flex items-center gap-1.5 py-3.5 px-2 rounded-[10.25px]">
+                    <CheckCircle2 size={16} className="text-green-500" />
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                      Done
                     </span>
                   </div>
                 </div>
-              </div>
-            ) : columnId === "completed" ? (
-              <div className="pt-2 border-t border-gray-50 dark:border-slate-700">
-                <div className="bg-[#F5F6F8] dark:bg-slate-700 flex items-center gap-1.5 py-3.5 px-2 rounded-[10.25px]">
-                  <CheckCircle2 size={16} className="text-green-500" />
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                    Done
-                  </span>
-                </div>
-              </div>
+                {dateTimeFooter}
+              </>
             ) : (
-              <div className="pt-2 border-t border-gray-50 dark:border-slate-700 text-[#44424C] dark:text-slate-300">
-                <div className="bg-[#F5F6F8] dark:bg-slate-700 flex items-center justify-between gap-1.5 py-2.5 px-2 rounded-[10.25px]">
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <div className="size-6 flex justify-center items-center bg-white dark:bg-slate-800 border border-[#D6D6D6] dark:border-slate-600 shadow rounded-full">
-                      <Calendar color="#3D89FB" size={14} />
-                    </div>
-
-                    <span>{task.date}</span>
-                  </div>
-                  {task.time && (
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <Clock size={14} />
-                      <span>{task.time}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              dateTimeFooter
             )}
           </div>
         </Link>

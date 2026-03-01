@@ -78,7 +78,10 @@ const SHARED_FILES_MOCK: SharedFile[] = [
 
 // --- Helper to get Icon ---
 const FileIcon = ({ type }: { type: FileType }) => {
-  const iconProps = { size: 24, className: "text-gray-700 dark:text-slate-300" };
+  const iconProps = {
+    size: 24,
+    className: "text-gray-700 dark:text-slate-300",
+  };
 
   switch (type) {
     case "video":
@@ -150,7 +153,9 @@ export const UserProfileView = ({
           )}
           {hasRating && (
             <div className="flex items-center justify-center gap-1">
-              <span className="text-gray-500 dark:text-slate-400 text-base">Rating:</span>
+              <span className="text-gray-500 dark:text-slate-400 text-base">
+                Rating:
+              </span>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Star
@@ -173,10 +178,10 @@ export const UserProfileView = ({
             <div className="bg-primary-100/50 p-1 rounded-full ">
               <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
             </div>
-              <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
-                Seeking for accountability on
-              </span>
-            </div>
+            <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
+              Personal Bio
+            </span>
+          </div>
           <span className="font-semibold text-base text-dark-gray dark:text-slate-200 pl-4">
             {person.seeking || "No profile details available yet."}
           </span>
@@ -246,7 +251,10 @@ export const GoalProgressView = ({
             onClick={() => setMenuOpen(!menuOpen)}
             className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
           >
-            <MoreVertical size={20} className="text-gray-600 dark:text-slate-300" />
+            <MoreVertical
+              size={20}
+              className="text-gray-600 dark:text-slate-300"
+            />
           </button>
 
           {menuOpen && (
@@ -336,7 +344,10 @@ export const SharedFilesView: React.FC = () => {
               <div className="w-10 h-10 flex items-center justify-center">
                 {/* Custom audio icon logic if standard Mic doesn't fit, otherwise generic icons */}
                 {file.type === "audio" ? (
-                  <Mic size={24} className="text-gray-700 dark:text-slate-300" />
+                  <Mic
+                    size={24}
+                    className="text-gray-700 dark:text-slate-300"
+                  />
                 ) : (
                   <FileIcon type={file.type} />
                 )}
