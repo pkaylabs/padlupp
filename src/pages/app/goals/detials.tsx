@@ -20,6 +20,7 @@ import Button from "@/components/core/buttons";
 import { useGoal } from "./hooks/useGoal";
 import { useCreateTask, useTasks } from "./hooks/useTasks";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
+import { Modal } from "@/components/core/modal";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
@@ -28,6 +29,8 @@ export function GoalDetailsPage() {
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(startOfToday());
+  const [isAddSubtaskModalOpen, setIsAddSubtaskModalOpen] = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
 
   // Data Fetching
   const { data: goal, isLoading: loadingGoal, isError } = useGoal(id);
@@ -37,7 +40,7 @@ export function GoalDetailsPage() {
 
   // Mutations
   const { mutate: updateGoal } = useUpdateGoal();
-  const { mutate: createTask, isPending: isCreatingTask } = useCreateTask();
+  const { mutateAsync: createTask, isPending: isCreatingTask } = useCreateTask();
 
   // Filter tasks for this goal
   const goalSubtasks =
@@ -54,16 +57,28 @@ export function GoalDetailsPage() {
   };
 
   const handleAddSubtask = () => {
-    // In a real app, this would be a modal or inline input
-    const title = prompt("Enter subtask title:");
-    if (title && goal) {
-      createTask({
-        goal: goal.id,
-        title: title,
-        status: "planned",
-        due_at: new Date().toISOString(), // Default to today
-      });
-    }
+    setIsAddSubtaskModalOpen(true);
+  };
+
+  const handleCloseAddSubtaskModal = () => {
+    if (isCreatingTask) return;
+    setIsAddSubtaskModalOpen(false);
+    setNewSubtaskTitle("");
+  };
+
+  const handleCreateSubtask = async () => {
+    const title = newSubtaskTitle.trim();
+    if (!title || !goal) return;
+
+    await createTask({
+      goal: goal.id,
+      title,
+      status: "planned",
+      due_at: new Date().toISOString(),
+    });
+
+    setIsAddSubtaskModalOpen(false);
+    setNewSubtaskTitle("");
   };
 
   // --- LOADING STATE (SKELETON) ---
@@ -360,6 +375,67 @@ export function GoalDetailsPage() {
           onDateSelect={setSelectedDate}
         />
       </div>
+
+      <Modal
+        isOpen={isAddSubtaskModalOpen}
+        onClose={handleCloseAddSubtaskModal}
+        showCloseButton
+        className="top-1/2 -translate-y-1/2 w-[92vw] sm:w-[480px] p-6"
+      >
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Add subtask
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              Add a clear, actionable subtask for this goal.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="subtask-title"
+              className="text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
+              Subtask title
+            </label>
+            <input
+              id="subtask-title"
+              type="text"
+              autoFocus
+              value={newSubtaskTitle}
+              onChange={(event) => setNewSubtaskTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void handleCreateSubtask();
+                }
+              }}
+              placeholder="e.g. Draft project outline"
+              className="mt-2 w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleCloseAddSubtaskModal}
+              disabled={isCreatingTask}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCreateSubtask()}
+              disabled={!newSubtaskTitle.trim() || isCreatingTask}
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {isCreatingTask ? "Adding..." : "Add Subtask"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

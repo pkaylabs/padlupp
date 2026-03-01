@@ -100,6 +100,7 @@ export const MessagesPage = () => {
   const navigate = useNavigate();
   const {
     conversations,
+    hasReceivedConversationsSnapshot,
     messages,
     activeConversationId,
     setActiveConversationId,
@@ -191,6 +192,9 @@ export const MessagesPage = () => {
 
   const hasConversations = conversations.length > 0;
   const hasActiveConversation = Boolean(activeConversation);
+  const hasSearchQuery = normalizeSearchText(searchValue).length > 0;
+  const showConversationListShimmer =
+    !hasReceivedConversationsSnapshot && !hasSearchQuery;
 
   useEffect(() => {
     if (!activeConversationId) return;
@@ -253,6 +257,10 @@ export const MessagesPage = () => {
     const nextCount = messages.length;
     const previousCount = lastMessageCountRef.current;
     const hasNewMessage = nextCount > previousCount;
+    const latestMessage = nextCount > 0 ? messages[nextCount - 1] : null;
+    const latestIsMine =
+      latestMessage?.sender?.id === authUser?.id ||
+      latestMessage?.sender?.name === "Me";
 
     if (forceScrollOnLoadRef.current && nextCount > 0) {
       // Force initial bottom position after history loads for the conversation.
@@ -260,12 +268,12 @@ export const MessagesPage = () => {
       window.setTimeout(() => scrollToBottom("auto"), 80);
       window.setTimeout(() => scrollToBottom("auto"), 180);
       forceScrollOnLoadRef.current = false;
-    } else if (hasNewMessage && isNearBottom()) {
+    } else if (hasNewMessage && (latestIsMine || isNearBottom())) {
       window.requestAnimationFrame(() => scrollToBottom("smooth"));
     }
 
     lastMessageCountRef.current = nextCount;
-  }, [activeConversationId, messages.length]);
+  }, [activeConversationId, authUser?.id, messages]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -405,89 +413,97 @@ export const MessagesPage = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.map((conversation) => {
-              const isActive = activeConversationId === conversation.id;
-              const name = getConversationName(conversation);
-              const avatarUrl = getConversationAvatar(conversation);
-              const { hasImageAttachment, hasVideoAttachment, lastText } =
-                getConversationPreview(conversation);
-              const timeText = formatMessageTime(
-                conversation.last_message?.created_at ??
-                  conversation.updated_at,
-              );
+            {showConversationListShimmer ? (
+              <ConversationListShimmer />
+            ) : (
+              filteredConversations.map((conversation) => {
+                const isActive = activeConversationId === conversation.id;
+                const name = getConversationName(conversation);
+                const avatarUrl = getConversationAvatar(conversation);
+                const { hasImageAttachment, hasVideoAttachment, lastText } =
+                  getConversationPreview(conversation);
+                const timeText = formatMessageTime(
+                  conversation.last_message?.created_at ??
+                    conversation.updated_at,
+                );
 
-              return (
-                <div
-                  key={conversation.id}
-                  onClick={() => {
-                    setActiveConversationId(conversation.id);
-                    setSideView("none");
-                    setShowMobileChat(true);
-                  }}
-                  className={cn(
-                    "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors relative",
-                    isActive ? "bg-primary-100/50 dark:bg-slate-800" : "",
-                  )}
-                >
-                  <div className="relative mr-3 shrink-0">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
-                        {getInitials(name)}
-                      </div>
+                return (
+                  <div
+                    key={conversation.id}
+                    onClick={() => {
+                      setActiveConversationId(conversation.id);
+                      setSideView("none");
+                      setShowMobileChat(true);
+                    }}
+                    className={cn(
+                      "flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors relative",
+                      isActive ? "bg-primary-100/50 dark:bg-slate-800" : "",
                     )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between mb-1">
-                      <h3 className="text-sm font-medium text-dark-gray dark:text-slate-100 truncate">
-                        {name}
-                      </h3>
-                    </div>
-                    <p className="text-sm font-medium text-[#616161] dark:text-slate-400 truncate">
-                      {hasImageAttachment ? (
-                        <span className="inline-flex items-center gap-1">
-                          <ImageIcon size={14} className="shrink-0" />
-                          {lastText}
-                        </span>
-                      ) : hasVideoAttachment ? (
-                        <span className="inline-flex items-center gap-1">
-                          <Video size={14} className="shrink-0" />
-                          {lastText}
-                        </span>
+                  >
+                    <div className="relative mr-3 shrink-0">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
                       ) : (
-                        lastText
+                        <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
+                          {getInitials(name)}
+                        </div>
                       )}
-                    </p>
-                  </div>
+                    </div>
 
-                  <div className="flex flex-col gap-1.5 items-end">
-                    <span className="font-sans text-sm text-[#929191] dark:text-slate-500">
-                      {timeText}
-                    </span>
-                    {conversation.unread_count > 0 && !isActive && (
-                      <div className="bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
-                        {conversation.unread_count}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between mb-1">
+                        <h3 className="text-sm font-medium text-dark-gray dark:text-slate-100 truncate">
+                          {name}
+                        </h3>
                       </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                      <p className="text-sm font-medium text-[#616161] dark:text-slate-400 truncate">
+                        {hasImageAttachment ? (
+                          <span className="inline-flex items-center gap-1">
+                            <ImageIcon size={14} className="shrink-0" />
+                            {lastText}
+                          </span>
+                        ) : hasVideoAttachment ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Video size={14} className="shrink-0" />
+                            {lastText}
+                          </span>
+                        ) : (
+                          lastText
+                        )}
+                      </p>
+                    </div>
 
-            {filteredConversations.length === 0 && (
+                    <div className="flex flex-col gap-1.5 items-end">
+                      <span className="font-sans text-sm text-[#929191] dark:text-slate-500">
+                        {timeText}
+                      </span>
+                      {conversation.unread_count > 0 && !isActive && (
+                        <div className="bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
+                          {conversation.unread_count}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {!showConversationListShimmer && filteredConversations.length === 0 && (
               <div className="px-4 py-12">
                 <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/30 p-5 text-center">
                   <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">
-                    No matching conversations
+                    {hasSearchQuery
+                      ? "No matching conversations"
+                      : "No conversations yet"}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    Try a different name or clear your search.
+                    {hasSearchQuery
+                      ? "Try a different name or clear your search."
+                      : "Start a new connection and your chats will appear here."}
                   </p>
                 </div>
               </div>
@@ -1144,6 +1160,23 @@ const ChatLoadingShimmer = () => {
               <div className="h-2 w-16 rounded bg-gray-200 dark:bg-slate-700" />
             </div>
           </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ConversationListShimmer = () => {
+  return (
+    <div className="px-2 py-2 space-y-1 animate-pulse">
+      {[1, 2, 3, 4, 5, 6].map((item) => (
+        <div key={item} className="flex items-center px-2 py-3">
+          <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0 mr-3" />
+          <div className="flex-1 min-w-0">
+            <div className="h-3.5 w-28 rounded bg-gray-200 dark:bg-slate-700 mb-2" />
+            <div className="h-3 w-40 rounded bg-gray-200 dark:bg-slate-700" />
+          </div>
+          <div className="h-3 w-10 rounded bg-gray-200 dark:bg-slate-700 ml-3" />
         </div>
       ))}
     </div>

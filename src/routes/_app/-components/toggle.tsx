@@ -1,6 +1,4 @@
-// src/components/ui/StyledSwitch.tsx
 import React from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/utils/cs";
 
 interface StyledSwitchProps {
@@ -15,17 +13,22 @@ export const StyledSwitch: React.FC<StyledSwitchProps> = ({
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative inline-flex w-10 h-5 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-        checked ? "bg-blue-500" : "bg-gray-300 dark:bg-slate-600"
+        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-all duration-200",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900",
+        checked
+          ? "border-blue-500 bg-blue-500"
+          : "border-gray-300 bg-gray-200 dark:border-slate-600 dark:bg-slate-700",
       )}
     >
-      <motion.span
-        className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"
-        layout
-        transition={{ type: "spring", stiffness: 700, damping: 30 }}
-        style={{ x: checked ? "100%" : "0%" }}
+      <span
+        className={cn(
+          "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+          checked ? "translate-x-4" : "translate-x-0.5",
+        )}
       />
     </button>
   );

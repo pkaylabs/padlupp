@@ -13,15 +13,19 @@ export const Badge: React.FC<BadgeProps> = ({ label, unlocked, imageUrl }) => {
   return (
     <div
       className={cn(
-        "w-full flex flex-col items-center gap-2",
+        "w-full flex flex-col items-center gap-2 text-center",
         !unlocked && "opacity-30"
       )}
     >
       {/* Placeholder for user's image */}
       <div className="w-full flex items-center justify-center">
-        <img src={imageUrl} alt={label} className="w-20 h-20 object-contain" />
+        <img
+          src={imageUrl}
+          alt={label}
+          className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+        />
       </div>
-      <span className="text-sm font-medium text-nowrap text-gray-700 dark:text-slate-300">
+      <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 leading-tight">
         {label}
       </span>
     </div>

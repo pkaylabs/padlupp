@@ -2,8 +2,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { cn } from "@/utils/cs";
-
 interface AwardCategoryProps {
   title: string;
   children: React.ReactNode;
@@ -20,9 +18,11 @@ export const AwardCategory: React.FC<AwardCategoryProps> = ({
       {/* Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between p-4 bg-primary-100 dark:bg-slate-800 rounded-t-xl"
+        className="flex w-full items-center justify-between p-3 sm:p-4 bg-primary-100 dark:bg-slate-800 rounded-t-xl"
       >
-        <span className="text-black dark:text-slate-100">{title}</span>
+        <span className="text-sm sm:text-base text-black dark:text-slate-100">
+          {title}
+        </span>
         <motion.div animate={{ rotate: isOpen ? 90 : 0 }}>
           <ChevronRight size={20} className="text-gray-600 dark:text-slate-300" />
         </motion.div>
@@ -38,7 +38,7 @@ export const AwardCategory: React.FC<AwardCategoryProps> = ({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="p-4">{children}</div>
+            <div className="p-3 sm:p-4">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>

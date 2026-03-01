@@ -7,6 +7,7 @@ import Button from "@/components/core/buttons";
 import { ArrowLeft2, ArrowRight2, QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
 import { UserAvatar } from "./user-avatar";
+import { Modal } from "@/components/core/modal";
 
 interface PeopleCardStackProps {
   people: Person[];
@@ -18,6 +19,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
   onInvite,
 }) => {
   const [index, setIndex] = useState(0);
+  const [isInterestsModalOpen, setIsInterestsModalOpen] = useState(false);
 
   useEffect(() => {
     setIndex(0);
@@ -28,6 +30,9 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
   const paginate = (direction: number) => {
     setIndex((prev) => (prev + direction + people.length) % people.length);
   };
+
+  const previewInterests = person?.interests?.slice(0, 6) ?? [];
+  const hasMoreInterests = (person?.interests?.length ?? 0) > previewInterests.length;
 
   return (
     <div className="relative w-full mx-auto h-180">
@@ -99,24 +104,35 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
             </div>
 
             <div className=" w-full bg-white dark:bg-slate-900 rounded-xl px-4 sm:px-6 py-8 border border-transparent dark:border-slate-800">
-              <div className="flex items-center gap-1.5">
-                <PiTagSimpleDuotone size={18} color="#A3CBFA" />
-                <span className="font-semibold text-base text-dark-gray dark:text-slate-100">
-                  Interest
-                </span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <PiTagSimpleDuotone size={18} color="#A3CBFA" />
+                  <span className="font-semibold text-base text-dark-gray dark:text-slate-100">
+                    Interest
+                  </span>
+                </div>
+                {hasMoreInterests && (
+                  <button
+                    type="button"
+                    onClick={() => setIsInterestsModalOpen(true)}
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    View all
+                  </button>
+                )}
               </div>
-              <div className="flex flex-wrap justify-center gap-2 my-4">
-                {person?.interests?.map((interest) => (
-                  <div className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1 rounded-sm">
+              <div className="flex flex-wrap justify-center gap-2 my-4 pb-14">
+                {previewInterests.map((interest) => (
+                  <div
+                    key={interest?.interest}
+                    className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1 rounded-sm"
+                  >
                     <interest.icon
                       size={16}
                       color="#141B34"
                       variant="TwoTone"
                     />
-                    <span
-                      key={interest?.interest}
-                      className="text-xs font-medium text-gray-600 dark:text-slate-300"
-                    >
+                    <span className="text-xs font-medium text-gray-600 dark:text-slate-300">
                       {interest?.interest}
                     </span>
                   </div>
@@ -149,6 +165,42 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
       >
         <ArrowRight2 variant="Bold" size={30} />
       </button>
+
+      <Modal
+        isOpen={isInterestsModalOpen}
+        onClose={() => setIsInterestsModalOpen(false)}
+        showCloseButton
+        className="top-1/2 -translate-y-1/2 w-[92vw] sm:w-[540px] p-5 sm:p-6"
+      >
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            {person?.name}'s Interests
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            All interests selected on this profile.
+          </p>
+
+          <div className="mt-4 max-h-[55vh] overflow-y-auto pr-1">
+            <div className="flex flex-wrap gap-2">
+              {(person?.interests ?? []).map((interest) => (
+                <div
+                  key={`modal-${interest?.interest}`}
+                  className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1.5 rounded-md"
+                >
+                  <interest.icon
+                    size={15}
+                    color="#141B34"
+                    variant="TwoTone"
+                  />
+                  <span className="text-xs font-medium text-gray-700 dark:text-slate-200">
+                    {interest?.interest}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

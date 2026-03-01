@@ -21,6 +21,7 @@ export interface ChatMessageUI extends Omit<ChatMessage, "id"> {
 
 interface UseChatState {
   conversations: Conversation[];
+  hasReceivedConversationsSnapshot: boolean;
   messages: ChatMessageUI[];
   activeConversationId: number | null;
   setActiveConversationId: (id: number | null) => void;
@@ -110,6 +111,8 @@ export const useChat = (): UseChatState => {
   const authUserId = useAuthStore((state) => state.user?.id ?? null);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [hasReceivedConversationsSnapshot, setHasReceivedConversationsSnapshot] =
+    useState(false);
   const [messagesByConversation, setMessagesByConversation] = useState<
     Record<number, ChatMessageUI[]>
   >({});
@@ -350,6 +353,7 @@ export const useChat = (): UseChatState => {
 
       const data = payload as Record<string, unknown>;
       if (data.type === "conversations" && Array.isArray(data.conversations)) {
+        setHasReceivedConversationsSnapshot(true);
         const next = sortConversations(
           data.conversations.filter(
             (item): item is Conversation => !!item && typeof item === "object",
@@ -488,6 +492,7 @@ export const useChat = (): UseChatState => {
 
   useEffect(() => {
     if (!token) return;
+    setHasReceivedConversationsSnapshot(false);
     connectConversationsSocket();
 
     return () => {
@@ -717,6 +722,7 @@ export const useChat = (): UseChatState => {
 
   return {
     conversations,
+    hasReceivedConversationsSnapshot,
     messages,
     activeConversationId,
     setActiveConversationId,

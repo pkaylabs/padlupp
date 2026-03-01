@@ -62,19 +62,18 @@ const StyledSwitch = ({
     aria-checked={checked}
     onClick={() => onChange(!checked)}
     className={cn(
-      "relative inline-flex h-7 w-12 items-center rounded-full border transition-all duration-300 ease-out",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2",
-      "active:scale-[0.98]",
+      "relative inline-flex h-5 w-9 items-center rounded-full border transition-all duration-200",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900",
       checked
-        ? "border-blue-500 bg-linear-to-r from-blue-500 to-blue-600 shadow-[0_4px_14px_-8px_rgba(37,99,235,0.9)]"
-        : "border-gray-300 bg-gray-200 hover:bg-gray-300/80",
+        ? "border-blue-500 bg-blue-500"
+        : "border-gray-300 bg-gray-200 dark:border-slate-600 dark:bg-slate-700",
     )}
   >
     <span
       className={cn(
-        "pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-md",
-        "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        checked ? "translate-x-6" : "translate-x-0",
+        "pointer-events-none absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm",
+        "transition-transform duration-200",
+        checked ? "translate-x-4" : "translate-x-0",
       )}
     />
   </button>

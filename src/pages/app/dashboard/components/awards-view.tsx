@@ -11,14 +11,14 @@ import s4 from "@/assets/images/s4.png";
 export const AwardsView: React.FC = () => {
   return (
     <motion.div
-      className="flex flex-col items-center w-full max-w-md space-y-4 mt-8"
+      className="flex flex-col items-center w-full max-w-md space-y-4 mt-6 sm:mt-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
       <AwardCategory title="Goals">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Badge label="Started a goal" imageUrl={s1} unlocked={true} />
           <Badge label="Completed a goal" imageUrl={s1} unlocked={true} />
           <Badge label="Completed 1/5" imageUrl={s1} unlocked={false} />
@@ -26,7 +26,7 @@ export const AwardsView: React.FC = () => {
       </AwardCategory>
 
       <AwardCategory title="Streak">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Badge label="3-day streak" imageUrl={s2} unlocked={true} />
           <Badge label="7-day streak" imageUrl={s2} unlocked={true} />
           <Badge label="14-day streak" imageUrl={s2} unlocked={false} />
