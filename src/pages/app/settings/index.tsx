@@ -363,7 +363,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
           <button onClick={() => setActiveModal("none")}>
             <X size={20} className="text-gray-400 dark:text-slate-500" />
           </button>
-          <h2 className="font-bold text-gray-800 dark:text-slate-100">Edit Bio</h2>
+          <h2 className="font-bold text-gray-800 dark:text-slate-100">
+            Edit Bio
+          </h2>
           <div className="w-5" />
         </div>
         <div className="mb-4">
@@ -391,7 +393,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
       >
         <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900">
           <div className="w-10" />
-          <h2 className="font-bold text-gray-800 dark:text-slate-100">Edit interests</h2>
+          <h2 className="font-bold text-gray-800 dark:text-slate-100">
+            Edit interests
+          </h2>
           <button
             onClick={() => setActiveModal("none")}
             className="text-blue-500 font-medium text-sm"
@@ -561,15 +565,28 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         {Icon && (
           <Icon
             size={18}
-            className={isDestructive ? "text-red-500" : "text-gray-500 dark:text-slate-400"}
+            className={
+              isDestructive
+                ? "text-red-500"
+                : "text-gray-500 dark:text-slate-400"
+            }
           />
         )}
-        <span className={cn("text-sm font-medium dark:text-slate-200", !Icon && "ml-0")}>
+        <span
+          className={cn(
+            "text-sm font-medium dark:text-slate-200",
+            !Icon && "ml-0",
+          )}
+        >
           {label}
         </span>
       </div>
       <div className="flex items-center gap-2">
-        {value && <span className="text-xs text-gray-400 dark:text-slate-500">{value}</span>}
+        {value && (
+          <span className="text-xs text-gray-400 dark:text-slate-500">
+            {value}
+          </span>
+        )}
 
         {isSelected ? (
           <Check size={18} className="text-blue-500" />
@@ -616,7 +633,9 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onChange: (val: boolean) => void;
   }) => (
     <div className="flex items-center justify-between py-4 px-1">
-      <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+        {label}
+      </span>
       <StyledSwitch checked={checked} onChange={onChange} />
     </div>
   );
@@ -971,7 +990,16 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   label="Help & Support"
                   isExternal={true}
                   onClick={() =>
-                    window.open("https://t.me/+ijvNLk3ifQlmOTZk", "_blank")
+                    // window.open("https://t.me/+ijvNLk3ifQlmOTZk", "_blank")
+                    window.open("mailto:info@padlupp.com", "_blank")
+                  }
+                />
+                <MenuItem
+                  label="Give us feedback"
+                  isExternal={true}
+                  onClick={() =>
+                    // window.open("https://t.me/+ijvNLk3ifQlmOTZk", "_blank")
+                    window.open("https://forms.gle/d5PJNxgZkEVjzcfM8", "_blank")
                   }
                 />
               </div>
@@ -1015,7 +1043,9 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         }}
         className="w-full max-w-md p-6 rounded-2xl top-1/2 -translate-y-1/2"
       >
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Delete Account</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+          Delete Account
+        </h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
           Tell us why you are leaving. This action is permanent.
         </p>

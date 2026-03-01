@@ -69,6 +69,7 @@ export interface Task {
   status: "planned" | "in-progress" | "completed"; // Adjust based on strict backend types
   is_shared: boolean;
   is_overdue: boolean;
+  completed?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -87,6 +88,18 @@ export interface CreateTaskPayload {
   due_at?: string;
   status?: string;
   is_shared?: boolean;
+}
+
+export interface UpdateTaskPayload {
+  id: string | number;
+  data: Partial<{
+    title: string;
+    description: string;
+    due_at: string;
+    status: string;
+    is_shared: boolean;
+    completed: boolean;
+  }>;
 }
 
 export interface UpdateGoalPayload {
@@ -123,6 +136,18 @@ export const getTasks = async (params: GetTasksParams) => {
 export const createTask = async (payload: CreateTaskPayload) => {
   const { data } = await api.post<Task>("/tasks/", payload);
   return data;
+};
+
+export const updateTask = async ({
+  id,
+  data,
+}: UpdateTaskPayload): Promise<Task> => {
+  const response = await api.patch<Task>(`/tasks/${id}/`, data);
+  return response.data;
+};
+
+export const deleteTask = async (id: string | number): Promise<void> => {
+  await api.delete(`/tasks/${id}/`);
 };
 
 export const updateGoal = async ({

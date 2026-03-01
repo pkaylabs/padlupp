@@ -98,7 +98,7 @@ export const SettingsSidebar: React.FC = () => {
       onClick={onClick}
       className={cn(
         "w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50 transition-colors group",
-        isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700"
+        isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700",
       )}
     >
       <div className="flex items-center gap-3">
@@ -147,7 +147,7 @@ export const SettingsSidebar: React.FC = () => {
   );
 
   const filteredLanguages = LANGUAGES.filter((lang) =>
-    lang.toLowerCase().includes(searchQuery.toLowerCase())
+    lang.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const SwitchItem = ({
@@ -355,7 +355,7 @@ export const SettingsSidebar: React.FC = () => {
                       "text-sm",
                       displayLanguage === lang
                         ? "font-medium text-blue-600"
-                        : "text-gray-600"
+                        : "text-gray-600",
                     )}
                   >
                     {lang}
@@ -511,7 +511,18 @@ export const SettingsSidebar: React.FC = () => {
                 <MenuItem
                   label="Help & Support"
                   isExternal={true}
-                  onClick={() => window.open("/support", "_blank")}
+                  onClick={() =>
+                    // window.open("https://t.me/+ijvNLk3ifQlmOTZk", "_blank")
+                    window.open("mailto:info@padlupp.com", "_blank")
+                  }
+                />
+                <MenuItem
+                  label="Give us feedback"
+                  isExternal={true}
+                  onClick={() =>
+                    // window.open("https://t.me/+ijvNLk3ifQlmOTZk", "_blank")
+                    window.open("https://forms.gle/d5PJNxgZkEVjzcfM8", "_blank")
+                  }
                 />
               </div>
             </div>

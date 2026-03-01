@@ -11,6 +11,8 @@ import {
   ListTodo,
   Activity,
   AlertCircle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/utils/cs";
@@ -18,7 +20,7 @@ import { format, parseISO, startOfToday } from "date-fns";
 import { CalendarWidget } from "../dashboard/components/calendar-widget";
 import Button from "@/components/core/buttons";
 import { useGoal } from "./hooks/useGoal";
-import { useCreateTask, useTasks } from "./hooks/useTasks";
+import { useCreateTask, useDeleteTask, useTasks, useUpdateTask } from "./hooks/useTasks";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
 import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import { Modal } from "@/components/core/modal";
@@ -57,6 +59,9 @@ export function GoalDetailsPage() {
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingTaskTitle, setEditingTaskTitle] = useState("");
+  const [pendingTaskIds, setPendingTaskIds] = useState<number[]>([]);
 
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -80,6 +85,8 @@ export function GoalDetailsPage() {
     useUpdateGoal();
   const { mutateAsync: deleteGoal, isPending: isDeletingGoal } = useDeleteGoal();
   const { mutateAsync: createTask, isPending: isCreatingTask } = useCreateTask();
+  const { mutateAsync: updateTask } = useUpdateTask();
+  const { mutateAsync: deleteTask } = useDeleteTask();
 
   useEffect(() => {
     if (!goal) return;
@@ -227,6 +234,85 @@ export function GoalDetailsPage() {
 
     setIsAddSubtaskModalOpen(false);
     setNewSubtaskTitle("");
+  };
+
+  const isTaskCompleted = (task: { completed?: boolean; status?: string }) => {
+    if (typeof task.completed === "boolean") {
+      return task.completed;
+    }
+    return task.status === "completed";
+  };
+
+  const setTaskPending = (taskId: number, pending: boolean) => {
+    setPendingTaskIds((prev) => {
+      if (pending) {
+        if (prev.includes(taskId)) return prev;
+        return [...prev, taskId];
+      }
+      return prev.filter((idValue) => idValue !== taskId);
+    });
+  };
+
+  const handleToggleTaskCompleted = async (task: {
+    id: number;
+    completed?: boolean;
+    status?: string;
+  }) => {
+    if (pendingTaskIds.includes(task.id)) return;
+    setTaskPending(task.id, true);
+    try {
+      await updateTask({
+        id: task.id,
+        data: { completed: !isTaskCompleted(task) },
+      });
+    } finally {
+      setTaskPending(task.id, false);
+    }
+  };
+
+  const handleStartTaskEdit = (task: { id: number; title: string }) => {
+    setEditingTaskId(task.id);
+    setEditingTaskTitle(task.title || "");
+  };
+
+  const handleCancelTaskEdit = () => {
+    setEditingTaskId(null);
+    setEditingTaskTitle("");
+  };
+
+  const handleSaveTaskEdit = async (taskId: number) => {
+    const title = editingTaskTitle.trim();
+    if (!title) {
+      toast.error("Subtask title is required.");
+      return;
+    }
+    if (pendingTaskIds.includes(taskId)) return;
+
+    setTaskPending(taskId, true);
+    try {
+      await updateTask({
+        id: taskId,
+        data: { title },
+      });
+      setEditingTaskId(null);
+      setEditingTaskTitle("");
+    } finally {
+      setTaskPending(taskId, false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    if (pendingTaskIds.includes(taskId)) return;
+    setTaskPending(taskId, true);
+    try {
+      await deleteTask(taskId);
+      if (editingTaskId === taskId) {
+        setEditingTaskId(null);
+        setEditingTaskTitle("");
+      }
+    } finally {
+      setTaskPending(taskId, false);
+    }
   };
 
   // --- LOADING STATE (SKELETON) ---
@@ -444,23 +530,83 @@ export function GoalDetailsPage() {
                     key={task.id}
                     className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group flex items-start gap-3"
                   >
-                    <button className="mt-0.5 text-gray-300 dark:text-slate-500 hover:text-blue-500 transition-colors">
-                      {task.status === "completed" ? (
+                    <button
+                      type="button"
+                      aria-label={
+                        isTaskCompleted(task)
+                          ? "Mark subtask as incomplete"
+                          : "Mark subtask as complete"
+                      }
+                      onClick={() => void handleToggleTaskCompleted(task)}
+                      disabled={pendingTaskIds.includes(task.id)}
+                      className={cn(
+                        "mt-0.5 transition-colors",
+                        pendingTaskIds.includes(task.id)
+                          ? "opacity-50 cursor-not-allowed"
+                          : "text-gray-300 dark:text-slate-500 hover:text-blue-500"
+                      )}
+                    >
+                      {isTaskCompleted(task) ? (
                         <CheckCircle2 size={20} className="text-green-500" />
                       ) : (
                         <Circle size={20} />
                       )}
                     </button>
                     <div className="flex-1">
-                      <p
-                        className={cn(
-                          "text-sm text-gray-800 dark:text-slate-200 font-medium",
-                          task.status === "completed" &&
-                            "text-gray-400 dark:text-slate-500 line-through"
-                        )}
-                      >
-                        {task.title}
-                      </p>
+                      {editingTaskId === task.id ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            autoFocus
+                            value={editingTaskTitle}
+                            onChange={(event) =>
+                              setEditingTaskTitle(event.target.value)
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                void handleSaveTaskEdit(task.id);
+                              }
+                              if (event.key === "Escape") {
+                                event.preventDefault();
+                                handleCancelTaskEdit();
+                              }
+                            }}
+                            className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleSaveTaskEdit(task.id)}
+                              disabled={
+                                pendingTaskIds.includes(task.id) ||
+                                !editingTaskTitle.trim()
+                              }
+                              className="px-2.5 py-1 text-xs font-semibold rounded-md bg-primary-500 text-white disabled:opacity-60"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelTaskEdit}
+                              disabled={pendingTaskIds.includes(task.id)}
+                              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 disabled:opacity-60"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p
+                          className={cn(
+                            "text-sm text-gray-800 dark:text-slate-200 font-medium",
+                            isTaskCompleted(task) &&
+                              "text-gray-400 dark:text-slate-500 line-through"
+                          )}
+                        >
+                          {task.title}
+                        </p>
+                      )}
                       <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-slate-500 mt-1.5">
                         {task.due_at && (
                           <div className="flex items-center gap-1">
@@ -469,6 +615,26 @@ export function GoalDetailsPage() {
                           </div>
                         )}
                       </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label="Edit subtask"
+                        onClick={() => handleStartTaskEdit(task)}
+                        disabled={pendingTaskIds.includes(task.id)}
+                        className="p-1.5 rounded-md text-gray-400 dark:text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Delete subtask"
+                        onClick={() => void handleDeleteTask(task.id)}
+                        disabled={pendingTaskIds.includes(task.id)}
+                        className="p-1.5 rounded-md text-gray-400 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </motion.div>
                 ))
