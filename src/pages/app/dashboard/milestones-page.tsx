@@ -28,13 +28,13 @@ export const MilestonesPage = () => {
           Milestones
         </h1>
 
-        <div className="mx-auto mt-5 sm:mt-6 w-full max-w-90 sm:w-fit rounded-xl bg-[#D8E1EE] dark:bg-slate-800 p-1.5">
+        <div className="mx-auto mt-5 w-full max-w-90 sm:w-fit rounded-lg bg-[#D8E1EE] dark:bg-slate-800 p-1">
           <div className="grid grid-cols-2 items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("streaks")}
               className={cn(
-                "px-4 sm:px-8 py-2 rounded-lg text-sm sm:text-lg font-medium transition-colors",
+                "px-4 sm:px-8 py-1 rounded-lg text-sm sm:text-lg font-medium transition-colors",
                 activeTab === "streaks"
                   ? "bg-primary-500 text-white"
                   : "text-[#4F5561] dark:text-slate-300",
@@ -46,7 +46,7 @@ export const MilestonesPage = () => {
               type="button"
               onClick={() => setActiveTab("awards")}
               className={cn(
-                "px-4 sm:px-8 py-2 rounded-lg text-sm sm:text-lg font-medium transition-colors",
+                "px-4 sm:px-8 py-1 rounded-lg text-sm sm:text-lg font-medium transition-colors",
                 activeTab === "awards"
                   ? "bg-primary-500 text-white"
                   : "text-[#4F5561] dark:text-slate-300",

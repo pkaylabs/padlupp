@@ -492,22 +492,23 @@ export const MessagesPage = () => {
               })
             )}
 
-            {!showConversationListShimmer && filteredConversations.length === 0 && (
-              <div className="px-4 py-12">
-                <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/30 p-5 text-center">
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">
-                    {hasSearchQuery
-                      ? "No matching conversations"
-                      : "No conversations yet"}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    {hasSearchQuery
-                      ? "Try a different name or clear your search."
-                      : "Start a new connection and your chats will appear here."}
-                  </p>
+            {!showConversationListShimmer &&
+              filteredConversations.length === 0 && (
+                <div className="px-4 py-12">
+                  <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/30 p-5 text-center">
+                    <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">
+                      {hasSearchQuery
+                        ? "No matching conversations"
+                        : "No conversations yet"}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                      {hasSearchQuery
+                        ? "Try a different name or clear your search."
+                        : "Start a new connection and your chats will appear here."}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
 
@@ -562,14 +563,14 @@ export const MessagesPage = () => {
                         ? "Select a conversation"
                         : "No conversations yet"}
                   </h2>
-                {hasActiveConversation ? (
-                  <p className="text-[11px] md:text-xs text-green-500 flex items-center truncate max-w-[50vw] md:max-w-none">
-                    {isPeerTyping
-                      ? `${peerTypingName || "Someone"} is typing...`
-                      : onlineUserIds.length > 0
-                        ? "Online"
-                        : "Conversation active"}
-                  </p>
+                  {hasActiveConversation ? (
+                    <p className="text-[11px] md:text-xs text-green-500 flex items-center truncate max-w-[50vw] md:max-w-none">
+                      {isPeerTyping
+                        ? `${peerTypingName || "Someone"} is typing...`
+                        : onlineUserIds.length > 0
+                          ? "Online"
+                          : "Conversation active"}
+                    </p>
                   ) : (
                     <p className="text-[11px] md:text-xs text-gray-400 dark:text-slate-500 flex items-center truncate max-w-[50vw] md:max-w-none">
                       Choose a chat from the left to start messaging.
@@ -1168,9 +1169,9 @@ const ChatLoadingShimmer = () => {
 
 const ConversationListShimmer = () => {
   return (
-    <div className="px-2 py-2 space-y-1 animate-pulse">
+    <div className="px-2 py-2  animate-pulse">
       {[1, 2, 3, 4, 5, 6].map((item) => (
-        <div key={item} className="flex items-center px-2 py-3">
+        <div key={item} className="flex items-center p-2">
           <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0 mr-3" />
           <div className="flex-1 min-w-0">
             <div className="h-3.5 w-28 rounded bg-gray-200 dark:bg-slate-700 mb-2" />
