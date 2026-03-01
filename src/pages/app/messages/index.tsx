@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRef } from "react";
 import {
   CreateGoalModal,
   RateUserModal,
@@ -113,11 +114,6 @@ export const MessagesPage = () => {
   const hasConversations = conversations.length > 0;
   const hasActiveConversation = Boolean(activeConversation);
 
-  useEffect(() => {
-    if (!activeConversationId && conversations.length > 0) {
-      setActiveConversationId(conversations[0].id);
-    }
-  }, [activeConversationId, conversations, setActiveConversationId]);
 
   useEffect(() => {
     if (!activeConversationId) return;
@@ -494,6 +490,51 @@ export const MessagesPage = () => {
               >
                 <Plus size={20} />
               </button>
+              {/* File input for sending files */}
+              <input
+                type="file"
+                id="chat-file-input"
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !hasActiveConversation) return;
+                  const reader = new FileReader();
+                  reader.onload = async (ev) => {
+                    const base64 = (ev.target?.result as string)?.split(",")[1];
+                    // Send file via websocket
+                    const payload = {
+                      type: "file",
+                      filename: file.name,
+                      content_type: file.type,
+                      data: base64,
+                      text: inputValue.trim() || ""
+                    };
+                    if (typeof window.sendEvent === "function") {
+                      window.sendEvent(payload);
+                    } else {
+                      // fallback: try to use sendEvent from props or context
+                      try {
+                        sendEvent(payload);
+                      } catch {}
+                    }
+                    setInputValue("");
+                  };
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+                accept="*/*"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById("chat-file-input")?.click();
+                }}
+                disabled={!hasActiveConversation}
+                className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg text-[#3D3D3D] dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Send file"
+              >
+                <FileText size={20} />
+              </button>
               <button className="text-[#3D3D3D] dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-200 hidden md:block">
                 <Mic strokeWidth={1.5} size={20} />
               </button>
@@ -555,21 +596,101 @@ const MessageBubble = ({
   timestamp: string;
   pending: boolean;
 }) => {
-  return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold">
-        {getInitials(isMe ? "Me" : senderName)}
-      </div>
-      <div>
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">
-            {isMe ? "Me" : senderName}
-          </span>
-          <span className="text-xs text-gray-400 dark:text-slate-500">{timestamp}</span>
-          {pending && <span className="text-xs text-gray-400 dark:text-slate-500">sending...</span>}
+  const MessageBubble = ({
+    text,
+    senderName,
+    isMe,
+    timestamp,
+    pending,
+    attachment,
+    attachment_name,
+    attachment_mime,
+    attachment_size,
+    data,
+  }: {
+    text: string;
+    senderName: string;
+    isMe: boolean;
+    timestamp: string;
+    pending: boolean;
+    attachment?: string | null;
+    attachment_name?: string;
+    attachment_mime?: string;
+    attachment_size?: number | null;
+    data?: string;
+  }) => {
+    // Helper to render file preview
+    const renderAttachment = () => {
+      if (!attachment && !data) return null;
+      const mime = attachment_mime || "";
+      const name = attachment_name || "File";
+      const fileData = attachment || data;
+      if (mime.startsWith("image/")) {
+        // Image preview
+        return (
+          <div className="mt-2">
+            <img
+              src={fileData.startsWith("data:") ? fileData : `data:${mime};base64,${fileData}`}
+              alt={name}
+              style={{ maxWidth: 220, maxHeight: 220, borderRadius: 8 }}
+            />
+            {name && <div className="text-xs text-gray-500 mt-1">{name}</div>}
+          </div>
+        );
+      }
+      if (mime === "application/pdf") {
+        // PDF preview
+        return (
+          <div className="mt-2 flex items-center gap-2">
+            <FileText size={20} className="text-red-500" />
+            <a
+              href={fileData.startsWith("data:") ? fileData : `data:${mime};base64,${fileData}`}
+              download={name}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 underline"
+            >
+              {name}
+            </a>
+          </div>
+        );
+      }
+      // Other file types
+      return (
+        <div className="mt-2 flex items-center gap-2">
+          <FileText size={20} className="text-gray-500" />
+          <a
+            href={fileData.startsWith("data:") ? fileData : `data:${mime || "application/octet-stream"};base64,${fileData}`}
+            download={name}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 underline"
+          >
+            {name}
+          </a>
+          {attachment_size && (
+            <span className="text-xs text-gray-400 ml-2">{(attachment_size / 1024).toFixed(1)} KB</span>
+          )}
         </div>
-        <div className="text-sm text-gray-800 dark:text-slate-200">{text}</div>
+      );
+    };
+    return (
+      <div className="flex gap-3">
+        <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold">
+          {getInitials(isMe ? "Me" : senderName)}
+        </div>
+        <div>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="font-semibold text-sm text-gray-900 dark:text-slate-100">
+              {isMe ? "Me" : senderName}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-slate-500">{timestamp}</span>
+            {pending && <span className="text-xs text-gray-400 dark:text-slate-500">sending...</span>}
+          </div>
+          <div className="text-sm text-gray-800 dark:text-slate-200">{text}</div>
+          {renderAttachment()}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 };

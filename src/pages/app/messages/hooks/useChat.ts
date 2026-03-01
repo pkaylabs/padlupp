@@ -72,6 +72,26 @@ const dedupeMessages = (messages: ChatMessageUI[]) => {
 };
 
 export const useChat = (): UseChatState => {
+    // Restore upsertConversation definition
+    const upsertConversation = useCallback((conversation: Conversation) => {
+      setConversations((prev) => {
+        const exists = prev.some((item) => item.id === conversation.id);
+        if (!exists) {
+          return sortByCreatedAt([conversation, ...prev]).reverse();
+        }
+        return prev
+          .map((item) =>
+            item.id === conversation.id ? { ...item, ...conversation } : item,
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+          );
+      });
+    }, []);
+
+    // Robust guard: Set initial active conversation only once per session
+    const hasSetInitialConversation = useRef(false);
   const token = useAuthStore((state) => state.token);
   const authUserId = useAuthStore((state) => state.user?.id ?? null);
 
@@ -79,9 +99,7 @@ export const useChat = (): UseChatState => {
   const [messagesByConversation, setMessagesByConversation] = useState<
     Record<number, ChatMessageUI[]>
   >({});
-  const [activeConversationId, setActiveConversationIdState] = useState<
-    number | null
-  >(null);
+  const [activeConversationId, setActiveConversationIdState] = useState<number | null>(null);
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("idle");
   const [conversationsConnectionState, setConversationsConnectionState] =
@@ -103,22 +121,15 @@ export const useChat = (): UseChatState => {
     activeConversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
 
-  const upsertConversation = useCallback((conversation: Conversation) => {
-    setConversations((prev) => {
-      const exists = prev.some((item) => item.id === conversation.id);
-      if (!exists) {
-        return sortByCreatedAt([conversation, ...prev]).reverse();
-      }
-      return prev
-        .map((item) =>
-          item.id === conversation.id ? { ...item, ...conversation } : item,
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-        );
-    });
-  }, []);
+  // ...existing code...
+
+  // Robust guard: Set initial active conversation only once per session, never reset on conversations update
+  useEffect(() => {
+    if (!hasSetInitialConversation.current && !activeConversationId && conversations.length > 0) {
+      setActiveConversationIdState(conversations[0].id);
+      hasSetInitialConversation.current = true;
+    }
+  }, [activeConversationId, conversations.length]);
 
   const clearFallbackTimer = useCallback((tempId: string) => {
     const timer = sendFallbackTimersRef.current[tempId];
@@ -251,7 +262,7 @@ export const useChat = (): UseChatState => {
   const connectConversationsSocket = useCallback(() => {
     if (!token) return;
 
-    conversationsWsRef.current?.close();
+    let intentionalClose = false;
     setConversationsConnectionState("connecting");
 
     const ws = new WebSocket(
@@ -269,6 +280,11 @@ export const useChat = (): UseChatState => {
       if (!payload || typeof payload !== "object") return;
 
       const data = payload as Record<string, unknown>;
+      if (data.type === "auth_error" || data.type === "handshake_error") {
+        setConversationsConnectionState("closed");
+        ws.close();
+        return;
+      }
       if (data.type === "conversations" && Array.isArray(data.conversations)) {
         const next = data.conversations.filter(
           (item): item is Conversation => !!item && typeof item === "object",
@@ -285,32 +301,36 @@ export const useChat = (): UseChatState => {
         }
         return;
       }
-
       if (data.type === "conversation_update" && data.conversation) {
         upsertConversation(data.conversation as Conversation);
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       setConversationsConnectionState("closed");
+      if (intentionalClose) return;
       if (!token) return;
-
+      if (event && event.code === 4001) return; // Custom code for auth error
       if (conversationsRetryRef.current >= MAX_RETRIES) return;
       const retry = ++conversationsRetryRef.current;
       const delay = Math.min(1000 * 2 ** retry, MAX_BACKOFF_MS);
       window.setTimeout(connectConversationsSocket, delay);
     };
 
-    ws.onerror = () => {
-      ws.close();
+    ws.onerror = (event) => {
+      // Only close if not intentional
+      if (!intentionalClose) ws.close();
     };
+
+    // Mark intentional close on cleanup
+    ws._intentionalClose = () => { intentionalClose = true; ws.close(); };
   }, [token, upsertConversation]);
 
   const connectChatSocket = useCallback(
     (conversationId: number) => {
       if (!token) return;
 
-      chatWsRef.current?.close();
+      let intentionalClose = false;
       setConnectionState("connecting");
 
       const ws = new WebSocket(
@@ -329,7 +349,11 @@ export const useChat = (): UseChatState => {
         if (!payload || typeof payload !== "object") return;
 
         const data = payload as Record<string, unknown>;
-
+        if (data.type === "auth_error" || data.type === "handshake_error") {
+          setConnectionState("closed");
+          ws.close();
+          return;
+        }
         if (data.type === "history" && Array.isArray(data.messages)) {
           const history = data.messages.filter(isChatMessage);
           setMessagesByConversation((prev) => ({
@@ -338,7 +362,6 @@ export const useChat = (): UseChatState => {
           }));
           return;
         }
-
         if (data.type === "typing") {
           const userId = typeof data.user_id === "number" ? data.user_id : null;
           const isTyping = Boolean(data.is_typing);
@@ -347,21 +370,17 @@ export const useChat = (): UseChatState => {
           }
           return;
         }
-
         if (data.type === "presence" && Array.isArray(data.online_user_ids)) {
           setOnlineUserIds(
             data.online_user_ids.filter((id): id is number => typeof id === "number"),
           );
           return;
         }
-
         if (data.type === "ack" || data.type === "delivered" || data.type === "read" || data.type === "read_all") {
           return;
         }
-
         if (isChatMessage(data)) {
           appendMessage(data);
-
           if (data.sender.id !== authUserId && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "delivered", message_id: data.id }));
           }
@@ -369,22 +388,25 @@ export const useChat = (): UseChatState => {
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         setConnectionState("closed");
-
+        if (intentionalClose) return;
         if (!token || activeConversationIdRef.current !== conversationId) {
           return;
         }
-
+        if (event && event.code === 4001) return; // Custom code for auth error
         if (chatRetryRef.current >= MAX_RETRIES) return;
         const retry = ++chatRetryRef.current;
         const delay = Math.min(1000 * 2 ** retry, MAX_BACKOFF_MS);
         window.setTimeout(() => connectChatSocket(conversationId), delay);
       };
 
-      ws.onerror = () => {
-        ws.close();
+      ws.onerror = (event) => {
+        if (!intentionalClose) ws.close();
       };
+
+      // Mark intentional close on cleanup
+      ws._intentionalClose = () => { intentionalClose = true; ws.close(); };
     },
     [appendMessage, authUserId, flushQueue, token],
   );
@@ -394,7 +416,11 @@ export const useChat = (): UseChatState => {
     connectConversationsSocket();
 
     return () => {
-      conversationsWsRef.current?.close();
+      if (conversationsWsRef.current && conversationsWsRef.current._intentionalClose) {
+        conversationsWsRef.current._intentionalClose();
+      } else {
+        conversationsWsRef.current?.close();
+      }
     };
   }, [connectConversationsSocket, token]);
 
@@ -406,7 +432,11 @@ export const useChat = (): UseChatState => {
     fetchHistory(activeConversationId);
 
     return () => {
-      chatWsRef.current?.close();
+      if (chatWsRef.current && chatWsRef.current._intentionalClose) {
+        chatWsRef.current._intentionalClose();
+      } else {
+        chatWsRef.current?.close();
+      }
     };
   }, [activeConversationId, connectChatSocket, fetchHistory, token]);
 
