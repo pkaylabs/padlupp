@@ -3,6 +3,7 @@ export const GOALS = "/goals";
 export const BUDDY_FINDER = "/buddy-finder";
 export const EVENTS = "/events";
 export const MESSAGES = "/messages";
+export const MILESTONES = "/milestones";
 export const PROFILE = "/profile";
 export const SETTINGS = "/settings";
 

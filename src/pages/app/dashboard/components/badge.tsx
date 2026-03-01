@@ -1,6 +1,5 @@
 // src/components/milestones/Badge.tsx
 import React from "react";
-import { Award } from "lucide-react";
 import { cn } from "@/utils/cs";
 
 interface BadgeProps {
@@ -22,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({ label, unlocked, imageUrl }) => {
       <div className="w-full flex items-center justify-center">
         <img src={imageUrl} alt={label} className="w-20 h-20 object-contain" />
       </div>
-      <span className="text-sm font-medium text-nowrap text-gray-700">
+      <span className="text-sm font-medium text-nowrap text-gray-700 dark:text-slate-300">
         {label}
       </span>
     </div>

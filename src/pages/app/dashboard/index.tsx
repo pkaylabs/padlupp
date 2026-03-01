@@ -7,14 +7,15 @@ import { TodayProgress } from "./components/progress";
 import { ClipboardList } from "lucide-react";
 import { useGoals } from "../goals/hooks/useGoals";
 import { Goal } from "../goals/api";
-import { StreaksView } from "./components/streaks-view";
 
 const formatGoalTime = (timeValue?: string | null) => {
-  if (!timeValue) return "";
+  if (!timeValue) return "No time set";
   const [h = "0", m = "0"] = timeValue.split(":");
   const hours = Number(h);
   const minutes = Number(m);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return timeValue;
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return "No time set";
+  }
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

@@ -18,6 +18,8 @@ interface User {
 export interface BuddyConnection {
   id: number;
   user: User;
+  compatibility_score?: number | null;
+  rating?: number | null;
   bio: string;
   location: string;
   experience: string;

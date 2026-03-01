@@ -38,16 +38,18 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
   const isLoading = isSearchMode ? isSearchLoading : isFinderLoading;
   const isError = isSearchMode ? isSearchError : isFinderError;
 
-  console.log(sourceBuddies, "buddies");
-
   const people: any = (sourceBuddies || []).map((buddy: any) => ({
+    ...(typeof buddy.compatibility_score === "number"
+      ? { compatibility: Math.max(0, Math.min(100, buddy.compatibility_score)) }
+      : { compatibility: 0 }),
+    ...(typeof buddy.rating === "number"
+      ? { rating: Math.max(0, Math.min(5, Math.round(buddy.rating))) }
+      : { rating: 0 }),
     id: buddy.user.id.toString(), // Ensure ID matches
     name: buddy.user.name,
     role: buddy.experience || "Member", // Fallback
     avatarUrl: buddy.user.avatar || "",
     age: 0,
-    compatibility: 0,
-    rating: 0,
     seeking: buddy.bio || "No bio added yet.",
     interests: Array.isArray(buddy.interests)
       ? buddy.interests.map((interest: string) => ({

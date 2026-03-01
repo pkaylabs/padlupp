@@ -16,6 +16,7 @@ import {
   getStoredThemePreference,
   setThemePreference,
 } from "@/utils/theme";
+import { MILESTONES } from "@/constants/page-path";
 
 interface LongestStreakResponse {
   longest_streak?: number;
@@ -94,10 +95,15 @@ export const TopNav: React.FC = () => {
             )}
           </Link>
 
-          <button className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 min-w-0">
-            <span className="text-xs sm:text-sm truncate text-gray-700 dark:text-slate-200">🔥 {longestStreak} days</span>
+          <Link
+            to={MILESTONES}
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 min-w-0"
+          >
+            <span className="text-xs sm:text-sm truncate text-gray-700 dark:text-slate-200">
+              🔥 {longestStreak} days
+            </span>
             <ChevronRight className="size-4 sm:size-5 shrink-0 text-gray-500 dark:text-slate-400" />
-          </button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">

@@ -17,13 +17,15 @@ export const StreaksView: React.FC = () => {
 
       <img src={streak} alt="Streak" className="w-52 h-52" />
 
-      <h2 className="text-xl font-semibold text-gray-700">12-Days Streak!</h2>
-      <p className="text-gray-500 mt-2 text-center">
+      <h2 className="text-xl font-semibold text-gray-700 dark:text-slate-100">
+        12-Days Streak!
+      </h2>
+      <p className="text-gray-500 dark:text-slate-400 mt-2 text-center">
         Complete your daily goals to start a streak. <br /> Skip a day and it
         resets.
       </p>
 
-      <div className="w-full max-w-md bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-center gap-4 mt-8">
+      <div className="w-full max-w-md bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-lg p-4 flex items-center gap-4 mt-8">
         <Flame
           strokeWidth={5}
           fill="#FFCE51"
@@ -32,10 +34,12 @@ export const StreaksView: React.FC = () => {
         />
 
         <div>
-          <span className="text-sm font-medium text-gray-600">
+          <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
             Longest streak
           </span>
-          <p className="text-lg font-bold text-[#263238] ">15 days</p>
+          <p className="text-lg font-bold text-[#263238] dark:text-slate-100">
+            15 days
+          </p>
         </div>
       </div>
     </motion.div>

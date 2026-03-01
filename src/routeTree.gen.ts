@@ -18,6 +18,7 @@ import { Route as AuthSigninRouteRouteImport } from './routes/_auth/signin/route
 import { Route as AuthForgotPasswordRouteRouteImport } from './routes/_auth/forgot-password/route'
 import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/route'
 import { Route as AppProfileRouteRouteImport } from './routes/_app/profile/route'
+import { Route as AppMilestonesRouteRouteImport } from './routes/_app/milestones/route'
 import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
 import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
@@ -69,6 +70,11 @@ const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppMilestonesRouteRoute = AppMilestonesRouteRouteImport.update({
+  id: '/milestones',
+  path: '/milestones',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppMessagesRouteRoute = AppMessagesRouteRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/buddy-finder': typeof AppBuddyFinderRouteRoute
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
+  '/milestones': typeof AppMilestonesRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/buddy-finder': typeof AppBuddyFinderRouteRoute
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
+  '/milestones': typeof AppMilestonesRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_app/buddy-finder': typeof AppBuddyFinderRouteRoute
   '/_app/dashboard': typeof AppDashboardRouteRoute
   '/_app/messages': typeof AppMessagesRouteRoute
+  '/_app/milestones': typeof AppMilestonesRouteRoute
   '/_app/profile': typeof AppProfileRouteRoute
   '/_app/settings': typeof AppSettingsRouteRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/buddy-finder'
     | '/dashboard'
     | '/messages'
+    | '/milestones'
     | '/profile'
     | '/settings'
     | '/forgot-password'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/buddy-finder'
     | '/dashboard'
     | '/messages'
+    | '/milestones'
     | '/profile'
     | '/settings'
     | '/forgot-password'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/_app/buddy-finder'
     | '/_app/dashboard'
     | '/_app/messages'
+    | '/_app/milestones'
     | '/_app/profile'
     | '/_app/settings'
     | '/_auth/forgot-password'
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/milestones': {
+      id: '/_app/milestones'
+      path: '/milestones'
+      fullPath: '/milestones'
+      preLoaderRoute: typeof AppMilestonesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/messages': {
       id: '/_app/messages'
       path: '/messages'
@@ -339,6 +358,7 @@ interface AppRouteRouteChildren {
   AppBuddyFinderRouteRoute: typeof AppBuddyFinderRouteRoute
   AppDashboardRouteRoute: typeof AppDashboardRouteRoute
   AppMessagesRouteRoute: typeof AppMessagesRouteRoute
+  AppMilestonesRouteRoute: typeof AppMilestonesRouteRoute
   AppProfileRouteRoute: typeof AppProfileRouteRoute
   AppSettingsRouteRoute: typeof AppSettingsRouteRoute
   AppGoalsIdRoute: typeof AppGoalsIdRoute
@@ -349,6 +369,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppBuddyFinderRouteRoute: AppBuddyFinderRouteRoute,
   AppDashboardRouteRoute: AppDashboardRouteRoute,
   AppMessagesRouteRoute: AppMessagesRouteRoute,
+  AppMilestonesRouteRoute: AppMilestonesRouteRoute,
   AppProfileRouteRoute: AppProfileRouteRoute,
   AppSettingsRouteRoute: AppSettingsRouteRoute,
   AppGoalsIdRoute: AppGoalsIdRoute,

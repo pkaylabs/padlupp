@@ -46,9 +46,9 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                 {person?.name}
               </span>
               <span className="size-1 rounded-full bg-primary-600" />
-              <span className=" text-gray-500 dark:text-slate-400">
+              {/* <span className=" text-gray-500 dark:text-slate-400">
                 {person?.age}
-              </span>
+              </span> */}
             </div>
 
             <div className="relative">

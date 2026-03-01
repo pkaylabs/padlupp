@@ -16,15 +16,15 @@ export const AwardCategory: React.FC<AwardCategoryProps> = ({
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="w-full bg-white rounded-xl shadow-sm">
+    <div className="w-full bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
       {/* Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between p-4 bg-primary-100 rounded-t-xl"
+        className="flex w-full items-center justify-between p-4 bg-primary-100 dark:bg-slate-800 rounded-t-xl"
       >
-        <span className="text-black">{title}</span>
+        <span className="text-black dark:text-slate-100">{title}</span>
         <motion.div animate={{ rotate: isOpen ? 90 : 0 }}>
-          <ChevronRight size={20} className="text-gray-600" />
+          <ChevronRight size={20} className="text-gray-600 dark:text-slate-300" />
         </motion.div>
       </button>
 
