@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   MoreVertical,
   Calendar,
@@ -20,10 +20,33 @@ import Button from "@/components/core/buttons";
 import { useGoal } from "./hooks/useGoal";
 import { useCreateTask, useTasks } from "./hooks/useTasks";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
+import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import { Modal } from "@/components/core/modal";
+import { toast } from "sonner";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
+  const navigate = useNavigate();
+
+  const normalizeStatusForApi = (status: string) => {
+    if (status === "In progress" || status === "in-progress") {
+      return "in-progress";
+    }
+    if (status === "Completed" || status === "completed") {
+      return "completed";
+    }
+    return "planned";
+  };
+
+  const normalizeStatusForUi = (status: string) => {
+    if (status === "in-progress" || status === "In progress") {
+      return "In progress";
+    }
+    if (status === "completed" || status === "Completed") {
+      return "Completed";
+    }
+    return "To-do";
+  };
 
   // UI State
   const [isDescExpanded, setIsDescExpanded] = useState(false);
@@ -31,6 +54,20 @@ export function GoalDetailsPage() {
   const [selectedDate, setSelectedDate] = useState(startOfToday());
   const [isAddSubtaskModalOpen, setIsAddSubtaskModalOpen] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
+  const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
+
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editTargetDate, setEditTargetDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editStatus, setEditStatus] = useState("To-do");
+  const [editImportance, setEditImportance] = useState("Regular");
+  const [editCategory, setEditCategory] = useState("");
+
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   // Data Fetching
   const { data: goal, isLoading: loadingGoal, isError } = useGoal(id);
@@ -39,8 +76,49 @@ export function GoalDetailsPage() {
   });
 
   // Mutations
-  const { mutate: updateGoal } = useUpdateGoal();
+  const { mutate: updateGoal, mutateAsync: updateGoalAsync, isPending: isUpdatingGoal } =
+    useUpdateGoal();
+  const { mutateAsync: deleteGoal, isPending: isDeletingGoal } = useDeleteGoal();
   const { mutateAsync: createTask, isPending: isCreatingTask } = useCreateTask();
+
+  useEffect(() => {
+    if (!goal) return;
+
+    setEditTitle(goal.title || "");
+    setEditDescription(goal.description || "");
+    setEditStartDate(goal.start_date ? goal.start_date.split("T")[0] : "");
+    setEditTargetDate(goal.target_date ? goal.target_date.split("T")[0] : "");
+    setEditStartTime(goal.start_time?.slice(0, 5) || "");
+    setEditStatus(normalizeStatusForUi(goal.status));
+    setEditImportance(goal.importance?.trim() || "Regular");
+    setEditCategory(goal.category?.trim() || "");
+  }, [goal]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isActionsMenuOpen &&
+        actionsMenuRef.current &&
+        !actionsMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsActionsMenuOpen(false);
+      }
+    };
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsActionsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleEsc);
+    };
+  }, [isActionsMenuOpen]);
 
   // Filter tasks for this goal
   const goalSubtasks =
@@ -49,11 +127,81 @@ export function GoalDetailsPage() {
   // --- Handlers ---
 
   const handleStatusChange = (newStatus: string) => {
-    let apiStatus = "planned";
-    if (newStatus === "In progress") apiStatus = "in-progress";
-    if (newStatus === "Completed") apiStatus = "completed";
-    updateGoal({ id: goal!.id, data: { status: apiStatus } });
+    updateGoal({ id: goal!.id, data: { status: normalizeStatusForApi(newStatus) } });
     setStatusPopoverOpen(false);
+  };
+
+  const handleOpenEditGoalModal = () => {
+    setIsActionsMenuOpen(false);
+    setIsEditGoalModalOpen(true);
+  };
+
+  const handleCloseEditGoalModal = () => {
+    if (isUpdatingGoal) return;
+    setIsEditGoalModalOpen(false);
+  };
+
+  const handleSaveGoalUpdates = async () => {
+    if (!goal) return;
+
+    const title = editTitle.trim();
+    const description = editDescription.trim();
+    const category = editCategory.trim();
+    const importance = editImportance.trim();
+    const normalizedStatus = normalizeStatusForApi(editStatus);
+
+    if (!title) {
+      toast.error("Title is required.");
+      return;
+    }
+
+    if (!editStartDate) {
+      toast.error("Start date is required.");
+      return;
+    }
+
+    if (!editTargetDate) {
+      toast.error("Target date is required.");
+      return;
+    }
+
+    if (!normalizedStatus) {
+      toast.error("Status is required.");
+      return;
+    }
+
+    if (!importance) {
+      toast.error("Importance is required.");
+      return;
+    }
+
+    if (!category) {
+      toast.error("Category is required.");
+      return;
+    }
+
+    await updateGoalAsync({
+      id: goal.id,
+      data: {
+        title,
+        description,
+        start_date: editStartDate,
+        target_date: editTargetDate,
+        start_time: editStartTime || null,
+        status: normalizedStatus,
+        importance,
+        category,
+      },
+    });
+
+    setIsEditGoalModalOpen(false);
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!goal) return;
+    await deleteGoal(goal.id);
+    setIsDeleteGoalModalOpen(false);
+    void navigate({ to: "/goals" });
   };
 
   const handleAddSubtask = () => {
@@ -137,9 +285,45 @@ export function GoalDetailsPage() {
               {goal.title}
             </h1>
           </div>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-500 dark:text-slate-400">
-            <MoreVertical size={20} />
-          </button>
+          <div className="relative" ref={actionsMenuRef}>
+            <button
+              type="button"
+              aria-label="Goal actions"
+              onClick={() => setIsActionsMenuOpen((prev) => !prev)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-500 dark:text-slate-400 transition-colors"
+            >
+              <MoreVertical size={20} />
+            </button>
+
+            <AnimatePresence>
+              {isActionsMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="absolute right-0 top-11 w-44 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg z-40 p-1.5"
+                >
+                  <button
+                    type="button"
+                    onClick={handleOpenEditGoalModal}
+                    className="w-full text-left px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  >
+                    Edit goal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsActionsMenuOpen(false);
+                      setIsDeleteGoalModalOpen(true);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
+                    Delete goal
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </header>
 
         <div className="px-4 py-8 sm:p-8 max-w-4xl mx-auto w-full pb-20">
@@ -432,6 +616,206 @@ export function GoalDetailsPage() {
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:opacity-90 disabled:opacity-60"
             >
               {isCreatingTask ? "Adding..." : "Add Subtask"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isEditGoalModalOpen}
+        onClose={handleCloseEditGoalModal}
+        showCloseButton
+        className="top-1/2 -translate-y-1/2 w-[94vw] sm:w-[560px] p-6"
+      >
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Edit goal
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              Update goal details and save your changes.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+              Title
+            </label>
+            <input
+              type="text"
+              value={editTitle}
+              disabled={isUpdatingGoal}
+              onChange={(event) => setEditTitle(event.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+              Description
+            </label>
+            <textarea
+              rows={3}
+              value={editDescription}
+              disabled={isUpdatingGoal}
+              onChange={(event) => setEditDescription(event.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Start date
+              </label>
+              <input
+                type="date"
+                value={editStartDate}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditStartDate(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Target date
+              </label>
+              <input
+                type="date"
+                value={editTargetDate}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditTargetDate(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Start time
+              </label>
+              <input
+                type="time"
+                value={editStartTime}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditStartTime(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Status
+              </label>
+              <select
+                value={editStatus}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditStatus(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="To-do">To-do</option>
+                <option value="In progress">In progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Importance
+              </label>
+              <select
+                value={editImportance}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditImportance(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="Urgent">Urgent</option>
+                <option value="Important">Important</option>
+                <option value="Regular">Regular</option>
+                <option value="Not important">Not important</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Category
+              </label>
+              <input
+                type="text"
+                value={editCategory}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditCategory(event.target.value)}
+                placeholder="e.g. Career building"
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleCloseEditGoalModal}
+              disabled={isUpdatingGoal}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSaveGoalUpdates()}
+              disabled={
+                isUpdatingGoal ||
+                !editTitle.trim() ||
+                !editStartDate ||
+                !editTargetDate ||
+                !editImportance.trim() ||
+                !editCategory.trim()
+              }
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {isUpdatingGoal ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteGoalModalOpen}
+        onClose={() => {
+          if (isDeletingGoal) return;
+          setIsDeleteGoalModalOpen(false);
+        }}
+        showCloseButton
+        className="top-1/2 -translate-y-1/2 w-[92vw] sm:w-[460px] p-6"
+      >
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Delete goal?
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              This action cannot be undone. The goal and its details will be removed.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDeleteGoalModalOpen(false)}
+              disabled={isDeletingGoal}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleDeleteGoal()}
+              disabled={isDeletingGoal}
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {isDeletingGoal ? "Deleting..." : "Delete goal"}
             </button>
           </div>
         </div>

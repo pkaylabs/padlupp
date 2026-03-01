@@ -132,3 +132,7 @@ export const updateGoal = async ({
   const response = await api.patch<Goal>(`/goals/${id}/`, data);
   return response.data;
 };
+
+export const deleteGoal = async (id: string | number): Promise<void> => {
+  await api.delete(`/goals/${id}/`);
+};
