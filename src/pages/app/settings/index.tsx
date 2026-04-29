@@ -103,6 +103,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
   const [promptAnswer, setPromptAnswer] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [tempAnswer, setTempAnswer] = useState("");
+  const [avatarViewerOpen, setAvatarViewerOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -235,7 +236,8 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
                 "https://placehold.co/150x150/333/FFF?text=User"
               }
               alt="Profile"
-              className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+              className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg cursor-zoom-in"
+              onClick={() => setAvatarViewerOpen(true)}
             />
             {isEditing && (
               <button
@@ -427,6 +429,22 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
           </div>
         </div>
       </Modal>
+
+      <Modal
+        isOpen={avatarViewerOpen}
+        onClose={() => setAvatarViewerOpen(false)}
+        showCloseButton
+        className="max-w-2xl w-[92vw] p-4 md:p-6 top-1/2 -translate-y-1/2"
+      >
+        <img
+          src={
+            userProfile?.user?.avatar ||
+            "https://placehold.co/500x500/333/FFF?text=User"
+          }
+          alt={userProfile?.user?.name || "Profile image"}
+          className="max-h-[75vh] w-full object-contain rounded-md"
+        />
+      </Modal>
     </div>
   );
 };
@@ -479,6 +497,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   });
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -553,11 +572,16 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     isExternal,
     isSelected,
     hasChevron = true,
+    disabled = false,
   }: any) => (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group",
+        "w-full flex items-center justify-between py-4 px-1 transition-colors group",
+        disabled
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:bg-gray-50 dark:hover:bg-slate-800",
         isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700",
       )}
     >
@@ -976,6 +1000,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               <MenuItem
                 label="Display Language"
                 value={displayLanguage}
+                disabled
                 onClick={() => setView("display_language")}
               />
             </div>
@@ -1008,7 +1033,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             {/* Footer Actions */}
             <div className="mt-12 border-t border-gray-100 dark:border-slate-800 pt-4 space-y-1">
               <button
-                onClick={() => logout()}
+                onClick={() => setLogoutModalOpen(true)}
                 disabled={isPending}
                 className="w-full flex items-center bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 justify-center py-3 text-gray-900 dark:text-slate-100 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
               >
@@ -1017,12 +1042,12 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               <div className="flex justify-center">
                 <ChevronsUp className="text-blue-500 animate-bounce" />
               </div>
-              <button
+              {/* <button
                 onClick={() => setDeleteAccountModalOpen(true)}
                 className="w-full flex items-center bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 justify-center py-3 text-red-500 font-medium text-sm rounded-lg cursor-pointer transition-all duration-150 ease-in-out"
               >
                 Delete Account
-              </button>
+              </button> */}
             </div>
           </div>
         );
@@ -1093,6 +1118,42 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             disabled={isDeletingAccount}
           >
             {isDeletingAccount ? "Submitting..." : "Confirm Delete"}
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={logoutModalOpen}
+        onClose={() => {
+          if (isPending) return;
+          setLogoutModalOpen(false);
+        }}
+        className="w-full max-w-md p-6 rounded-2xl top-1/2 -translate-y-1/2"
+      >
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+          Log Out
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+          Are you sure you want to log out of your account?
+        </p>
+        <div className="flex gap-3 mt-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setLogoutModalOpen(false)}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={() => {
+              logout();
+              setLogoutModalOpen(false);
+            }}
+            disabled={isPending}
+          >
+            {isPending ? "Logging out..." : "Confirm Logout"}
           </Button>
         </div>
       </Modal>

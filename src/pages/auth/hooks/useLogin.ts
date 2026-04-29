@@ -2,7 +2,7 @@ import { useAuthStore } from "@/features/auth/authStore";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { LoginCredentials, loginUser } from "../api";
-import { DASHBOARD } from "@/constants/page-path";
+import { DASHBOARD, GOALS } from "@/constants/page-path";
 import { toast } from "sonner";
 
 export function useLogin() {
@@ -17,7 +17,7 @@ export function useLogin() {
 
       router.invalidate();
 
-      router.navigate({ to: DASHBOARD, replace: true });
+      router.navigate({ to: GOALS, replace: true });
 
       toast.success("Welcome back!");
     },

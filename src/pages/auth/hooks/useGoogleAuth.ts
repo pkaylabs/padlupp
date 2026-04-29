@@ -3,9 +3,10 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useAuthStore } from "@/features/auth/authStore";
 import { googleAuthUser, GoogleAuthPayload } from "../api";
-import { DASHBOARD } from "@/constants/page-path";
+import { DASHBOARD, GOALS } from "@/constants/page-path";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
+import { sanitizeNameInput } from "@/utils/name-validation";
 
 export function useGoogleAuth() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function useGoogleAuth() {
         router.navigate({ to: "/onboarding", replace: true });
         toast.success("Account created successfully!");
       } else {
-        router.navigate({ to: DASHBOARD, replace: true });
+        router.navigate({ to: GOALS, replace: true });
         toast.success("Welcome back!");
       }
     },
@@ -43,10 +44,17 @@ export function useGoogleAuth() {
 
     try {
       const decoded: any = jwtDecode(response.credential);
+      const sanitizedName = sanitizeNameInput(
+        String(decoded.name || ""),
+      ).trim();
+      if (!sanitizedName) {
+        toast.error("Invalid name from Google account");
+        return;
+      }
 
       backendMutation.mutate({
         id_token: response.credential,
-        name: decoded.name,
+        name: sanitizedName,
         phone: "",
       });
     } catch (err) {

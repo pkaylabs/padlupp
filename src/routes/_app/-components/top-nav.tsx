@@ -32,6 +32,7 @@ const resolveLongestStreak = (payload?: LongestStreakResponse): number => {
 
 export const TopNav: React.FC = () => {
   const [isTimerOpen, setIsTimerOpen] = useState(false);
+  const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     getResolvedTheme(getStoredThemePreference()),
   );
@@ -81,7 +82,11 @@ export const TopNav: React.FC = () => {
     <>
       <nav className="w-full h-full flex items-center justify-between gap-3 px-2 sm:px-6 bg-white dark:bg-slate-900">
         <div className="flex items-center gap-2 min-w-0">
-          <Link to="/settings" className="shrink-0">
+          <button
+            type="button"
+            className="shrink-0"
+            onClick={() => setIsAvatarViewerOpen(true)}
+          >
             {userProfile?.user?.avatar ? (
               <img
                 src={userProfile.user.avatar}
@@ -93,7 +98,7 @@ export const TopNav: React.FC = () => {
                 <User size={18} />
               </div>
             )}
-          </Link>
+          </button>
 
           <Link
             to={MILESTONES}
@@ -116,7 +121,7 @@ export const TopNav: React.FC = () => {
           </button>
 
           {/* Set Timer Button */}
-          <div className="flex-1 w-full ">
+          {/* <div className="flex-1 w-full ">
             <Button
               variant="primary"
               size="md"
@@ -126,18 +131,41 @@ export const TopNav: React.FC = () => {
               <span className="text-xs sm:text-sm">Set timer</span>
               <TimerStart size="20" color="#fff" />
             </Button>
-          </div>
+          </div> */}
         </div>
       </nav>
 
       {/* The Modal itself */}
-      <Modal
+      {/* <Modal
         isOpen={isTimerOpen}
         onClose={() => setIsTimerOpen(false)}
         // This className is key for positioning
         className="fixed sm:top-15 sm:right-5 w-full sm:w-xl"
       >
         <TimerModal onClose={() => setIsTimerOpen(false)} />
+      </Modal> */}
+
+      <Modal
+        isOpen={isAvatarViewerOpen}
+        onClose={() => setIsAvatarViewerOpen(false)}
+        showCloseButton
+        className="max-w-2xl w-[92vw] p-4 md:p-6 top-1/2 -translate-y-1/2"
+      >
+        <div>
+          <img
+            src={
+              userProfile?.user?.avatar ||
+              "https://placehold.co/500x500/333/FFF?text=User"
+            }
+            alt={userProfile?.user?.name || "Profile image"}
+            className="max-h-[75vh] w-full object-contain rounded-md"
+          />
+          <div className="mt-4 flex justify-end">
+            <Link to="/settings" className="text-sm text-blue-600">
+              Open profile settings
+            </Link>
+          </div>
+        </div>
       </Modal>
     </>
   );

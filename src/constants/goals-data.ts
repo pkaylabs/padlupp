@@ -8,21 +8,7 @@ import {
   Icon,
   Polyswarm,
 } from "iconsax-reactjs";
-import {
-  Briefcase,
-  Plane,
-  Apple,
-  List,
-  Smile,
-  Globe,
-  Wallet,
-  BookOpen,
-  School,
-  Check,
-  TrendingUp,
-  Circle,
-  Sparkles,
-} from "lucide-react";
+import { CORE_CATEGORIES } from "./categories";
 
 // --- Types ---
 export type GoalStatus = "todo" | "inProgress" | "completed";
@@ -69,72 +55,7 @@ export interface GoalDetails {
 // --- Mock Data ---
 
 export const CATEGORIES_MOCK = [
-  {
-    label: "Career building",
-    icon: Briefcase,
-    color: "bg-pink-100",
-    icon_color: "text-[#F56FAD] ",
-  },
-  {
-    label: "Travel",
-    icon: Plane,
-    color: "bg-blue-100",
-    icon_color: "text-[#4E92F4] ",
-  },
-  {
-    label: "Nutrition",
-    icon: Apple,
-    color: "bg-green-100",
-    icon_color: "text-[#BAD426] ",
-  },
-  {
-    label: "To-do list",
-    icon: List,
-    color: "bg-yellow-100",
-    icon_color: "text-[#D8C81F] ",
-  },
-  {
-    label: "Hobbies",
-    icon: Smile,
-    color: "bg-teal-100",
-    icon_color: "text-[#64F97B] ",
-  },
-  {
-    label: "Site or blog",
-    icon: Globe,
-    color: "bg-purple-100",
-    icon_color: "text-[#881CCE] ",
-  },
-  {
-    label: "Finance",
-    icon: Wallet,
-    color: "bg-cyan-100",
-    icon_color: "text-[#1FD8D8] ",
-  },
-  {
-    label: "Book and media",
-    icon: BookOpen,
-    color: "bg-orange-100",
-    icon_color: "text-[#1DB9C3] ",
-  },
-  {
-    label: "Education",
-    icon: School,
-    color: "bg-red-100",
-    icon_color: "text-[#FCB59A] ",
-  },
-  {
-    label: "Habit tracking",
-    icon: Check,
-    color: "bg-indigo-100",
-    icon_color: "text-[#2630EC] ",
-  },
-  {
-    label: "Project tracking",
-    icon: TrendingUp,
-    color: "bg-pink-100",
-    icon_color: "text-[#C31DAD] ",
-  },
+  ...CORE_CATEGORIES,
 ];
 
 export const PEOPLE_MOCK: Person[] = [
@@ -252,6 +173,6 @@ export const GOAL_MOCK: GoalDetails = {
   tags: [
     { label: "To-do", type: "todo" },
     { label: "Regular", type: "regular" },
-    { label: "Career building", type: "inProgress" },
+    { label: "Career", type: "inProgress" },
   ],
 };

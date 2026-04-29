@@ -76,7 +76,7 @@ export const SignIn: React.FC = () => {
         />
         <TextInput
           id="password"
-          label="Create password"
+          label="Enter password"
           type="password"
           placeholder="Password"
           values={formik.values}

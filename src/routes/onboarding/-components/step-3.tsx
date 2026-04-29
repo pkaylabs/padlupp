@@ -101,7 +101,7 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
       >
         Back
       </Button>
-      <button
+      {/* <button
         onClick={() => {
           onSkip();
           onFileSelect(null, null);
@@ -110,7 +110,7 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
         className="mt-4 text-sm text-gray-500 hover:text-gray-700"
       >
         Skip for now.
-      </button>
+      </button> */}
     </div>
   );
 };

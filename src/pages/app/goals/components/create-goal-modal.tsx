@@ -7,15 +7,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Briefcase,
-  Plane,
-  Apple,
-  List,
-  Smile,
-  Globe,
-  Wallet,
-  BookOpen,
-  School,
   CheckCircle2,
   Trash2,
 } from "lucide-react";
@@ -49,6 +40,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { createMessage } from "@/pages/app/messages/api";
 import { useAuthStore } from "@/features/auth/authStore";
 import { serializeGoalCreatedEvent } from "@/pages/app/messages/utils/goal-message";
+import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
 
 interface CreateGoalModalProps {
   isOpen: boolean;
@@ -65,32 +57,12 @@ type PopoverType =
   | "sm"
   | null;
 
-// --- Mock Data for Popovers ---
-const CATEGORIES = [
-  {
-    label: "Career building",
-    icon: Briefcase,
-    color: "bg-pink-100 text-pink-600",
-  },
-  { label: "Travel", icon: Plane, color: "bg-blue-100 text-blue-600" },
-  { label: "Nutrition", icon: Apple, color: "bg-green-100 text-green-600" },
-  { label: "To - do list", icon: List, color: "bg-yellow-100 text-yellow-600" },
-  { label: "Hobbies", icon: Smile, color: "bg-green-50 text-green-500" },
-  {
-    label: "Site or blog",
-    icon: Globe,
-    color: "bg-purple-100 text-purple-600",
-  },
-  { label: "Finance", icon: Wallet, color: "bg-cyan-100 text-cyan-600" },
-  { label: "Project tracking", icon: List, color: "bg-pink-50 text-pink-500" }, // Reusing list icon
-  { label: "Book and media", icon: BookOpen, color: "bg-sky-100 text-sky-600" },
-  {
-    label: "Habit tracking",
-    icon: CheckCircle2,
-    color: "bg-indigo-100 text-indigo-600",
-  },
-  { label: "Education", icon: School, color: "bg-orange-100 text-orange-600" },
-];
+// --- Category Data ---
+const CATEGORIES = CORE_CATEGORIES.map((item) => ({
+  label: item.label,
+  icon: item.icon,
+  color: `${item.color} ${item.icon_color}`,
+}));
 
 export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   isOpen,
@@ -117,7 +89,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [status, setStatus] = useState("To-do");
   const [priority, setPriority] = useState("Regular");
-  const [category, setCategory] = useState("Career building");
+  const [category, setCategory] = useState("Career");
   const [isShared, setIsShared] = useState(true);
 
   // Subtask Input State
@@ -480,10 +452,10 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               />
               <AnimatePresence>
                 {activePopover === "category" && (
-                  <CategoryPopover
-                    selected={category}
-                    onSelect={(c: any) => {
-                      setCategory(c);
+                    <CategoryPopover
+                      selected={category}
+                      onSelect={(c: any) => {
+                      setCategory(normalizeCategory(c));
                       setActivePopover(null);
                     }}
                   />
@@ -900,7 +872,7 @@ const CategoryPopover = ({ selected, onSelect }: any) => {
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
       className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-gray-100 dark:border-slate-700 p-4 w-80"
     >
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.label}

@@ -50,7 +50,9 @@ export const Step2Goal: React.FC<Step2Props> = ({
             title={item.title}
             description={item.description}
             isSelected={selected === item.title}
-            onClick={() => setSelected(item.title)}
+            onClick={() =>
+              setSelected((prev) => (prev === item.title ? "" : item.title))
+            }
           />
         ))}
       </div>

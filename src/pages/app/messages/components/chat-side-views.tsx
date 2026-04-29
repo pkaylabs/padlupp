@@ -1,6 +1,6 @@
 // src/components/chat/ChatSideViews.tsx
 import React, { useState } from "react";
-import { Star, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import Button from "@/components/core/buttons";
 import { ArrowLeft, QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
@@ -108,13 +108,14 @@ export const UserProfileView = ({
   person,
   onBack,
   onRate,
+  onAvatarClick,
 }: {
   person: ChatPartnerProfile;
   onBack: () => void;
   onRate: () => void;
+  onAvatarClick?: () => void;
 }) => {
   const hasCompatibility = typeof person.compatibility === "number";
-  const hasRating = typeof person.rating === "number";
   const hasInterests = Boolean(person.interests?.length);
 
   return (
@@ -139,7 +140,8 @@ export const UserProfileView = ({
           <img
             src={person.avatarUrl}
             alt={person.name}
-            className="w-32 h-32 rounded-full border-4 border-white shadow-sm"
+            className="w-32 h-32 rounded-full border-4 border-white shadow-sm cursor-zoom-in"
+            onClick={onAvatarClick}
           />
           {/* Blue dot if online */}
           <div className="absolute bottom-2 right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full"></div>
@@ -150,26 +152,6 @@ export const UserProfileView = ({
             <p className="text-orange-400 text-base mb-1">
               {person.compatibility}% compatible
             </p>
-          )}
-          {hasRating && (
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-gray-500 dark:text-slate-400 text-base">
-                Rating:
-              </span>
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star
-                    key={i}
-                    size={20}
-                    className={
-                      i <= (person.rating ?? 0)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }
-                  />
-                ))}
-              </div>
-            </div>
           )}
         </div>
 

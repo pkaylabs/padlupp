@@ -14,7 +14,7 @@ import { ListTodo, Mail } from "lucide-react";
 import { PiUsersThree } from "react-icons/pi";
 
 export const navigation = [
-  { name: "Dashboard", href: DASHBOARD, icon: MdOutlineDashboard },
+  // { name: "Dashboard", href: DASHBOARD, icon: MdOutlineDashboard },
   { name: "Goals", href: GOALS, icon: ListTodo },
   { name: "Messages", href: MESSAGES, icon: Mail },
   { name: "Buddy Finder", href: BUDDY_FINDER, icon: PiUsersThree },

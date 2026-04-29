@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { OnboardingPayload, setOnboardingExperience } from "./api";
+import { toast } from "sonner";
 
 export function useOnboarding() {
   return useMutation({
@@ -14,7 +15,7 @@ export function useOnboarding() {
     },
     onError: (error: unknown) => {
       console.error("Onboarding failed:", error);
-      //   toast.error('Failed to save profile. Please try again.');
+      toast.error("Failed to save profile. Please try again.");
     },
   });
 }

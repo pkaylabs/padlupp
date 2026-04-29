@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { DASHBOARD } from "@/constants/page-path";
+import { DASHBOARD, GOALS } from "@/constants/page-path";
 import { OnboardingPayload, setOnboardingAvatar } from "./api";
+import { toast } from "sonner";
 
 export function useOnboardingAvatar() {
   const router = useRouter();
@@ -13,12 +14,12 @@ export function useOnboardingAvatar() {
       // 1. Invalidate queries (like 'user-profile') if you have them
       router.invalidate();
       // 2. Navigate to Dashboard
-      router.navigate({ to: DASHBOARD });
+      router.navigate({ to: GOALS });
       //   toast.success('Profile setup complete!');
     },
     onError: (error: unknown) => {
       console.error("Onboarding failed:", error);
-      //   toast.error('Failed to save profile. Please try again.');
+      toast.error("Failed to save profile. Please try again.");
     },
   });
 }

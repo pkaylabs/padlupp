@@ -1,4 +1,4 @@
-import { DASHBOARD } from "@/constants/page-path";
+import { DASHBOARD, GOALS } from "@/constants/page-path";
 import { useAuthStore } from "@/features/auth/authStore";
 import { SignIn } from "@/pages/auth/signin";
 import { createFileRoute, redirect } from "@tanstack/react-router";
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_auth/signin")({
     const { isAuthenticated } = useAuthStore.getState();
     if (isAuthenticated) {
       throw redirect({
-        to: DASHBOARD,
+        to: GOALS,
       });
     }
   },

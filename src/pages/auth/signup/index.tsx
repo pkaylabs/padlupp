@@ -12,6 +12,11 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { GoogleLogin } from "@react-oauth/google";
 import { Check, X } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  NAME_ALLOWED_PATTERN,
+  NAME_MAX_LENGTH,
+  sanitizeNameInput,
+} from "@/utils/name-validation";
 
 // Google G logo SVG
 export const GoogleIcon = () => (
@@ -37,7 +42,11 @@ export const GoogleIcon = () => (
 
 // Validation schema
 const validationSchema = Yup.object({
-  fullName: Yup.string().required("Required field"),
+  fullName: Yup.string()
+    .trim()
+    .max(NAME_MAX_LENGTH, `Name must be ${NAME_MAX_LENGTH} characters or less`)
+    .matches(NAME_ALLOWED_PATTERN, "Only letters and spaces are allowed")
+    .required("Required field"),
   email: Yup.string().email("Invalid email address").required("Required field"),
   password: Yup.string()
     .min(8, "Must be at least 8 characters")
@@ -66,11 +75,11 @@ export const SignUp: React.FC = () => {
     },
     validationSchema,
     onSubmit: (values) => {
-      console.log("Form Submitted", values);
+      const sanitizedName = sanitizeNameInput(values.fullName).trim();
       register({
         email: values.email,
         password: values.password,
-        name: values.fullName,
+        name: sanitizedName,
       });
     },
   });
@@ -113,10 +122,14 @@ export const SignUp: React.FC = () => {
           id="fullName"
           label="Full Name"
           type="text"
+          maxLength={NAME_MAX_LENGTH}
           values={formik.values}
           errors={formik.errors}
           touched={formik.touched}
-          handleChange={formik.handleChange}
+          handleChange={(event) => {
+            const sanitized = sanitizeNameInput(event.target.value).trimStart();
+            formik.setFieldValue("fullName", sanitized);
+          }}
           handleBlur={formik.handleBlur}
         />
         <TextInput

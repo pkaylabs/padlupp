@@ -5,6 +5,11 @@ import { Modal } from "@/components/core/modal";
 import { usePlatformInvite } from "../hooks/useBuddies";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import {
+  NAME_ALLOWED_PATTERN,
+  NAME_MAX_LENGTH,
+  sanitizeNameInput,
+} from "@/utils/name-validation";
 
 interface PlatformInviteModalProps {
   isOpen: boolean;
@@ -12,7 +17,11 @@ interface PlatformInviteModalProps {
 }
 
 const validationSchema = Yup.object({
-  name: Yup.string().trim().required("Required field"),
+  name: Yup.string()
+    .trim()
+    .max(NAME_MAX_LENGTH, `Name must be ${NAME_MAX_LENGTH} characters or less`)
+    .matches(NAME_ALLOWED_PATTERN, "Only letters and spaces are allowed")
+    .required("Required field"),
   email: Yup.string().email("Invalid email address").required("Required field"),
 });
 
@@ -28,7 +37,7 @@ export const PlatformInviteModal = ({ isOpen, onClose }: PlatformInviteModalProp
     onSubmit: (values) => {
       sendInvite(
         {
-          name: values.name.trim(),
+          name: sanitizeNameInput(values.name).trim(),
           email: values.email.trim(),
         },
         {
@@ -61,10 +70,14 @@ export const PlatformInviteModal = ({ isOpen, onClose }: PlatformInviteModalProp
             id="name"
             label="Name"
             type="text"
+            maxLength={NAME_MAX_LENGTH}
             values={formik.values}
             errors={formik.errors}
             touched={formik.touched}
-            handleChange={formik.handleChange}
+            handleChange={(event) => {
+              const sanitized = sanitizeNameInput(event.target.value).trimStart();
+              formik.setFieldValue("name", sanitized);
+            }}
             handleBlur={formik.handleBlur}
           />
 

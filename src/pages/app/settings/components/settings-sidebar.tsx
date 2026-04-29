@@ -93,11 +93,14 @@ export const SettingsSidebar: React.FC = () => {
     isExternal,
     isSelected,
     hasChevron = true,
+    disabled = false,
   }: any) => (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50 transition-colors group",
+        "w-full flex items-center justify-between py-4 px-1 transition-colors group",
+        disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50",
         isDestructive ? "text-red-500 hover:bg-red-50" : "text-gray-700",
       )}
     >
@@ -403,6 +406,7 @@ export const SettingsSidebar: React.FC = () => {
                   icon={Globe}
                   label="Language"
                   value="Select"
+                  disabled
                   onClick={() => {}}
                 />
                 <MenuItem
@@ -459,6 +463,7 @@ export const SettingsSidebar: React.FC = () => {
                   icon={Globe}
                   label="Prompt Language"
                   value="Select"
+                  disabled
                   onClick={() => {}}
                 />
               </div>
@@ -497,6 +502,7 @@ export const SettingsSidebar: React.FC = () => {
               {/* Navigation Item */}
               <MenuItem
                 label="Display Language"
+                disabled
                 value={displayLanguage}
                 onClick={() => setView("display_language")}
               />
@@ -535,9 +541,9 @@ export const SettingsSidebar: React.FC = () => {
               <div className="flex justify-center">
                 <ChevronsUp className="text-blue-500 animate-bounce" />
               </div>
-              <button className="w-full flex items-center bg-white justify-center py-3 text-red-500 font-medium text-sm rounded-lg">
+              {/* <button className="w-full flex items-center bg-white justify-center py-3 text-red-500 font-medium text-sm rounded-lg">
                 Delete Account
-              </button>
+              </button> */}
             </div>
           </div>
         );

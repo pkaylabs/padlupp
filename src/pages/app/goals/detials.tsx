@@ -25,6 +25,7 @@ import { useUpdateGoal } from "./hooks/useUpdateGoal";
 import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import { Modal } from "@/components/core/modal";
 import { toast } from "sonner";
+import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
@@ -70,7 +71,7 @@ export function GoalDetailsPage() {
   const [editStartTime, setEditStartTime] = useState("");
   const [editStatus, setEditStatus] = useState("To-do");
   const [editImportance, setEditImportance] = useState("Regular");
-  const [editCategory, setEditCategory] = useState("");
+  const [editCategory, setEditCategory] = useState("Career");
 
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -98,7 +99,7 @@ export function GoalDetailsPage() {
     setEditStartTime(goal.start_time?.slice(0, 5) || "");
     setEditStatus(normalizeStatusForUi(goal.status));
     setEditImportance(goal.importance?.trim() || "Regular");
-    setEditCategory(goal.category?.trim() || "");
+    setEditCategory(normalizeCategory(goal.category));
   }, [goal]);
 
   useEffect(() => {
@@ -153,7 +154,7 @@ export function GoalDetailsPage() {
 
     const title = editTitle.trim();
     const description = editDescription.trim();
-    const category = editCategory.trim();
+    const category = normalizeCategory(editCategory);
     const importance = editImportance.trim();
     const normalizedStatus = normalizeStatusForApi(editStatus);
 
@@ -908,14 +909,18 @@ export function GoalDetailsPage() {
               <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
                 Category
               </label>
-              <input
-                type="text"
+              <select
                 value={editCategory}
                 disabled={isUpdatingGoal}
                 onChange={(event) => setEditCategory(event.target.value)}
-                placeholder="e.g. Career building"
                 className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
+              >
+                {CORE_CATEGORIES.map((item) => (
+                  <option key={item.label} value={item.label}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

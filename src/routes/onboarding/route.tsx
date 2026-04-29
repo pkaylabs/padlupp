@@ -22,6 +22,7 @@ export const Route = createFileRoute("/onboarding")({
 
 function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [maxVisitedStep, setMaxVisitedStep] = useState(1);
   const [isHydrated, setIsHydrated] = useState(false);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     null,
@@ -53,6 +54,7 @@ function OnboardingPage() {
 
       if (parsed.currentStep && parsed.currentStep >= 1 && parsed.currentStep <= 3) {
         setCurrentStep(parsed.currentStep);
+        setMaxVisitedStep(parsed.currentStep);
       }
       setFormData((prev) => ({
         ...prev,
@@ -87,6 +89,10 @@ function OnboardingPage() {
     },
     [profileImagePreview],
   );
+
+  useEffect(() => {
+    setMaxVisitedStep((prev) => Math.max(prev, currentStep));
+  }, [currentStep]);
 
   const handleStep1Continue = (interests: string[]) => {
     const payload = {
@@ -178,7 +184,12 @@ function OnboardingPage() {
 
   return (
     <div className="flex flex-col items-center min-h-screen w-full bg-white pt-10 px-4">
-      <ProgressBar step={currentStep} totalSteps={3} />
+      <ProgressBar
+        step={currentStep}
+        totalSteps={3}
+        maxAccessibleStep={maxVisitedStep}
+        onStepSelect={setCurrentStep}
+      />
       <div className="w-full max-w-lg">
         <AnimatePresence mode="wait">
           <motion.div

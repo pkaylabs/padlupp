@@ -51,6 +51,19 @@ const formatMessageTime = (isoString?: string) => {
   });
 };
 
+const formatMessageDateTime = (isoString?: string) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 const getConversationName = (conversation: Conversation) =>
   conversation.partner_name?.trim() || `Conversation #${conversation.id}`;
 
@@ -141,6 +154,7 @@ export const MessagesPage = () => {
   const previousConversationIdRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const inputPopoverRef = useRef<HTMLDivElement | null>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useClickAway(inputPopoverRef, () => {
     setInputPopoverOpen(false);
@@ -373,6 +387,14 @@ export const MessagesPage = () => {
     };
   }, [selectedFilePreviewUrl]);
 
+  useEffect(() => {
+    const input = messageInputRef.current;
+    if (!input) return;
+
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 140)}px`;
+  }, [inputValue]);
+
   return (
     <>
       <div className="font-monts w-full flex h-[92vh] bg-white dark:bg-slate-950 overflow-hidden relative text-gray-900 dark:text-slate-100">
@@ -446,6 +468,14 @@ export const MessagesPage = () => {
                           src={avatarUrl}
                           alt={name}
                           className="w-12 h-12 rounded-full object-cover"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setAttachmentViewer({
+                              url: avatarUrl,
+                              mime: "image/*",
+                              name,
+                            });
+                          }}
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
@@ -545,6 +575,14 @@ export const MessagesPage = () => {
                       src={getConversationAvatar(activeConversation)}
                       alt={getConversationName(activeConversation)}
                       className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setAttachmentViewer({
+                          url: getConversationAvatar(activeConversation),
+                          mime: "image/*",
+                          name: getConversationName(activeConversation),
+                        });
+                      }}
                     />
                   ) : (
                     getInitials(
@@ -691,9 +729,10 @@ export const MessagesPage = () => {
                     key={message.id}
                     text={message.text}
                     senderName={message.sender?.name || "User"}
+                    senderAvatar={message.sender?.avatar || ""}
                     isMe={message.sender?.id === authUser?.id}
                     myName={currentUserName}
-                    timestamp={formatMessageTime(message.created_at)}
+                    timestamp={formatMessageDateTime(message.created_at)}
                     pending={Boolean(message.optimistic)}
                     attachment={message.attachment}
                     attachmentName={message.attachment_name}
@@ -730,6 +769,13 @@ export const MessagesPage = () => {
                         person={activePartnerProfile}
                         onBack={handleBackToChat}
                         onRate={() => setActiveModal("rate")}
+                        onAvatarClick={() =>
+                          setAttachmentViewer({
+                            url: activePartnerProfile.avatarUrl,
+                            mime: "image/*",
+                            name: activePartnerProfile.name,
+                          })
+                        }
                       />
                     )}
                     {sideView === "progress" && (
@@ -797,12 +843,12 @@ export const MessagesPage = () => {
                 >
                   <Mic strokeWidth={1.5} size={20} />
                 </button>
-                <input
-                  type="text"
+                <textarea
+                  ref={messageInputRef}
                   value={inputValue}
                   onChange={(event) => setInputValue(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") {
+                    if (event.key === "Enter" && !event.shiftKey) {
                       event.preventDefault();
                       void handleSend();
                     }
@@ -815,7 +861,8 @@ export const MessagesPage = () => {
                         : "Type a message"
                       : "Select a conversation"
                   }
-                  className="h-full flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500"
+                  rows={1}
+                  className="py-2 min-h-10 max-h-[140px] flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500 leading-5"
                 />
                 <button
                   disabled={!activeConversationId || sending}
@@ -955,6 +1002,7 @@ export const MessagesPage = () => {
 const MessageBubble = ({
   text,
   senderName,
+  senderAvatar,
   isMe,
   myName,
   timestamp,
@@ -967,6 +1015,7 @@ const MessageBubble = ({
 }: {
   text: string | null;
   senderName: string;
+  senderAvatar: string;
   isMe: boolean;
   myName: string;
   timestamp: string;
@@ -1025,9 +1074,24 @@ const MessageBubble = ({
           isMe ? "flex-row-reverse" : "flex-row",
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold shrink-0 mt-1">
-          {getInitials(displayName)}
-        </div>
+        {senderAvatar ? (
+          <img
+            src={senderAvatar}
+            alt={displayName}
+            className="w-8 h-8 rounded-full object-cover shrink-0 mt-1 cursor-zoom-in"
+            onClick={() =>
+              onAttachmentClick?.({
+                url: senderAvatar,
+                mime: "image/*",
+                name: displayName,
+              })
+            }
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold shrink-0 mt-1">
+            {getInitials(displayName)}
+          </div>
+        )}
         <div
           className={cn("flex flex-col", isMe ? "items-end" : "items-start")}
         >
@@ -1095,6 +1159,7 @@ const MessageBubble = ({
               <div
                 className={cn(
                   "text-sm leading-relaxed whitespace-pre-wrap break-words",
+                  "[overflow-wrap:anywhere]",
                   isMe ? "text-white" : "text-gray-800 dark:text-slate-100",
                 )}
               >

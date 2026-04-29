@@ -13,6 +13,7 @@ import Button from "@/components/core/buttons";
 import { useGoals } from "./hooks/useGoals";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
 import moment from "moment";
+import { normalizeCategory } from "@/constants/categories";
 
 const formatGoalTime = (timeValue?: string | null) => {
   if (!timeValue) return "";
@@ -101,7 +102,7 @@ export const GoalsPage = () => {
 
       const normalizedImportance = goal.importance?.trim() || "Regular";
       const normalizedStatus = goal.status?.trim() || "To-do";
-      const normalizedCategory = goal.category?.trim() || "";
+      const normalizedCategory = normalizeCategory(goal.category);
 
       const item = {
         id: goal.id.toString(),

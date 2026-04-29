@@ -1,7 +1,6 @@
 // src/components/goals/PeopleCardStack.tsx
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star } from "lucide-react";
 import { type Person } from "@/constants/goals-data";
 import Button from "@/components/core/buttons";
 import { ArrowLeft2, ArrowRight2, QuoteDown } from "iconsax-reactjs";
@@ -72,23 +71,6 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
             <span className="text-[#F18E69] ">
               {person?.compatibility}% compatible
             </span>
-            <div className="flex items-center gap-1.5 my-2">
-              <span className="text-[#636363] dark:text-slate-300">
-                Rating:
-              </span>
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  size={20}
-                  className={
-                    i < person?.rating
-                      ? "text-yellow-400 fill-yellow-400"
-                      : "text-gray-300"
-                  }
-                />
-              ))}
-            </div>
-
             <div className="w-full p-4 sm:p-6 py-8 bg-white dark:bg-slate-900 rounded-lg shadow text-sm text-gray-700 dark:text-slate-300 my-4 border border-transparent dark:border-slate-800">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="bg-primary-100/50 p-1 rounded-full ">

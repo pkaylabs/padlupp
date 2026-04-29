@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import { StreaksView } from "./components/streaks-view";
 import { AwardsView } from "./components/awards-view";
 import { cn } from "@/utils/cs";
+import { GOALS } from "@/constants/page-path";
 
 type MilestoneTab = "streaks" | "awards";
 
@@ -18,7 +19,7 @@ export const MilestonesPage = () => {
         <button
           type="button"
           aria-label="Back"
-          onClick={() => void navigate({ to: "/dashboard" })}
+          onClick={() => void navigate({ to: GOALS })}
           className="absolute left-0 top-0 sm:top-1 p-2 rounded-full hover:bg-gray-200/80 dark:hover:bg-slate-800 text-[#4A4A4A] dark:text-slate-200"
         >
           <ChevronLeft size={22} className="sm:w-6.5 sm:h-6.5" />
