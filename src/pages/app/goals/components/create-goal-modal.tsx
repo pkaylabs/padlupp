@@ -41,6 +41,7 @@ import { createMessage } from "@/pages/app/messages/api";
 import { useAuthStore } from "@/features/auth/authStore";
 import { serializeGoalCreatedEvent } from "@/pages/app/messages/utils/goal-message";
 import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
+import type { CheckinFrequency } from "../api";
 
 interface CreateGoalModalProps {
   isOpen: boolean;
@@ -54,6 +55,7 @@ type PopoverType =
   | "status"
   | "priority"
   | "category"
+  | "checkin"
   | "sm"
   | null;
 
@@ -63,6 +65,20 @@ const CATEGORIES = CORE_CATEGORIES.map((item) => ({
   icon: item.icon,
   color: `${item.color} ${item.icon_color}`,
 }));
+
+const CHECKIN_FREQUENCIES: CheckinFrequency[] = [
+  "DAILY",
+  "3-DAYS",
+  "WEEKLY",
+  "BI-WEEKLY",
+  "MONDAYS",
+  "TUESDAYS",
+  "WEDNESDAYS",
+  "THURSDAYS",
+  "FRIDAYS",
+  "SATURDAYS",
+  "SUNDAYS",
+];
 
 export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   isOpen,
@@ -90,6 +106,8 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   const [status, setStatus] = useState("To-do");
   const [priority, setPriority] = useState("Regular");
   const [category, setCategory] = useState("Career");
+  const [checkinFrequency, setCheckinFrequency] =
+    useState<CheckinFrequency>("DAILY");
   const [isShared, setIsShared] = useState(true);
 
   // Subtask Input State
@@ -116,6 +134,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
           : format(dateRange.start, "yyyy-MM-dd"),
         category,
         importance: priority,
+        checkin_frequency: checkinFrequency,
         status,
         is_active: true,
         ...(conversationId ? { conversation: conversationId } : {}),
@@ -452,10 +471,31 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               />
               <AnimatePresence>
                 {activePopover === "category" && (
-                    <CategoryPopover
-                      selected={category}
-                      onSelect={(c: any) => {
+                  <CategoryPopover
+                    selected={category}
+                    onSelect={(c: any) => {
                       setCategory(normalizeCategory(c));
+                      setActivePopover(null);
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative">
+              <BadgeButton
+                label={checkinFrequency}
+                type="checkin"
+                color="bg-emerald-100 text-emerald-700"
+                icon="↻"
+              />
+              <AnimatePresence>
+                {activePopover === "checkin" && (
+                  <CheckinFrequencyPopover
+                    options={CHECKIN_FREQUENCIES}
+                    selected={checkinFrequency}
+                    onSelect={(value: CheckinFrequency) => {
+                      setCheckinFrequency(value);
                       setActivePopover(null);
                     }}
                   />
@@ -896,6 +936,38 @@ const CategoryPopover = ({ selected, onSelect }: any) => {
           </button>
         ))}
       </div>
+    </motion.div>
+  );
+};
+
+const CheckinFrequencyPopover = ({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: CheckinFrequency[];
+  selected: CheckinFrequency;
+  onSelect: (value: CheckinFrequency) => void;
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 5, scale: 0.95 }}
+      className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-2 w-52 max-h-64 overflow-y-auto"
+    >
+      {options.map((frequency) => (
+        <button
+          key={frequency}
+          onClick={() => onSelect(frequency)}
+          className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg flex items-center justify-between text-sm text-gray-700 dark:text-slate-200"
+        >
+          <span>{frequency}</span>
+          {selected === frequency && (
+            <CheckCircle2 size={14} className="text-blue-500" />
+          )}
+        </button>
+      ))}
     </motion.div>
   );
 };

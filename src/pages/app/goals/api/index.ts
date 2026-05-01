@@ -12,13 +12,25 @@ export interface User {
   email_verified: boolean;
 }
 
+export interface GoalPartner {
+  id: number;
+  name: string;
+  avatar?: string | null;
+}
+
 export interface Goal {
   id: number;
   user: User;
   partnership?: number | null;
+  partner?: GoalPartner | null;
+  partner_name?: string | null;
+  partner_avatar?: string | null;
   title: string;
   category?: string | null;
   importance?: string | null;
+  checkin_frequency?: CheckinFrequency | null;
+  public_share_link?: string | null;
+  share_link?: string | null;
   description: string;
   start_date: string; // ISO Date string
   start_time?: string | null;
@@ -53,10 +65,24 @@ export interface CreateGoalPayload {
   target_date: string; // Format: YYYY-MM-DD
   category?: string;
   importance?: string;
+  checkin_frequency: CheckinFrequency;
   is_active: boolean;
   status: string;
   conversation?: number;
 }
+
+export type CheckinFrequency =
+  | "DAILY"
+  | "3-DAYS"
+  | "WEEKLY"
+  | "BI-WEEKLY"
+  | "MONDAYS"
+  | "TUESDAYS"
+  | "WEDNESDAYS"
+  | "THURSDAYS"
+  | "FRIDAYS"
+  | "SATURDAYS"
+  | "SUNDAYS";
 
 export interface Task {
   id: number;
@@ -105,6 +131,37 @@ export interface UpdateTaskPayload {
 export interface UpdateGoalPayload {
   id: string | number;
   data: Partial<Omit<Goal, "id" | "user">>; // Allow updating any field except ID/User
+}
+
+export interface ShareGoalInvitePayload {
+  emails: string[];
+  message?: string;
+}
+
+export interface ShareGoalInviteResponse {
+  detail?: string;
+  invited_count?: number;
+  public_share_link?: string | null;
+  share_link?: string | null;
+}
+
+export interface GoalInvitePreview {
+  id?: number;
+  token?: string;
+  status?: "pending" | "accepted" | "declined" | "expired";
+  goal: {
+    id: number;
+    title: string;
+    description?: string | null;
+    category?: string | null;
+    target_date?: string | null;
+  };
+  inviter?: {
+    id?: number;
+    name?: string | null;
+    avatar?: string | null;
+  } | null;
+  message?: string | null;
 }
 
 export const getGoals = async (
@@ -160,4 +217,33 @@ export const updateGoal = async ({
 
 export const deleteGoal = async (id: string | number): Promise<void> => {
   await api.delete(`/goals/${id}/`);
+};
+
+export const shareGoalInvites = async (
+  goalId: string | number,
+  payload: ShareGoalInvitePayload,
+): Promise<ShareGoalInviteResponse> => {
+  const { data } = await api.post<ShareGoalInviteResponse>(
+    `/goals/${goalId}/share/`,
+    payload,
+  );
+  return data;
+};
+
+export const getGoalInvitePreview = async (
+  token: string,
+): Promise<GoalInvitePreview> => {
+  const { data } = await api.get<GoalInvitePreview>(`/goals/invite/${token}/`);
+  return data;
+};
+
+export const respondToGoalInvite = async (
+  token: string,
+  action: "accept" | "decline",
+): Promise<{ detail?: string }> => {
+  const { data } = await api.post<{ detail?: string }>(
+    `/goals/invite/${token}/respond/`,
+    { action },
+  );
+  return data;
 };

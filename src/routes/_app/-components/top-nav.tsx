@@ -18,15 +18,17 @@ import {
 } from "@/utils/theme";
 import { MILESTONES } from "@/constants/page-path";
 
-interface LongestStreakResponse {
+interface StreakStatsResponse {
+  current_streak_count?: number;
+  longest_streak_count?: number;
   longest_streak?: number;
   streak?: number;
   days?: number;
 }
 
-const resolveLongestStreak = (payload?: LongestStreakResponse): number => {
+const resolveCurrentStreak = (payload?: StreakStatsResponse): number => {
   if (!payload) return 0;
-  const value = payload.longest_streak ?? payload.streak ?? payload.days ?? 0;
+  const value = payload.current_streak_count ?? 0;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
 
@@ -40,14 +42,14 @@ export const TopNav: React.FC = () => {
   const { data: streakResponse } = useQuery({
     queryKey: ["longest-streak"],
     queryFn: async () => {
-      const { data } = await api.get<LongestStreakResponse>(
+      const { data } = await api.get<StreakStatsResponse>(
         "/stats/longest-streak/",
       );
       return data;
     },
     staleTime: 1000 * 60 * 5,
   });
-  const longestStreak = resolveLongestStreak(streakResponse);
+  const currentStreak = resolveCurrentStreak(streakResponse);
 
   useEffect(() => {
     const syncTheme = () => {
@@ -105,7 +107,7 @@ export const TopNav: React.FC = () => {
             className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 min-w-0"
           >
             <span className="text-xs sm:text-sm truncate text-gray-700 dark:text-slate-200">
-              🔥 {longestStreak} days
+              🔥 {currentStreak} days
             </span>
             <ChevronRight className="size-4 sm:size-5 shrink-0 text-gray-500 dark:text-slate-400" />
           </Link>

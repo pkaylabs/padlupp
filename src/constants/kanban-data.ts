@@ -13,6 +13,11 @@ export interface Task {
   timeLeft?: string; // "58 Min Left"
   progress?: number; // 0-100
   priority?: "high" | "medium" | "low";
+  goalId?: number;
+  partnershipId?: number | null;
+  sharedPartnerName?: string;
+  sharedPartnerAvatar?: string;
+  publicShareLink?: string | null;
 }
 
 export interface Column {

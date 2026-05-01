@@ -12,8 +12,15 @@ import { BoardData } from "@/constants/kanban-data";
 import Button from "@/components/core/buttons";
 import { useGoals } from "./hooks/useGoals";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
+import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import moment from "moment";
 import { normalizeCategory } from "@/constants/categories";
+import { Modal } from "@/components/core/modal";
+import { CORE_CATEGORIES } from "@/constants/categories";
+import { toast } from "sonner";
+import { useShareGoalInvites } from "./hooks/useShareGoal";
+import { ShareGoalModal } from "./components/share-goal-modal";
+import type { Goal } from "./api";
 
 const formatGoalTime = (timeValue?: string | null) => {
   if (!timeValue) return "";
@@ -52,6 +59,19 @@ export const GoalsPage = () => {
   const [chatConversationId, setChatConversationId] = useState<number | null>(
     null,
   );
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
+  const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
+  const [isShareGoalModalOpen, setIsShareGoalModalOpen] = useState(false);
+  const [shareLinkDraft, setShareLinkDraft] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editTargetDate, setEditTargetDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editStatus, setEditStatus] = useState("To-do");
+  const [editImportance, setEditImportance] = useState("Regular");
+  const [editCategory, setEditCategory] = useState("Career");
 
   useEffect(() => {
     if (localStorage.getItem(OPEN_CREATE_GOAL_FROM_CHAT_KEY) === "1") {
@@ -79,7 +99,124 @@ export const GoalsPage = () => {
   console.log(goalsData, "goals data");
 
   // 2. Mutation for Drag & Drop
-  const { mutate: updateGoalStatus } = useUpdateGoal();
+  const {
+    mutate: updateGoalStatus,
+    mutateAsync: updateGoal,
+    isPending: isUpdatingGoal,
+  } = useUpdateGoal();
+  const { mutateAsync: deleteGoal, isPending: isDeletingGoal } = useDeleteGoal();
+  const { mutateAsync: shareGoalInvites, isPending: isSharingGoal } = useShareGoalInvites();
+
+  const normalizeStatusForApi = (status: string) => {
+    if (status === "In progress" || status === "in-progress") {
+      return "in-progress";
+    }
+    if (status === "Completed" || status === "completed") {
+      return "completed";
+    }
+    return "planned";
+  };
+
+  const normalizeStatusForUi = (status: string) => {
+    if (status === "in-progress" || status === "In progress") {
+      return "In progress";
+    }
+    if (status === "completed" || status === "Completed") {
+      return "Completed";
+    }
+    return "To-do";
+  };
+
+  const openEditGoalModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setEditTitle(goal.title || "");
+    setEditDescription(goal.description || "");
+    setEditStartDate(goal.start_date ? goal.start_date.split("T")[0] : "");
+    setEditTargetDate(goal.target_date ? goal.target_date.split("T")[0] : "");
+    setEditStartTime(goal.start_time?.slice(0, 5) || "");
+    setEditStatus(normalizeStatusForUi(goal.status));
+    setEditImportance(goal.importance?.trim() || "Regular");
+    setEditCategory(normalizeCategory(goal.category));
+    setIsEditGoalModalOpen(true);
+  };
+
+  const openDeleteGoalModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setIsDeleteGoalModalOpen(true);
+  };
+
+  const openShareGoalModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setShareLinkDraft(goal.public_share_link || goal.share_link || "");
+    setIsShareGoalModalOpen(true);
+  };
+
+  const handleSaveGoalUpdates = async () => {
+    if (!selectedGoal) return;
+
+    const title = editTitle.trim();
+    const description = editDescription.trim();
+    const category = normalizeCategory(editCategory);
+    const importance = editImportance.trim();
+    const normalizedStatus = normalizeStatusForApi(editStatus);
+
+    if (!title) {
+      toast.error("Title is required.");
+      return;
+    }
+    if (!editStartDate) {
+      toast.error("Start date is required.");
+      return;
+    }
+    if (!editTargetDate) {
+      toast.error("Target date is required.");
+      return;
+    }
+    if (!importance) {
+      toast.error("Importance is required.");
+      return;
+    }
+    if (!category) {
+      toast.error("Category is required.");
+      return;
+    }
+
+    await updateGoal({
+      id: selectedGoal.id,
+      data: {
+        title,
+        description,
+        start_date: editStartDate,
+        target_date: editTargetDate,
+        start_time: editStartTime || null,
+        status: normalizedStatus,
+        importance,
+        category,
+      },
+    });
+    setIsEditGoalModalOpen(false);
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!selectedGoal) return;
+    await deleteGoal(selectedGoal.id);
+    setIsDeleteGoalModalOpen(false);
+  };
+
+  const handleShareGoalInvites = async (payload: {
+    emails: string[];
+    message?: string;
+  }) => {
+    if (!selectedGoal) return;
+    const response = await shareGoalInvites({
+      goalId: selectedGoal.id,
+      payload,
+    });
+    const maybeLink = response.public_share_link || response.share_link || "";
+    if (maybeLink) {
+      setShareLinkDraft(maybeLink);
+    }
+  };
 
   const boardData = useMemo(() => {
     if (!goalsData?.results) return EMPTY_BOARD;
@@ -106,6 +243,17 @@ export const GoalsPage = () => {
 
       const item = {
         id: goal.id.toString(),
+        goalId: goal.id,
+        partnershipId: goal.partnership ?? null,
+        sharedPartnerName:
+          goal.partner?.name ||
+          goal.partner_name ||
+          (goal.partnership ? "Shared partner" : ""),
+        sharedPartnerAvatar:
+          goal.partner?.avatar ||
+          goal.partner_avatar ||
+          "",
+        publicShareLink: goal.public_share_link || goal.share_link || null,
         title: goal.title,
         description: goal.description,
         tags: [normalizedImportance, normalizedStatus, normalizedCategory].filter(
@@ -277,6 +425,10 @@ export const GoalsPage = () => {
                     key={column.id}
                     column={column}
                     onAddTask={() => setIsModalOpen(true)}
+                    goalsData={goalsData?.results || []}
+                    onEditGoal={openEditGoalModal}
+                    onDeleteGoal={openDeleteGoalModal}
+                    onShareGoal={openShareGoalModal}
                   />
                 ))}
               </div>
@@ -296,6 +448,230 @@ export const GoalsPage = () => {
         isOpen={isModalOpen}
         onClose={handleCloseCreateModal}
         conversationId={chatConversationId}
+      />
+
+      <Modal
+        isOpen={isEditGoalModalOpen}
+        onClose={() => {
+          if (isUpdatingGoal) return;
+          setIsEditGoalModalOpen(false);
+        }}
+        showCloseButton
+        className="top-1/2 -translate-y-1/2 w-[94vw] sm:w-[560px] p-6"
+      >
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Edit goal
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              Update goal details and save your changes.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+              Title
+            </label>
+            <input
+              type="text"
+              value={editTitle}
+              disabled={isUpdatingGoal}
+              onChange={(event) => setEditTitle(event.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+              Description
+            </label>
+            <textarea
+              rows={3}
+              value={editDescription}
+              disabled={isUpdatingGoal}
+              onChange={(event) => setEditDescription(event.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Start date
+              </label>
+              <input
+                type="date"
+                value={editStartDate}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditStartDate(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Target date
+              </label>
+              <input
+                type="date"
+                value={editTargetDate}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditTargetDate(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Start time
+              </label>
+              <input
+                type="time"
+                value={editStartTime}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditStartTime(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Status
+              </label>
+              <select
+                value={editStatus}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditStatus(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="To-do">To-do</option>
+                <option value="In progress">In progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Importance
+              </label>
+              <select
+                value={editImportance}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditImportance(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="Urgent">Urgent</option>
+                <option value="Important">Important</option>
+                <option value="Regular">Regular</option>
+                <option value="Not important">Not important</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Category
+              </label>
+              <select
+                value={editCategory}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditCategory(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                {CORE_CATEGORIES.map((item) => (
+                  <option key={item.label} value={item.label}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setIsEditGoalModalOpen(false)}
+              disabled={isUpdatingGoal}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSaveGoalUpdates()}
+              disabled={
+                isUpdatingGoal ||
+                !editTitle.trim() ||
+                !editStartDate ||
+                !editTargetDate ||
+                !editImportance.trim() ||
+                !editCategory.trim()
+              }
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {isUpdatingGoal ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteGoalModalOpen}
+        onClose={() => {
+          if (isDeletingGoal) return;
+          setIsDeleteGoalModalOpen(false);
+        }}
+        showCloseButton
+        className="top-1/2 -translate-y-1/2 w-[92vw] sm:w-[460px] p-6"
+      >
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Delete goal?
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              This action cannot be undone. The goal and its details will be removed.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDeleteGoalModalOpen(false)}
+              disabled={isDeletingGoal}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleDeleteGoal()}
+              disabled={isDeletingGoal}
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {isDeletingGoal ? "Deleting..." : "Delete goal"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <ShareGoalModal
+        isOpen={isShareGoalModalOpen}
+        onClose={() => {
+          if (isSharingGoal) return;
+          setIsShareGoalModalOpen(false);
+        }}
+        goalTitle={selectedGoal?.title || "Goal"}
+        shareLink={
+          shareLinkDraft ||
+          selectedGoal?.public_share_link ||
+          selectedGoal?.share_link ||
+          ""
+        }
+        isSubmitting={isSharingGoal}
+        onSendInvites={handleShareGoalInvites}
       />
     </div>
   );

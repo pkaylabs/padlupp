@@ -1,5 +1,5 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { RateUserModal, ReportUserModal } from "./components/modals";
+import { ReportUserModal } from "./components/modals";
 import {
   CheckCircle,
   FileText,
@@ -14,10 +14,7 @@ import {
 import { cn } from "@/utils/cs";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ChatPartnerProfile,
-  GoalProgressView,
   SharedFilesView,
-  UserProfileView,
 } from "./components/chat-side-views";
 import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
 import { useChat } from "./hooks/useChat";
@@ -29,9 +26,13 @@ import { Modal } from "@/components/core/modal";
 import logo from "@/assets/images/logo.png";
 import { useClickAway } from "react-use";
 import { parseGoalCreatedEvent } from "./utils/goal-message";
+import {
+  useBuddyFinder,
+  useConnections,
+} from "@/pages/app/buddy-finder/hooks/useBuddies";
+import type { BuddyConnection } from "@/pages/app/buddy-finder/api";
 
-type SideView = "none" | "profile" | "progress";
-type ActiveModal = "none" | "rate" | "report";
+type ActiveModal = "none" | "report";
 type ComingSoonFeature = "none" | "voice_call" | "video_call";
 type AttachmentViewerState = {
   url: string;
@@ -65,10 +66,10 @@ const formatMessageDateTime = (isoString?: string) => {
 };
 
 const getConversationName = (conversation: Conversation) =>
-  conversation.partner_name?.trim() || `Conversation #${conversation.id}`;
+  toDisplayText(conversation.partner_name) || `Conversation #${conversation.id}`;
 
 const getConversationAvatar = (conversation: Conversation) =>
-  conversation.partner_avatar?.trim() || "";
+  toDisplayText(conversation.partner_avatar);
 
 const getInitials = (name: string) =>
   name
@@ -79,11 +80,37 @@ const getInitials = (name: string) =>
     .join("");
 
 const normalizeSearchText = (value?: string | null) =>
-  (value || "")
+  (toDisplayText(value) || "")
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+
+const toDisplayText = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => toDisplayText(item))
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (value && typeof value === "object") {
+    const maybeLabel = (value as { label?: unknown }).label;
+    if (typeof maybeLabel === "string") {
+      return maybeLabel.trim();
+    }
+  }
+
+  return "";
+};
 
 const getConversationPreview = (conversation: Conversation) => {
   const goalEvent = parseGoalCreatedEvent(conversation.last_message?.text);
@@ -129,13 +156,15 @@ export const MessagesPage = () => {
   } = useChat();
 
   const authUser = useAuthStore((state) => state.user);
+  const { data: connections = [] } = useConnections();
+  const { data: finderProfiles = [] } = useBuddyFinder();
 
   const [activeTab, setActiveTab] = useState<"Activities" | "Shared">(
     "Activities",
   );
   const [searchValue, setSearchValue] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
-  const [sideView, setSideView] = useState<SideView>("none");
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ActiveModal>("none");
   const [inputPopoverOpen, setInputPopoverOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -191,17 +220,92 @@ export const MessagesPage = () => {
     [activeConversationId, conversations],
   );
 
-  const activePartnerProfile = useMemo<ChatPartnerProfile | null>(() => {
+  const activePartnerUserId = useMemo(() => {
+    if (!authUser?.id) return null;
+    const partnerMessage = messages.find(
+      (message) => message.sender?.id && message.sender.id !== authUser.id,
+    );
+    return partnerMessage?.sender?.id ?? null;
+  }, [authUser?.id, messages]);
+
+  const availableProfiles = useMemo(() => {
+    const merged = [...connections, ...finderProfiles];
+    const unique = new Map<number, BuddyConnection>();
+    merged.forEach((profile) => {
+      if (!profile?.id) return;
+      if (!unique.has(profile.id)) {
+        unique.set(profile.id, profile);
+      }
+    });
+    return Array.from(unique.values());
+  }, [connections, finderProfiles]);
+
+  const activePartnerProfile = useMemo<
+    | (Pick<BuddyConnection, "bio" | "experience" | "location" | "time_zone" | "availability" | "communication_styles" | "focus_areas" | "interests"> & {
+        id: string;
+        name: string;
+        avatarUrl: string;
+        userId?: number;
+        compatibility?: number;
+      })
+    | null
+  >(() => {
     if (!activeConversation) return null;
+
+    const conversationName = getConversationName(activeConversation);
+    const conversationAvatar = getConversationAvatar(activeConversation);
+    const normalizedConversationName = normalizeSearchText(conversationName);
+
+    const matchedConnection = availableProfiles.find((connection) => {
+      if (connection.id === activeConversation.partnership) {
+        return true;
+      }
+
+      if (activePartnerUserId && connection.user?.id === activePartnerUserId) {
+        return true;
+      }
+
+      const connectionName = normalizeSearchText(connection.user?.name);
+      if (!connectionName || connectionName !== normalizedConversationName) {
+        return false;
+      }
+
+      if (!conversationAvatar) return true;
+      return (
+        (connection.user?.avatar || "").trim() === conversationAvatar.trim()
+      );
+    });
 
     return {
       id: String(activeConversation.id),
-      name: getConversationName(activeConversation),
-      avatarUrl:
-        getConversationAvatar(activeConversation) ||
-        "https://placehold.co/120x120/E6F0FD/1F2937?text=U",
+      name: conversationName,
+      avatarUrl: conversationAvatar,
+      userId: matchedConnection?.user?.id,
+      compatibility:
+        typeof matchedConnection?.compatibility_score === "number"
+          ? Math.max(0, Math.min(100, Math.round(matchedConnection.compatibility_score)))
+          : undefined,
+      bio: toDisplayText(matchedConnection?.bio),
+      experience: toDisplayText(matchedConnection?.experience),
+      location: toDisplayText(matchedConnection?.location),
+      time_zone: toDisplayText(matchedConnection?.time_zone),
+      availability: toDisplayText(matchedConnection?.availability),
+      communication_styles: toDisplayText(matchedConnection?.communication_styles),
+      focus_areas: toDisplayText(matchedConnection?.focus_areas),
+      interests: Array.isArray(matchedConnection?.interests)
+        ? matchedConnection.interests
+            .map((interest) => toDisplayText(interest))
+            .filter(Boolean)
+        : toDisplayText(matchedConnection?.interests)
+            ? [toDisplayText(matchedConnection?.interests)]
+            : [],
     };
-  }, [activeConversation]);
+  }, [activeConversation, activePartnerUserId, availableProfiles]);
+
+  const isActivePartnerOnline = useMemo(() => {
+    if (!activePartnerProfile?.userId) return onlineUserIds.length > 0;
+    return onlineUserIds.includes(activePartnerProfile.userId);
+  }, [activePartnerProfile?.userId, onlineUserIds]);
   const currentUserName = authUser?.name?.trim() || "Me";
 
   const hasConversations = conversations.length > 0;
@@ -220,7 +324,7 @@ export const MessagesPage = () => {
       if (event.key !== "Escape") return;
 
       setInputPopoverOpen(false);
-      setSideView("none");
+      setIsProfileModalOpen(false);
       setComingSoonFeature("none");
       setAttachmentViewer(null);
       setActiveConversationId(null);
@@ -298,12 +402,6 @@ export const MessagesPage = () => {
       window.clearTimeout(timeout);
     };
   }, [inputValue, setTyping]);
-
-  const handleOpenProfile = () => {
-    if (!hasActiveConversation) return;
-    setSideView("profile");
-  };
-  const handleBackToChat = () => setSideView("none");
 
   const handleSend = async () => {
     const text = inputValue.trim();
@@ -454,7 +552,7 @@ export const MessagesPage = () => {
                     key={conversation.id}
                     onClick={() => {
                       setActiveConversationId(conversation.id);
-                      setSideView("none");
+                      setIsProfileModalOpen(false);
                       setShowMobileChat(true);
                     }}
                     className={cn(
@@ -563,11 +661,8 @@ export const MessagesPage = () => {
                 <div
                   className={cn(
                     "w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-2 md:mr-3 shrink-0",
-                    hasActiveConversation
-                      ? "cursor-pointer"
-                      : "cursor-not-allowed opacity-60",
+                    hasActiveConversation ? "" : "opacity-60",
                   )}
-                  onClick={handleOpenProfile}
                 >
                   {activeConversation &&
                   getConversationAvatar(activeConversation) ? (
@@ -594,18 +689,23 @@ export const MessagesPage = () => {
                 </div>
 
                 <div className="min-w-0">
-                  <h2 className="font-semibold text-[#666668] dark:text-slate-200 text-sm truncate max-w-[42vw] md:max-w-none">
+                  <button
+                    type="button"
+                    disabled={!hasActiveConversation}
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="font-semibold text-[#666668] dark:text-slate-200 text-sm truncate max-w-[42vw] md:max-w-none text-left hover:text-[#4E92F4] transition-colors disabled:pointer-events-none disabled:opacity-80"
+                  >
                     {activeConversation
                       ? getConversationName(activeConversation)
                       : hasConversations
                         ? "Select a conversation"
                         : "No conversations yet"}
-                  </h2>
+                  </button>
                   {hasActiveConversation ? (
                     <p className="text-[11px] md:text-xs text-green-500 flex items-center truncate max-w-[50vw] md:max-w-none">
                       {isPeerTyping
                         ? `${peerTypingName || "Someone"} is typing...`
-                        : onlineUserIds.length > 0
+                        : isActivePartnerOnline
                           ? "Online"
                           : "Conversation active"}
                     </p>
@@ -753,45 +853,6 @@ export const MessagesPage = () => {
               </div>
             )}
 
-            <AnimatePresence>
-              {sideView !== "none" &&
-                hasActiveConversation &&
-                activePartnerProfile && (
-                  <motion.div
-                    initial={{ x: "100%" }}
-                    animate={{ x: 0 }}
-                    exit={{ x: "100%" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute inset-0 z-20 bg-white dark:bg-slate-900"
-                  >
-                    {sideView === "profile" && (
-                      <UserProfileView
-                        person={activePartnerProfile}
-                        onBack={handleBackToChat}
-                        onRate={() => setActiveModal("rate")}
-                        onAvatarClick={() =>
-                          setAttachmentViewer({
-                            url: activePartnerProfile.avatarUrl,
-                            mime: "image/*",
-                            name: activePartnerProfile.name,
-                          })
-                        }
-                      />
-                    )}
-                    {sideView === "progress" && (
-                      <GoalProgressView
-                        personName={
-                          activeConversation
-                            ? getConversationName(activeConversation)
-                            : "User"
-                        }
-                        onBack={handleBackToChat}
-                        onReport={() => setActiveModal("report")}
-                      />
-                    )}
-                  </motion.div>
-                )}
-            </AnimatePresence>
           </div>
 
           {hasActiveConversation && (
@@ -923,14 +984,99 @@ export const MessagesPage = () => {
         </div>
       </div>
 
-      <RateUserModal
-        isOpen={activeModal === "rate"}
-        onClose={() => setActiveModal("none")}
-      />
       <ReportUserModal
         isOpen={activeModal === "report"}
         onClose={() => setActiveModal("none")}
       />
+      <Modal
+        isOpen={isProfileModalOpen && Boolean(activePartnerProfile)}
+        onClose={() => setIsProfileModalOpen(false)}
+        showCloseButton
+        className="max-w-lg w-[92vw] p-5 md:p-6 top-1/2 -translate-y-1/2"
+      >
+        {activePartnerProfile && (
+          <div className="flex flex-col items-center text-center">
+            {activePartnerProfile.avatarUrl ? (
+              <img
+                src={activePartnerProfile.avatarUrl}
+                alt={activePartnerProfile.name}
+                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-sm cursor-zoom-in"
+                onClick={() =>
+                  setAttachmentViewer({
+                    url: activePartnerProfile.avatarUrl,
+                    mime: "image/*",
+                    name: activePartnerProfile.name,
+                  })
+                }
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-2xl font-semibold">
+                {getInitials(activePartnerProfile.name)}
+              </div>
+            )}
+            <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+              {activePartnerProfile.name}
+            </h3>
+            <p className="mt-1 text-sm text-green-500">
+              {isActivePartnerOnline ? "Online" : "Conversation active"}
+            </p>
+
+            {typeof activePartnerProfile.compatibility === "number" && (
+              <p className="mt-2 text-sm font-medium text-orange-500">
+                {activePartnerProfile.compatibility}% compatible
+              </p>
+            )}
+
+            <div className="mt-5 w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 px-4 py-3 text-left">
+              <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                About
+              </p>
+              <p className="mt-1 text-sm text-gray-700 dark:text-slate-200 whitespace-pre-wrap">
+                {activePartnerProfile.bio || "No bio added yet."}
+              </p>
+            </div>
+
+            <div className="mt-3 w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 px-4 py-3 text-left">
+              <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                Profile details
+              </p>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <ProfileField label="Experience" value={activePartnerProfile.experience} />
+                <ProfileField label="Location" value={activePartnerProfile.location} />
+                <ProfileField label="Time zone" value={activePartnerProfile.time_zone} />
+                <ProfileField label="Availability" value={activePartnerProfile.availability} />
+                <ProfileField
+                  label="Communication"
+                  value={activePartnerProfile.communication_styles}
+                />
+                <ProfileField label="Focus areas" value={activePartnerProfile.focus_areas} />
+              </div>
+            </div>
+
+            <div className="mt-3 w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 px-4 py-3 text-left">
+              <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                Interests
+              </p>
+              {activePartnerProfile.interests.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {activePartnerProfile.interests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="bg-[#4E92F426] dark:bg-blue-500/20 text-xs font-medium text-gray-700 dark:text-slate-200 px-2.5 py-1 rounded-sm"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-gray-700 dark:text-slate-200">
+                  No interests shared yet.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
       <Modal
         isOpen={comingSoonFeature !== "none"}
         onClose={() => setComingSoonFeature("none")}
@@ -998,6 +1144,15 @@ export const MessagesPage = () => {
     </>
   );
 };
+
+const ProfileField = ({ label, value }: { label: string; value?: unknown }) => (
+  <div className="rounded-md bg-gray-50 dark:bg-slate-800 px-2.5 py-2">
+    <p className="text-[11px] text-gray-500 dark:text-slate-400">{label}</p>
+    <p className="text-sm text-gray-800 dark:text-slate-100">
+      {toDisplayText(value) || "Not set"}
+    </p>
+  </div>
+);
 
 const MessageBubble = ({
   text,

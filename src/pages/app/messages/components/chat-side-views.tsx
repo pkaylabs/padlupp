@@ -1,7 +1,6 @@
 // src/components/chat/ChatSideViews.tsx
 import React, { useState } from "react";
 import { MoreVertical } from "lucide-react";
-import Button from "@/components/core/buttons";
 import { ArrowLeft, QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
 
@@ -107,12 +106,10 @@ const FileIcon = ({ type }: { type: FileType }) => {
 export const UserProfileView = ({
   person,
   onBack,
-  onRate,
   onAvatarClick,
 }: {
   person: ChatPartnerProfile;
   onBack: () => void;
-  onRate: () => void;
   onAvatarClick?: () => void;
 }) => {
   const hasCompatibility = typeof person.compatibility === "number";
@@ -194,12 +191,6 @@ export const UserProfileView = ({
               </span>
             )}
           </div>
-        </div>
-
-        <div className="mt-auto pt-3 sm:pt-0">
-          <Button variant="primary" className="w-48" onClick={onRate}>
-            Rate
-          </Button>
         </div>
       </div>
     </div>

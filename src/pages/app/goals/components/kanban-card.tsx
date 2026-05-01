@@ -1,24 +1,70 @@
 // src/components/goals/KanbanCard.tsx
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { AlarmClock, Clock, CheckCircle2 } from "lucide-react";
+import { AlarmClock, Clock, MoreHorizontal, CheckCircle2 } from "lucide-react";
 import { cn } from "@/utils/cs";
 import { GoalStatus, Task } from "@/constants/kanban-data";
 import { Calendar } from "iconsax-reactjs";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { GoalActionsMenu } from "./goal-actions-menu";
+import type { Goal } from "../api";
 
 interface KanbanCardProps {
   task: Task;
   index: number;
   columnId: GoalStatus;
+  goal: Goal | null;
+  onEditGoal: (goal: Goal) => void;
+  onDeleteGoal: (goal: Goal) => void;
+  onShareGoal: (goal: Goal) => void;
 }
 
 export const KanbanCard: React.FC<KanbanCardProps> = ({
   task,
   index,
   columnId,
+  goal,
+  onEditGoal,
+  onDeleteGoal,
+  onShareGoal,
 }) => {
+  const navigate = useNavigate();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const timeText = task.time?.trim() || "No time set";
+  const sharedPartnerName =
+    goal?.partner?.name || goal?.partner_name || task.sharedPartnerName || "";
+  const sharedPartnerAvatar =
+    goal?.partner?.avatar ||
+    goal?.partner_avatar ||
+    task.sharedPartnerAvatar ||
+    "";
+  const isSharedGoal = Boolean(goal?.partnership || task.partnershipId);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("keydown", handleEsc);
+    };
+  }, [isMenuOpen]);
 
   const getTagClassName = (tag: string) => {
     const normalized = tag.toLowerCase();
@@ -59,29 +105,47 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
     </div>
   );
 
+  const sharedBadge = isSharedGoal ? (
+    <div
+      className="ml-2 shrink-0 flex items-center"
+      title={sharedPartnerName || "Shared goal"}
+    >
+      {sharedPartnerAvatar ? (
+        <img
+          src={sharedPartnerAvatar}
+          alt={sharedPartnerName || "Shared partner"}
+          className="w-6 h-6 rounded-full border border-white dark:border-slate-700 object-cover"
+        />
+      ) : (
+        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-white dark:border-slate-700 flex items-center justify-center text-[10px] font-semibold">
+          {(sharedPartnerName || "SP")
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]?.toUpperCase() ?? "")
+            .join("")}
+        </div>
+      )}
+    </div>
+  ) : null;
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
-        <Link
-          to={"/goals/$id"}
-          params={{
-            id: task.id,
-          }}
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={cn(
+            "bg-white dark:bg-slate-800 rounded-[10.25px] p-4 mb-4 shadow-lg dark:shadow-slate-950/40 transition-shadow group border border-transparent dark:border-slate-700",
+            snapshot.isDragging
+              ? "shadow-xl rotate-2 ring-2 ring-blue-500/20"
+              : "hover:shadow-md",
+          )}
+          style={provided.draggableProps.style}
         >
-          <div
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            {...provided.dragHandleProps}
-            className={cn(
-              "bg-white dark:bg-slate-800 rounded-[10.25px] p-4 mb-4 shadow-lg dark:shadow-slate-950/40 transition-shadow group border border-transparent dark:border-slate-700",
-              snapshot.isDragging
-                ? "shadow-xl rotate-2 ring-2 ring-blue-500/20"
-                : "hover:shadow-md",
-            )}
-            style={provided.draggableProps.style}
-          >
-            {/* Header Badges */}
-            <div className="mb-2">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
               {columnId === "inProgress" && (
                 <span className="bg-[#EB612C] text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
                   <Clock size={12} /> Ongoing
@@ -98,8 +162,52 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 </span>
               )}
             </div>
+            <div className="flex items-center gap-1" ref={menuRef}>
+              {sharedBadge}
+              {goal && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label="Goal actions"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setIsMenuOpen((prev) => !prev);
+                    }}
+                    className="p-1.5 rounded-md text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                  <GoalActionsMenu
+                    isOpen={isMenuOpen}
+                    onEdit={() => {
+                      setIsMenuOpen(false);
+                      onEditGoal(goal);
+                    }}
+                    onShare={() => {
+                      setIsMenuOpen(false);
+                      onShareGoal(goal);
+                    }}
+                    onDelete={() => {
+                      setIsMenuOpen(false);
+                      onDeleteGoal(goal);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
 
-            {/* Content */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isMenuOpen) return;
+              void navigate({
+                to: "/goals/$id",
+                params: { id: task.id },
+              });
+            }}
+            className="w-full text-left"
+          >
             <h4 className="font-semibold text-[#0D062D] dark:text-slate-100 mb-1">
               {task.title}
             </h4>
@@ -107,7 +215,6 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               {task.description}
             </p>
 
-            {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-4">
               {task.tags.map((tag) => (
                 <span
@@ -122,7 +229,6 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               ))}
             </div>
 
-            {/* Footer: Progress Bar OR Date/Time */}
             {columnId === "inProgress" && typeof task.progress === "number" ? (
               <>
                 <div className="pt-2 border-t border-gray-50 dark:border-slate-700">
@@ -157,8 +263,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             ) : (
               dateTimeFooter
             )}
-          </div>
-        </Link>
+          </button>
+        </div>
       )}
     </Draggable>
   );

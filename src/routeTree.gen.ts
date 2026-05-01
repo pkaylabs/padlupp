@@ -13,6 +13,7 @@ import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GoalInviteTokenRouteImport } from './routes/goal-invite/$token'
 import { Route as AuthSignupRouteRouteImport } from './routes/_auth/signup/route'
 import { Route as AuthSigninRouteRouteImport } from './routes/_auth/signin/route'
 import { Route as AuthForgotPasswordRouteRouteImport } from './routes/_auth/forgot-password/route'
@@ -43,6 +44,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoalInviteTokenRoute = GoalInviteTokenRouteImport.update({
+  id: '/goal-invite/$token',
+  path: '/goal-invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSignupRouteRoute = AuthSignupRouteRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
   '/signin': typeof AuthSigninRouteRoute
   '/signup': typeof AuthSignupRouteRoute
+  '/goal-invite/$token': typeof GoalInviteTokenRoute
   '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
   '/signin': typeof AuthSigninRouteRoute
   '/signup': typeof AuthSignupRouteRoute
+  '/goal-invite/$token': typeof GoalInviteTokenRoute
   '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/_auth/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
   '/_auth/signin': typeof AuthSigninRouteRoute
   '/_auth/signup': typeof AuthSignupRouteRoute
+  '/goal-invite/$token': typeof GoalInviteTokenRoute
   '/_auth/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/_auth/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/_app/goals/$id': typeof AppGoalsIdRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/signin'
     | '/signup'
+    | '/goal-invite/$token'
     | '/forgot-password/reset-password'
     | '/forgot-password/verify-otp'
     | '/goals/$id'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/signin'
     | '/signup'
+    | '/goal-invite/$token'
     | '/forgot-password/reset-password'
     | '/forgot-password/verify-otp'
     | '/goals/$id'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/_auth/forgot-password'
     | '/_auth/signin'
     | '/_auth/signup'
+    | '/goal-invite/$token'
     | '/_auth/forgot-password/reset-password'
     | '/_auth/forgot-password/verify-otp'
     | '/_app/goals/$id'
@@ -228,6 +240,7 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   OnboardingRouteRoute: typeof OnboardingRouteRoute
+  GoalInviteTokenRoute: typeof GoalInviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/goal-invite/$token': {
+      id: '/goal-invite/$token'
+      path: '/goal-invite/$token'
+      fullPath: '/goal-invite/$token'
+      preLoaderRoute: typeof GoalInviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/signup': {
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
   OnboardingRouteRoute: OnboardingRouteRoute,
+  GoalInviteTokenRoute: GoalInviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

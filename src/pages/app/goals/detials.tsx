@@ -26,6 +26,9 @@ import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import { Modal } from "@/components/core/modal";
 import { toast } from "sonner";
 import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
+import { GoalActionsMenu } from "./components/goal-actions-menu";
+import { ShareGoalModal } from "./components/share-goal-modal";
+import { useShareGoalInvites } from "./hooks/useShareGoal";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
@@ -60,6 +63,7 @@ export function GoalDetailsPage() {
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
+  const [isShareGoalModalOpen, setIsShareGoalModalOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState("");
   const [pendingTaskIds, setPendingTaskIds] = useState<number[]>([]);
@@ -72,6 +76,7 @@ export function GoalDetailsPage() {
   const [editStatus, setEditStatus] = useState("To-do");
   const [editImportance, setEditImportance] = useState("Regular");
   const [editCategory, setEditCategory] = useState("Career");
+  const [shareLinkDraft, setShareLinkDraft] = useState<string>("");
 
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +90,7 @@ export function GoalDetailsPage() {
   const { mutate: updateGoal, mutateAsync: updateGoalAsync, isPending: isUpdatingGoal } =
     useUpdateGoal();
   const { mutateAsync: deleteGoal, isPending: isDeletingGoal } = useDeleteGoal();
+  const { mutateAsync: shareGoalInvites, isPending: isSharingGoal } = useShareGoalInvites();
   const { mutateAsync: createTask, isPending: isCreatingTask } = useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: deleteTask } = useDeleteTask();
@@ -142,6 +148,11 @@ export function GoalDetailsPage() {
   const handleOpenEditGoalModal = () => {
     setIsActionsMenuOpen(false);
     setIsEditGoalModalOpen(true);
+  };
+
+  const handleOpenShareGoalModal = () => {
+    setIsActionsMenuOpen(false);
+    setIsShareGoalModalOpen(true);
   };
 
   const handleCloseEditGoalModal = () => {
@@ -210,6 +221,22 @@ export function GoalDetailsPage() {
     await deleteGoal(goal.id);
     setIsDeleteGoalModalOpen(false);
     void navigate({ to: "/goals" });
+  };
+
+  const handleShareGoalInvites = async (payload: {
+    emails: string[];
+    message?: string;
+  }) => {
+    if (!goal) return;
+
+    const response = await shareGoalInvites({
+      goalId: goal.id,
+      payload,
+    });
+    const maybeLink = response.public_share_link || response.share_link || "";
+    if (maybeLink) {
+      setShareLinkDraft(maybeLink);
+    }
   };
 
   const handleAddSubtask = () => {
@@ -382,34 +409,15 @@ export function GoalDetailsPage() {
               <MoreVertical size={20} />
             </button>
 
-            <AnimatePresence>
-              {isActionsMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  className="absolute right-0 top-11 w-44 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg z-40 p-1.5"
-                >
-                  <button
-                    type="button"
-                    onClick={handleOpenEditGoalModal}
-                    className="w-full text-left px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  >
-                    Edit goal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsActionsMenuOpen(false);
-                      setIsDeleteGoalModalOpen(true);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  >
-                    Delete goal
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <GoalActionsMenu
+              isOpen={isActionsMenuOpen}
+              onEdit={handleOpenEditGoalModal}
+              onShare={handleOpenShareGoalModal}
+              onDelete={() => {
+                setIsActionsMenuOpen(false);
+                setIsDeleteGoalModalOpen(true);
+              }}
+            />
           </div>
         </header>
 
@@ -991,6 +999,23 @@ export function GoalDetailsPage() {
           </div>
         </div>
       </Modal>
+
+      <ShareGoalModal
+        isOpen={isShareGoalModalOpen}
+        onClose={() => {
+          if (isSharingGoal) return;
+          setIsShareGoalModalOpen(false);
+        }}
+        goalTitle={goal.title}
+        shareLink={
+          shareLinkDraft ||
+          goal.public_share_link ||
+          goal.share_link ||
+          ""
+        }
+        isSubmitting={isSharingGoal}
+        onSendInvites={handleShareGoalInvites}
+      />
     </div>
   );
 }

@@ -5,15 +5,24 @@ import { MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/utils/cs";
 import { Column, GoalStatus } from "@/constants/kanban-data";
 import { KanbanCard } from "./kanban-card";
+import type { Goal } from "../api";
 
 interface GoalColumnProps {
   column: Column;
   onAddTask: () => void;
+  goalsData: Goal[];
+  onEditGoal: (goal: Goal) => void;
+  onDeleteGoal: (goal: Goal) => void;
+  onShareGoal: (goal: Goal) => void;
 }
 
 export const GoalColumn: React.FC<GoalColumnProps> = ({
   column,
   onAddTask,
+  goalsData,
+  onEditGoal,
+  onDeleteGoal,
+  onShareGoal,
 }) => {
   return (
     <div className="flex flex-col h-fit sm:w-[300px] bg-[#F5F5F5] dark:bg-slate-900 rounded-xl p-3 border border-transparent dark:border-slate-800">
@@ -53,6 +62,10 @@ export const GoalColumn: React.FC<GoalColumnProps> = ({
                 task={task}
                 index={index}
                 columnId={column.id as GoalStatus}
+                goal={goalsData.find((goal) => String(goal.id) === task.id) || null}
+                onEditGoal={onEditGoal}
+                onDeleteGoal={onDeleteGoal}
+                onShareGoal={onShareGoal}
               />
             ))}
             {provided.placeholder}
