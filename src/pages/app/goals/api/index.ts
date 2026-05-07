@@ -36,6 +36,8 @@ export interface Goal {
   start_time?: string | null;
   target_date: string; // ISO Date string
   is_active: boolean;
+  is_public?: boolean;
+  is_shared?: boolean;
   status: string;
   created_at: string;
   updated_at: string;
@@ -67,6 +69,7 @@ export interface CreateGoalPayload {
   importance?: string;
   checkin_frequency: CheckinFrequency;
   is_active: boolean;
+  is_public: boolean;
   status: string;
   conversation?: number;
 }
@@ -83,6 +86,20 @@ export type CheckinFrequency =
   | "FRIDAYS"
   | "SATURDAYS"
   | "SUNDAYS";
+
+export const CHECKIN_FREQUENCIES: CheckinFrequency[] = [
+  "DAILY",
+  "3-DAYS",
+  "WEEKLY",
+  "BI-WEEKLY",
+  "MONDAYS",
+  "TUESDAYS",
+  "WEDNESDAYS",
+  "THURSDAYS",
+  "FRIDAYS",
+  "SATURDAYS",
+  "SUNDAYS",
+];
 
 export interface Task {
   id: number;

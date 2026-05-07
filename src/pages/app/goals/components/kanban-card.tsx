@@ -32,14 +32,27 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const timeText = task.time?.trim() || "No time set";
-  const sharedPartnerName =
-    goal?.partner?.name || goal?.partner_name || task.sharedPartnerName || "";
-  const sharedPartnerAvatar =
-    goal?.partner?.avatar ||
-    goal?.partner_avatar ||
-    task.sharedPartnerAvatar ||
-    "";
-  const isSharedGoal = Boolean(goal?.partnership || task.partnershipId);
+  const creatorName = goal?.user?.name?.trim() || "Goal creator";
+  const creatorAvatar = goal?.user?.avatar?.trim() || "";
+  const creatorId = goal?.user?.id ?? null;
+  const isSharedGoal = Boolean(goal?.is_shared);
+
+  const openUserProfile = (profile: {
+    id?: number | null;
+    name?: string | null;
+    avatar?: string | null;
+  }) => {
+    if (!profile.id) return;
+
+    void navigate({
+      to: "/users/$userId",
+      params: { userId: String(profile.id) },
+      search: {
+        name: profile.name?.trim() || undefined,
+        avatar: profile.avatar?.trim() || undefined,
+      },
+    });
+  };
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -105,20 +118,30 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
     </div>
   );
 
-  const sharedBadge = isSharedGoal ? (
-    <div
-      className="ml-2 shrink-0 flex items-center"
-      title={sharedPartnerName || "Shared goal"}
+  const creatorBadge = creatorId ? (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        openUserProfile({
+          id: creatorId,
+          name: creatorName,
+          avatar: creatorAvatar,
+        });
+      }}
+      className="ml-1 shrink-0 flex items-center"
+      title={creatorName}
+      aria-label={`Open ${creatorName}'s profile`}
     >
-      {sharedPartnerAvatar ? (
+      {creatorAvatar ? (
         <img
-          src={sharedPartnerAvatar}
-          alt={sharedPartnerName || "Shared partner"}
+          src={creatorAvatar}
+          alt={creatorName}
           className="w-6 h-6 rounded-full border border-white dark:border-slate-700 object-cover"
         />
       ) : (
         <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-white dark:border-slate-700 flex items-center justify-center text-[10px] font-semibold">
-          {(sharedPartnerName || "SP")
+          {(creatorName || "GC")
             .split(" ")
             .filter(Boolean)
             .slice(0, 2)
@@ -126,7 +149,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             .join("")}
         </div>
       )}
-    </div>
+    </button>
   ) : null;
 
   return (
@@ -146,24 +169,31 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <div>
-              {columnId === "inProgress" && (
-                <span className="bg-[#EB612C] text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
-                  <Clock size={12} /> Ongoing
-                </span>
-              )}
-              {columnId === "todo" && task.timeLeft && (
-                <span className="bg-primary-500 text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
-                  <Clock size={12} /> {task.timeLeft}
-                </span>
-              )}
-              {columnId === "completed" && (
-                <span className="bg-[#1DB9C3] text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
-                  Completed
-                </span>
-              )}
+              <div className="flex items-center gap-1.5">
+                {columnId === "inProgress" && (
+                  <span className="bg-[#EB612C] text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
+                    <Clock size={12} /> Ongoing
+                  </span>
+                )}
+                {columnId === "todo" && task.timeLeft && (
+                  <span className="bg-primary-500 text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
+                    <Clock size={12} /> {task.timeLeft}
+                  </span>
+                )}
+                {columnId === "completed" && (
+                  <span className="bg-[#1DB9C3] text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
+                    Completed
+                  </span>
+                )}
+                {isSharedGoal && (
+                  <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-medium px-2 py-1 rounded-[2.56px]">
+                    Shared
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1" ref={menuRef}>
-              {sharedBadge}
+              {creatorBadge}
               {goal && (
                 <div className="relative">
                   <button

@@ -13,6 +13,8 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
+  Square,
+  CheckSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/utils/cs";
@@ -29,6 +31,8 @@ import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
 import { GoalActionsMenu } from "./components/goal-actions-menu";
 import { ShareGoalModal } from "./components/share-goal-modal";
 import { useShareGoalInvites } from "./hooks/useShareGoal";
+import { CHECKIN_FREQUENCIES } from "./api";
+import type { CheckinFrequency } from "./api";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
@@ -76,6 +80,9 @@ export function GoalDetailsPage() {
   const [editStatus, setEditStatus] = useState("To-do");
   const [editImportance, setEditImportance] = useState("Regular");
   const [editCategory, setEditCategory] = useState("Career");
+  const [editCheckinFrequency, setEditCheckinFrequency] =
+    useState<CheckinFrequency>("DAILY");
+  const [editIsPublic, setEditIsPublic] = useState(false);
   const [shareLinkDraft, setShareLinkDraft] = useState<string>("");
 
   const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -106,6 +113,8 @@ export function GoalDetailsPage() {
     setEditStatus(normalizeStatusForUi(goal.status));
     setEditImportance(goal.importance?.trim() || "Regular");
     setEditCategory(normalizeCategory(goal.category));
+    setEditCheckinFrequency(goal.checkin_frequency || "DAILY");
+    setEditIsPublic(Boolean(goal.is_public));
   }, [goal]);
 
   useEffect(() => {
@@ -210,6 +219,8 @@ export function GoalDetailsPage() {
         status: normalizedStatus,
         importance,
         category,
+        checkin_frequency: editCheckinFrequency,
+        is_public: editIsPublic,
       },
     });
 
@@ -343,6 +354,44 @@ export function GoalDetailsPage() {
     }
   };
 
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "U";
+
+  const openProfileFromIndicator = (profile: {
+    id?: number | null;
+    name?: string | null;
+    avatar?: string | null;
+  }) => {
+    if (!profile.id) return;
+    void navigate({
+      to: "/users/$userId",
+      params: { userId: String(profile.id) },
+      search: {
+        name: profile.name?.trim() || undefined,
+        avatar: profile.avatar?.trim() || undefined,
+      },
+    });
+  };
+
+  const creatorIndicator = {
+    id: goal?.user?.id ?? null,
+    name: goal?.user?.name || "Goal creator",
+    avatar: goal?.user?.avatar || "",
+  };
+  const partnerIndicator =
+    goal?.partner || goal?.partner_name || goal?.partner_avatar
+      ? {
+          id: goal?.partner?.id ?? null,
+          name: goal?.partner?.name || goal?.partner_name || "Shared partner",
+          avatar: goal?.partner?.avatar || goal?.partner_avatar || "",
+        }
+      : null;
+
   // --- LOADING STATE (SKELETON) ---
   if (loadingGoal) {
     return (
@@ -388,13 +437,56 @@ export function GoalDetailsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Header */}
         <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <Link
               to="/goals"
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-600 dark:text-slate-300 transition-colors"
             >
               <ArrowLeft size={20} />
             </Link>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => openProfileFromIndicator(creatorIndicator)}
+                title={creatorIndicator.name}
+                aria-label={`Open ${creatorIndicator.name}'s profile`}
+                className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              >
+                {creatorIndicator.avatar ? (
+                  <img
+                    src={creatorIndicator.avatar}
+                    alt={creatorIndicator.name}
+                    className="w-8 h-8 rounded-full border border-white dark:border-slate-700 object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-white dark:border-slate-700 flex items-center justify-center text-[11px] font-semibold">
+                    {getInitials(creatorIndicator.name)}
+                  </div>
+                )}
+              </button>
+              {partnerIndicator && (
+                <button
+                  type="button"
+                  onClick={() => openProfileFromIndicator(partnerIndicator)}
+                  title={partnerIndicator.name}
+                  aria-label={`Open ${partnerIndicator.name}'s profile`}
+                  className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!partnerIndicator.id}
+                >
+                  {partnerIndicator.avatar ? (
+                    <img
+                      src={partnerIndicator.avatar}
+                      alt={partnerIndicator.name}
+                      className="w-8 h-8 rounded-full border border-white dark:border-slate-700 object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-white dark:border-slate-700 flex items-center justify-center text-[11px] font-semibold">
+                      {getInitials(partnerIndicator.name)}
+                    </div>
+                  )}
+                </button>
+              )}
+            </div>
             <h1 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-slate-100 truncate max-w-md">
               {goal.title}
             </h1>
@@ -865,7 +957,25 @@ export function GoalDetailsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="py-1">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={editIsPublic}
+                disabled={isUpdatingGoal}
+                onChange={(event) => setEditIsPublic(event.target.checked)}
+                className="sr-only"
+              />
+              {editIsPublic ? (
+                <CheckSquare size={18} className="text-blue-600" />
+              ) : (
+                <Square size={18} className="text-gray-400 dark:text-slate-500" />
+              )}
+              <span>Make this goal public</span>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
                 Start time
@@ -891,6 +1001,25 @@ export function GoalDetailsPage() {
                 <option value="To-do">To-do</option>
                 <option value="In progress">In progress</option>
                 <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Check-in frequency
+              </label>
+              <select
+                value={editCheckinFrequency}
+                disabled={isUpdatingGoal}
+                onChange={(event) =>
+                  setEditCheckinFrequency(event.target.value as CheckinFrequency)
+                }
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                {CHECKIN_FREQUENCIES.map((frequency) => (
+                  <option key={frequency} value={frequency}>
+                    {frequency}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

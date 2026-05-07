@@ -36,6 +36,7 @@ interface UseChatState {
   isPeerTyping: boolean;
   peerTypingName: string | null;
   onlineUserIds: number[];
+  lastSeenAtByUserId: Record<number, string>;
 }
 
 const sortByCreatedAt = <T extends { created_at: string }>(items: T[]) =>
@@ -78,9 +79,16 @@ const normalizeOptionalText = (value: string | null | undefined) =>
 
 const sortConversations = (items: Conversation[]) =>
   [...items].sort((a, b) => {
-    const byUpdated =
-      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-    if (byUpdated !== 0) return byUpdated;
+    const getActivityTimestamp = (item: Conversation) =>
+      new Date(
+        item.last_message?.updated_at ||
+          item.last_message?.created_at ||
+          item.updated_at ||
+          item.created_at,
+      ).getTime();
+
+    const byActivity = getActivityTimestamp(b) - getActivityTimestamp(a);
+    if (byActivity !== 0) return byActivity;
     return b.id - a.id;
   });
 
@@ -128,6 +136,9 @@ export const useChat = (): UseChatState => {
   const [isPeerTyping, setIsPeerTyping] = useState(false);
   const [peerTypingName, setPeerTypingName] = useState<string | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<number[]>([]);
+  const [lastSeenAtByUserId, setLastSeenAtByUserId] = useState<
+    Record<number, string>
+  >({});
 
   const conversationsWsRef = useRef<WebSocket | null>(null);
   const chatWsRef = useRef<WebSocket | null>(null);
@@ -235,8 +246,26 @@ export const useChat = (): UseChatState => {
       setMessagesByConversation((prev) => {
         const current = prev[conversationId] ?? [];
 
-        const hasReal = current.some((item) => item.id === message.id);
-        if (hasReal) return prev;
+        const existingRealMessage = current.find((item) => item.id === message.id);
+        if (existingRealMessage) {
+          const nextMessage = { ...existingRealMessage, ...message, optimistic: false };
+          const didChange =
+            existingRealMessage.updated_at !== nextMessage.updated_at ||
+            existingRealMessage.is_read !== nextMessage.is_read ||
+            existingRealMessage.text !== nextMessage.text ||
+            existingRealMessage.attachment !== nextMessage.attachment ||
+            existingRealMessage.attachment_name !== nextMessage.attachment_name ||
+            existingRealMessage.attachment_mime !== nextMessage.attachment_mime;
+
+          if (!didChange) return prev;
+
+          return {
+            ...prev,
+            [conversationId]: dedupeMessages(
+              current.map((item) => (item.id === message.id ? nextMessage : item)),
+            ),
+          };
+        }
 
         let matchedTempId: string | null = null;
         const withPossibleReplacement = current.map((item) => {
@@ -301,6 +330,25 @@ export const useChat = (): UseChatState => {
       });
     },
     [clearFallbackTimer, upsertConversation],
+  );
+
+  const markMessagesAsRead = useCallback(
+    (conversationId: number, shouldMark: (message: ChatMessageUI) => boolean) => {
+      setMessagesByConversation((prev) => {
+        const current = prev[conversationId] ?? [];
+        let changed = false;
+        const next = current.map((message) => {
+          if (message.is_read) return message;
+          if (!shouldMark(message)) return message;
+          changed = true;
+          return { ...message, is_read: true, optimistic: false };
+        });
+
+        if (!changed) return prev;
+        return { ...prev, [conversationId]: next };
+      });
+    },
+    [],
   );
 
   const fetchHistory = useCallback(async (conversationId: number) => {
@@ -446,14 +494,101 @@ export const useChat = (): UseChatState => {
           return;
         }
 
-        if (data.type === "presence" && Array.isArray(data.online_user_ids)) {
-          setOnlineUserIds(
-            data.online_user_ids.filter((id): id is number => typeof id === "number"),
-          );
+        if (data.type === "presence") {
+          if (Array.isArray(data.online_user_ids)) {
+            setOnlineUserIds(
+              data.online_user_ids.filter(
+                (id): id is number => typeof id === "number",
+              ),
+            );
+          }
+
+          const nextLastSeenByUserId: Record<number, string> = {};
+          const candidateArrays = [
+            data.users,
+            data.presences,
+            data.user_statuses,
+            data.statuses,
+          ];
+
+          candidateArrays.forEach((candidate) => {
+            if (!Array.isArray(candidate)) return;
+            candidate.forEach((item) => {
+              if (!item || typeof item !== "object") return;
+              const value = item as Record<string, unknown>;
+              const userIdCandidate =
+                typeof value.user_id === "number"
+                  ? value.user_id
+                  : typeof value.id === "number"
+                    ? value.id
+                    : null;
+              const lastSeenCandidate =
+                typeof value.last_seen_at === "string"
+                  ? value.last_seen_at
+                  : null;
+
+              if (userIdCandidate && lastSeenCandidate) {
+                nextLastSeenByUserId[userIdCandidate] = lastSeenCandidate;
+              }
+            });
+          });
+
+          if (data.last_seen_at && typeof data.last_seen_at === "object") {
+            Object.entries(data.last_seen_at as Record<string, unknown>).forEach(
+              ([rawUserId, rawLastSeen]) => {
+                const parsedUserId = Number(rawUserId);
+                if (
+                  Number.isFinite(parsedUserId) &&
+                  parsedUserId > 0 &&
+                  typeof rawLastSeen === "string"
+                ) {
+                  nextLastSeenByUserId[parsedUserId] = rawLastSeen;
+                }
+              },
+            );
+          }
+
+          if (Object.keys(nextLastSeenByUserId).length > 0) {
+            setLastSeenAtByUserId((prev) => ({
+              ...prev,
+              ...nextLastSeenByUserId,
+            }));
+          }
           return;
         }
 
-        if (data.type === "ack" || data.type === "delivered" || data.type === "read" || data.type === "read_all") {
+        if (data.type === "ack" || data.type === "delivered") {
+          return;
+        }
+
+        if (data.type === "read") {
+          const eventConversationId =
+            typeof data.conversation_id === "number"
+              ? data.conversation_id
+              : conversationId;
+          const messageId =
+            typeof data.message_id === "number" ? data.message_id : null;
+
+          if (messageId) {
+            markMessagesAsRead(
+              eventConversationId,
+              (message) => Number(message.id) === messageId,
+            );
+          }
+          return;
+        }
+
+        if (data.type === "read_all") {
+          const eventConversationId =
+            typeof data.conversation_id === "number"
+              ? data.conversation_id
+              : conversationId;
+          markMessagesAsRead(eventConversationId, (message) => {
+            if (!authUserId) return false;
+            return (
+              message.sender.id === authUserId || message.sender.name === "Me"
+            );
+          });
           return;
         }
 
@@ -487,7 +622,7 @@ export const useChat = (): UseChatState => {
         ws.close();
       };
     },
-    [appendMessage, authUserId, flushQueue, token],
+    [appendMessage, authUserId, flushQueue, markMessagesAsRead, token],
   );
 
   useEffect(() => {
@@ -737,5 +872,6 @@ export const useChat = (): UseChatState => {
     isPeerTyping,
     peerTypingName,
     onlineUserIds,
+    lastSeenAtByUserId,
   };
 };

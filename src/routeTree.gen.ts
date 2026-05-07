@@ -24,6 +24,7 @@ import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/rou
 import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
+import { Route as AppUsersUserIdRouteImport } from './routes/_app/users/$userId'
 import { Route as AppGoalsIdRouteImport } from './routes/_app/goals/$id'
 import { Route as AuthForgotPasswordVerifyOtpRouteRouteImport } from './routes/_auth/forgot-password/verify-otp/route'
 import { Route as AuthForgotPasswordResetPasswordRouteRouteImport } from './routes/_auth/forgot-password/reset-password/route'
@@ -101,6 +102,11 @@ const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
   path: '/goals/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppUsersUserIdRoute = AppUsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppGoalsIdRoute = AppGoalsIdRouteImport.update({
   id: '/goals/$id',
   path: '/goals/$id',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
+  '/users/$userId': typeof AppUsersUserIdRoute
   '/goals': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
+  '/users/$userId': typeof AppUsersUserIdRoute
   '/goals': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesById {
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/_auth/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/_auth/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/_app/goals/$id': typeof AppGoalsIdRoute
+  '/_app/users/$userId': typeof AppUsersUserIdRoute
   '/_app/goals/': typeof AppGoalsIndexRoute
 }
 export interface FileRouteTypes {
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/forgot-password/reset-password'
     | '/forgot-password/verify-otp'
     | '/goals/$id'
+    | '/users/$userId'
     | '/goals'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/forgot-password/reset-password'
     | '/forgot-password/verify-otp'
     | '/goals/$id'
+    | '/users/$userId'
     | '/goals'
   id:
     | '__root__'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/_auth/forgot-password/reset-password'
     | '/_auth/forgot-password/verify-otp'
     | '/_app/goals/$id'
+    | '/_app/users/$userId'
     | '/_app/goals/'
   fileRoutesById: FileRoutesById
 }
@@ -350,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/users/$userId': {
+      id: '/_app/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AppUsersUserIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/goals/$id': {
       id: '/_app/goals/$id'
       path: '/goals/$id'
@@ -382,6 +401,7 @@ interface AppRouteRouteChildren {
   AppProfileRouteRoute: typeof AppProfileRouteRoute
   AppSettingsRouteRoute: typeof AppSettingsRouteRoute
   AppGoalsIdRoute: typeof AppGoalsIdRoute
+  AppUsersUserIdRoute: typeof AppUsersUserIdRoute
   AppGoalsIndexRoute: typeof AppGoalsIndexRoute
 }
 
@@ -393,6 +413,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProfileRouteRoute: AppProfileRouteRoute,
   AppSettingsRouteRoute: AppSettingsRouteRoute,
   AppGoalsIdRoute: AppGoalsIdRoute,
+  AppUsersUserIdRoute: AppUsersUserIdRoute,
   AppGoalsIndexRoute: AppGoalsIndexRoute,
 }
 

@@ -19,29 +19,29 @@ export const AwardsView: React.FC = () => {
     >
       <AwardCategory title="Goals">
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <Badge label="Started a goal" imageUrl={s1} unlocked={true} />
-          <Badge label="Completed a goal" imageUrl={s1} unlocked={true} />
+          <Badge label="Started a goal" imageUrl={s1} unlocked={false} />
+          <Badge label="Completed a goal" imageUrl={s1} unlocked={false} />
           <Badge label="Completed 1/5" imageUrl={s1} unlocked={false} />
         </div>
       </AwardCategory>
 
       <AwardCategory title="Streak">
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <Badge label="3-day streak" imageUrl={s2} unlocked={true} />
-          <Badge label="7-day streak" imageUrl={s2} unlocked={true} />
+          <Badge label="3-day streak" imageUrl={s2} unlocked={false} />
+          <Badge label="7-day streak" imageUrl={s2} unlocked={false} />
           <Badge label="14-day streak" imageUrl={s2} unlocked={false} />
         </div>
       </AwardCategory>
 
       <AwardCategory title="Referrals">
         <div className="grid grid-cols-3 gap-4">
-          <Badge label="Referral Badge" imageUrl={s3} unlocked={true} />
+          <Badge label="Referral Badge" imageUrl={s3} unlocked={false} />
         </div>
       </AwardCategory>
 
       <AwardCategory title="Team Player">
         <div className="grid grid-cols-3 gap-4">
-          <Badge label="Collaborated on goal" imageUrl={s4} unlocked={true} />
+          <Badge label="Collaborated on goal" imageUrl={s4} unlocked={false} />
         </div>
       </AwardCategory>
     </motion.div>

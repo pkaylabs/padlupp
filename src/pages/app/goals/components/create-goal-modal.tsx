@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Calendar,
   Clock,
+  Square,
+  CheckSquare,
   Plus,
   X,
   ChevronLeft,
@@ -31,16 +33,15 @@ import {
   addMonths,
 } from "date-fns";
 import { Modal } from "@/components/core/modal";
-import { StyledSwitch } from "@/routes/_app/-components/toggle";
 import Button from "@/components/core/buttons";
 import { useCreateGoal } from "../hooks/useCreateGoal";
 import ButtonLoader from "@/components/loaders/button";
 import { useCreateTask } from "../hooks/useTasks";
-import { useNavigate } from "@tanstack/react-router";
 import { createMessage } from "@/pages/app/messages/api";
 import { useAuthStore } from "@/features/auth/authStore";
 import { serializeGoalCreatedEvent } from "@/pages/app/messages/utils/goal-message";
 import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
+import { CHECKIN_FREQUENCIES } from "../api";
 import type { CheckinFrequency } from "../api";
 
 interface CreateGoalModalProps {
@@ -66,26 +67,11 @@ const CATEGORIES = CORE_CATEGORIES.map((item) => ({
   color: `${item.color} ${item.icon_color}`,
 }));
 
-const CHECKIN_FREQUENCIES: CheckinFrequency[] = [
-  "DAILY",
-  "3-DAYS",
-  "WEEKLY",
-  "BI-WEEKLY",
-  "MONDAYS",
-  "TUESDAYS",
-  "WEDNESDAYS",
-  "THURSDAYS",
-  "FRIDAYS",
-  "SATURDAYS",
-  "SUNDAYS",
-];
-
 export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   isOpen,
   onClose,
   conversationId,
 }) => {
-  const navigate = useNavigate();
   const authUser = useAuthStore((state) => state.user);
   const { mutateAsync: createGoal, isPending: isCreatingGoal } =
     useCreateGoal();
@@ -108,7 +94,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   const [category, setCategory] = useState("Career");
   const [checkinFrequency, setCheckinFrequency] =
     useState<CheckinFrequency>("DAILY");
-  const [isShared, setIsShared] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Subtask Input State
   const [newSubtask, setNewSubtask] = useState("");
@@ -135,6 +121,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
         category,
         importance: priority,
         checkin_frequency: checkinFrequency,
+        is_public: isPublic,
         status,
         is_active: true,
         ...(conversationId ? { conversation: conversationId } : {}),
@@ -154,7 +141,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               partnership: 0, // Default as per requirements
               description: "", // Default
               status: "planned",
-              is_shared: isShared,
+              is_shared: isPublic,
               // Defaulting due date to Goal's target date since subtask doesn't have its own picker
               due_at: newGoal.target_date
                 ? new Date(newGoal.target_date).toISOString()
@@ -181,13 +168,11 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
-        if (isShared) {
-          void navigate({ to: "/buddy-finder" });
-        }
         // Reset Form
         setTitle("");
         setDescription("");
         setSubtasks([]);
+        setIsPublic(false);
       }, 2000);
     } catch (error) {
       console.error("Creation flow failed", error);
@@ -504,12 +489,22 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             </div>
           </div>
 
-          {/* Share Toggle */}
-          <div className="flex items-center gap-3 py-2">
-            <span className="text-sm text-gray-700 dark:text-slate-300">
-              Share goal with someone
-            </span>
-            <StyledSwitch checked={isShared} onChange={setIsShared} />
+          <div className="py-2">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                disabled={isPending}
+                onChange={(event) => setIsPublic(event.target.checked)}
+                className="sr-only"
+              />
+              {isPublic ? (
+                <CheckSquare size={18} className="text-blue-600" />
+              ) : (
+                <Square size={18} className="text-gray-400 dark:text-slate-500" />
+              )}
+              <span>Make this goal public</span>
+            </label>
           </div>
 
           {/* Action Button */}
@@ -521,8 +516,6 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
           >
             {isPending ? (
               <ButtonLoader title="Creating Goal..." />
-            ) : isShared ? (
-              "Find me a partner"
             ) : (
               "Create"
             )}

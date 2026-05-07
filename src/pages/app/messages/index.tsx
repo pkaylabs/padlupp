@@ -1,7 +1,10 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ReportUserModal } from "./components/modals";
 import {
+  Check,
+  CheckCheck,
   CheckCircle,
+  Clock3,
   FileText,
   Image as ImageIcon,
   PhoneCall,
@@ -63,6 +66,30 @@ const formatMessageDateTime = (isoString?: string) => {
     month: "short",
     year: "numeric",
   });
+};
+
+const formatLastSeen = (isoString?: string) => {
+  if (!isoString) return "Last seen recently";
+  const lastSeenDate = new Date(isoString);
+  if (Number.isNaN(lastSeenDate.getTime())) return "Last seen recently";
+
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeenDate.getTime();
+  if (diffMs <= 60_000) return "Last seen just now";
+
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 60) return `Last seen ${diffMin} min ago`;
+
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `Last seen ${diffHr} hr ago`;
+
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `Last seen ${diffDay} d ago`;
+
+  return `Last seen ${lastSeenDate.toLocaleDateString([], {
+    day: "2-digit",
+    month: "short",
+  })}`;
 };
 
 const getConversationName = (conversation: Conversation) =>
@@ -153,6 +180,7 @@ export const MessagesPage = () => {
     isPeerTyping,
     peerTypingName,
     onlineUserIds,
+    lastSeenAtByUserId,
   } = useChat();
 
   const authUser = useAuthStore((state) => state.user);
@@ -307,6 +335,10 @@ export const MessagesPage = () => {
     return onlineUserIds.includes(activePartnerProfile.userId);
   }, [activePartnerProfile?.userId, onlineUserIds]);
   const currentUserName = authUser?.name?.trim() || "Me";
+  const activePartnerLastSeenAt = useMemo(() => {
+    if (!activePartnerProfile?.userId) return undefined;
+    return lastSeenAtByUserId[activePartnerProfile.userId];
+  }, [activePartnerProfile?.userId, lastSeenAtByUserId]);
 
   const hasConversations = conversations.length > 0;
   const hasActiveConversation = Boolean(activeConversation);
@@ -702,12 +734,19 @@ export const MessagesPage = () => {
                         : "No conversations yet"}
                   </button>
                   {hasActiveConversation ? (
-                    <p className="text-[11px] md:text-xs text-green-500 flex items-center truncate max-w-[50vw] md:max-w-none">
+                    <p
+                      className={cn(
+                        "text-[11px] md:text-xs flex items-center truncate max-w-[50vw] md:max-w-none",
+                        isPeerTyping || isActivePartnerOnline
+                          ? "text-green-500"
+                          : "text-gray-500 dark:text-slate-400",
+                      )}
+                    >
                       {isPeerTyping
                         ? `${peerTypingName || "Someone"} is typing...`
                         : isActivePartnerOnline
                           ? "Online"
-                          : "Conversation active"}
+                          : formatLastSeen(activePartnerLastSeenAt)}
                     </p>
                   ) : (
                     <p className="text-[11px] md:text-xs text-gray-400 dark:text-slate-500 flex items-center truncate max-w-[50vw] md:max-w-none">
@@ -834,6 +873,7 @@ export const MessagesPage = () => {
                     myName={currentUserName}
                     timestamp={formatMessageDateTime(message.created_at)}
                     pending={Boolean(message.optimistic)}
+                    isRead={Boolean(message.is_read)}
                     attachment={message.attachment}
                     attachmentName={message.attachment_name}
                     attachmentMime={message.attachment_mime}
@@ -1017,8 +1057,17 @@ export const MessagesPage = () => {
             <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
               {activePartnerProfile.name}
             </h3>
-            <p className="mt-1 text-sm text-green-500">
-              {isActivePartnerOnline ? "Online" : "Conversation active"}
+            <p
+              className={cn(
+                "mt-1 text-sm",
+                isActivePartnerOnline
+                  ? "text-green-500"
+                  : "text-gray-500 dark:text-slate-400",
+              )}
+            >
+              {isActivePartnerOnline
+                ? "Online"
+                : formatLastSeen(activePartnerLastSeenAt)}
             </p>
 
             {typeof activePartnerProfile.compatibility === "number" && (
@@ -1162,6 +1211,7 @@ const MessageBubble = ({
   myName,
   timestamp,
   pending,
+  isRead,
   attachment,
   attachmentName,
   attachmentMime,
@@ -1175,6 +1225,7 @@ const MessageBubble = ({
   myName: string;
   timestamp: string;
   pending: boolean;
+  isRead: boolean;
   attachment?: string | null;
   attachmentName?: string | null;
   attachmentMime?: string | null;
@@ -1334,9 +1385,25 @@ const MessageBubble = ({
             >
               {timestamp}
             </span>
-            {pending && (
-              <span className="text-[11px] text-gray-400 dark:text-slate-500">
-                sending...
+            {isMe && (
+              <span
+                className={cn(
+                  "text-[11px] inline-flex items-center gap-1",
+                  pending
+                    ? "text-gray-400 dark:text-slate-500"
+                    : isRead
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-gray-400 dark:text-slate-500",
+                )}
+              >
+                {pending ? (
+                  <Clock3 size={12} />
+                ) : isRead ? (
+                  <CheckCheck size={13} />
+                ) : (
+                  <Check size={13} />
+                )}
+                {pending ? "Sending..." : isRead ? "Read" : "Sent"}
               </span>
             )}
           </div>
