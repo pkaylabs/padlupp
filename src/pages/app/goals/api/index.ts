@@ -264,3 +264,40 @@ export const respondToGoalInvite = async (
   );
   return data;
 };
+
+export interface GoalPreview {
+  id: number;
+  title: string;
+  description: string;
+  category?: string | null;
+  importance?: string | null;
+  start_date: string;
+  target_date: string;
+  is_public: boolean;
+  status: string;
+  user: {
+    id: number;
+    name: string;
+    avatar?: string | null;
+  };
+  partner?: {
+    id: number;
+    name: string;
+    avatar?: string | null;
+  } | null;
+  partner_name?: string | null;
+  partner_avatar?: string | null;
+  created_at: string;
+}
+
+export const getGoalPreview = async (id: string | number): Promise<GoalPreview> => {
+  const { data } = await api.get<GoalPreview>(`/goals/${id}/`);
+  return data;
+};
+
+export const joinGoal = async (goalId: string | number): Promise<{ detail?: string }> => {
+  const { data } = await api.post<{ detail?: string }>("/goals/join-goal/", {
+    goal: goalId,
+  });
+  return data;
+};

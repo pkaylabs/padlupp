@@ -5,14 +5,18 @@ import {
   CheckCheck,
   CheckCircle,
   Clock3,
+  CornerDownLeft,
   FileText,
   Image as ImageIcon,
+  Pencil,
   PhoneCall,
   Mic,
   Plus,
+  Reply,
   Search,
   Send,
   Video,
+  X,
 } from "lucide-react";
 import { cn } from "@/utils/cs";
 import { AnimatePresence, motion } from "framer-motion";
@@ -22,7 +26,8 @@ import {
 import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
 import { useChat } from "./hooks/useChat";
 import { useAuthStore } from "@/features/auth/authStore";
-import type { Conversation } from "./api";
+import type { Conversation, ReplyToInfo } from "./api";
+import type { ChatMessageUI } from "./hooks/useChat";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Modal } from "@/components/core/modal";
@@ -152,13 +157,23 @@ const getConversationPreview = (conversation: Conversation) => {
   const lastAttachmentMime = conversation.last_message?.attachment_mime ?? "";
   const hasImageAttachment = lastAttachmentMime.startsWith("image/");
   const hasVideoAttachment = lastAttachmentMime.startsWith("video/");
-  const lastText =
+
+  let lastText =
     conversation.last_message?.text ||
     (hasImageAttachment
       ? "Image"
       : hasVideoAttachment
         ? "Video"
         : "No messages yet");
+
+  if (conversation.last_message?.reply_to && conversation.last_message.text) {
+    const replySnippet = conversation.last_message.reply_to.text
+      ? conversation.last_message.reply_to.text.length > 30
+        ? `${conversation.last_message.reply_to.text.slice(0, 30)}...`
+        : conversation.last_message.reply_to.text
+      : "Message";
+    lastText = `↪ ${replySnippet}: ${lastText}`;
+  }
 
   return { hasImageAttachment, hasVideoAttachment, lastText };
 };
@@ -175,6 +190,7 @@ export const MessagesPage = () => {
     setTyping,
     sendFile,
     markAllRead,
+    renameGroup,
     loadingHistory,
     sending,
     isPeerTyping,
@@ -204,6 +220,14 @@ export const MessagesPage = () => {
   >(null);
   const [attachmentViewer, setAttachmentViewer] =
     useState<AttachmentViewerState>(null);
+  const [replyingTo, setReplyingTo] = useState<ChatMessageUI | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    message: ChatMessageUI;
+  } | null>(null);
+  const [isRenameGroupOpen, setIsRenameGroupOpen] = useState(false);
+  const [renameGroupValue, setRenameGroupValue] = useState("");
   const messagesScrollRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const lastMessageCountRef = useRef(0);
@@ -212,9 +236,14 @@ export const MessagesPage = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const inputPopoverRef = useRef<HTMLDivElement | null>(null);
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
 
   useClickAway(inputPopoverRef, () => {
     setInputPopoverOpen(false);
+  });
+
+  useClickAway(contextMenuRef, () => {
+    setContextMenu(null);
   });
 
   const filteredConversations = useMemo(() => {
@@ -349,6 +378,8 @@ export const MessagesPage = () => {
   useEffect(() => {
     if (!activeConversationId) return;
     markAllRead();
+    setReplyingTo(null);
+    setContextMenu(null);
   }, [activeConversationId, markAllRead]);
 
   useEffect(() => {
@@ -359,6 +390,9 @@ export const MessagesPage = () => {
       setIsProfileModalOpen(false);
       setComingSoonFeature("none");
       setAttachmentViewer(null);
+      setContextMenu(null);
+      setReplyingTo(null);
+      setIsRenameGroupOpen(false);
       setActiveConversationId(null);
     };
 
@@ -439,6 +473,8 @@ export const MessagesPage = () => {
     const text = inputValue.trim();
     if (!text && !selectedFile) return;
 
+    const replyId = typeof replyingTo?.id === "number" ? replyingTo.id : null;
+
     if (selectedFile) {
       await sendFile(selectedFile, text || undefined);
       setSelectedFile(null);
@@ -448,12 +484,14 @@ export const MessagesPage = () => {
       setSelectedFilePreviewUrl(null);
       setInputValue("");
       setTyping(false);
+      setReplyingTo(null);
       return;
     }
 
-    await sendMessage(text);
+    await sendMessage(text, replyId);
     setInputValue("");
     setTyping(false);
+    setReplyingTo(null);
   };
 
   const handleCreateGoalFromChat = () => {
@@ -507,6 +545,59 @@ export const MessagesPage = () => {
       URL.revokeObjectURL(selectedFilePreviewUrl);
     }
     setSelectedFilePreviewUrl(null);
+  };
+
+  const handleRenameGroup = async () => {
+    if (!activeConversationId || !activeConversation?.is_group) return;
+    const trimmed = renameGroupValue.trim();
+    if (!trimmed) return;
+    try {
+      await renameGroup(activeConversationId, trimmed);
+      toast.success("Group renamed successfully.");
+      setIsRenameGroupOpen(false);
+    } catch {
+      toast.error("Failed to rename group.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeConversation) {
+      setRenameGroupValue(
+        getConversationName(activeConversation).replace(/^Conversation #\d+$/, ""),
+      );
+    }
+  }, [activeConversation]);
+
+  const handleMessageClick = (
+    event: React.MouseEvent,
+    message: ChatMessageUI,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({
+      x: event.clientX ?? event.nativeEvent.offsetX,
+      y: event.clientY ?? event.nativeEvent.offsetY,
+      message,
+    });
+  };
+
+  const handleContextMenu = (
+    event: React.MouseEvent,
+    message: ChatMessageUI,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      message,
+    });
+  };
+
+  const handleReplyTo = (message: ChatMessageUI) => {
+    setReplyingTo(message);
+    setContextMenu(null);
+    messageInputRef.current?.focus();
   };
 
   useEffect(() => {
@@ -618,6 +709,11 @@ export const MessagesPage = () => {
                       <div className="flex justify-between mb-1">
                         <h3 className="text-sm font-medium text-dark-gray dark:text-slate-100 truncate">
                           {name}
+                          {conversation.is_group && (
+                            <span className="ml-1.5 text-[10px] font-medium text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full align-middle">
+                              Group
+                            </span>
+                          )}
                         </h3>
                       </div>
                       <p className="text-sm font-medium text-[#616161] dark:text-slate-400 truncate">
@@ -721,18 +817,41 @@ export const MessagesPage = () => {
                 </div>
 
                 <div className="min-w-0">
-                  <button
-                    type="button"
-                    disabled={!hasActiveConversation}
-                    onClick={() => setIsProfileModalOpen(true)}
-                    className="font-semibold text-[#666668] dark:text-slate-200 text-sm truncate max-w-[42vw] md:max-w-none text-left hover:text-[#4E92F4] transition-colors disabled:pointer-events-none disabled:opacity-80"
-                  >
-                    {activeConversation
-                      ? getConversationName(activeConversation)
-                      : hasConversations
-                        ? "Select a conversation"
-                        : "No conversations yet"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!hasActiveConversation}
+                      onClick={() => {
+                        if (activeConversation?.is_group) {
+                          setRenameGroupValue(getConversationName(activeConversation));
+                          setIsRenameGroupOpen(true);
+                        } else {
+                          setIsProfileModalOpen(true);
+                        }
+                      }}
+                      className="font-semibold text-[#666668] dark:text-slate-200 text-sm truncate max-w-[42vw] md:max-w-none text-left hover:text-[#4E92F4] transition-colors disabled:pointer-events-none disabled:opacity-80"
+                    >
+                      {activeConversation
+                        ? getConversationName(activeConversation)
+                        : hasConversations
+                          ? "Select a conversation"
+                          : "No conversations yet"}
+                    </button>
+                    {activeConversation?.is_group && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!activeConversation) return;
+                          setRenameGroupValue(getConversationName(activeConversation));
+                          setIsRenameGroupOpen(true);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+                        aria-label="Rename group"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    )}
+                  </div>
                   {hasActiveConversation ? (
                     <p
                       className={cn(
@@ -878,6 +997,9 @@ export const MessagesPage = () => {
                     attachmentName={message.attachment_name}
                     attachmentMime={message.attachment_mime}
                     goalEvent={parseGoalCreatedEvent(message.text)}
+                    replyTo={message.reply_to ?? null}
+                    onClick={(event) => handleMessageClick(event, message)}
+                    onContextMenu={(event) => handleContextMenu(event, message)}
                     onAttachmentClick={(payload) =>
                       setAttachmentViewer(payload)
                     }
@@ -897,6 +1019,35 @@ export const MessagesPage = () => {
 
           {hasActiveConversation && (
             <div className="relative pt-2 px-4 pb-5 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
+              {replyingTo && (
+                <div className="mb-2 flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-3 py-2">
+                  <CornerDownLeft size={14} className="shrink-0 text-blue-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
+                      {replyingTo.sender?.id === authUser?.id
+                        ? "You"
+                        : replyingTo.sender?.name || "User"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                      {replyingTo.text
+                        ? replyingTo.text.length > 60
+                          ? `${replyingTo.text.slice(0, 60)}...`
+                          : replyingTo.text
+                        : replyingTo.attachment_name
+                          ? `📎 ${replyingTo.attachment_name}`
+                          : "Message"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    className="shrink-0 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
+                    aria-label="Cancel reply"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
               <AnimatePresence>
                 {inputPopoverOpen && (
                   <motion.div
@@ -1190,6 +1341,83 @@ export const MessagesPage = () => {
           </div>
         )}
       </Modal>
+
+      <AnimatePresence>
+        {contextMenu && (
+          <motion.div
+            ref={contextMenuRef}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.1 }}
+            style={{
+              position: "fixed",
+              left: contextMenu.x,
+              top: contextMenu.y,
+              zIndex: 100,
+            }}
+            className="min-w-[140px] rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl py-1.5"
+          >
+            <button
+              type="button"
+              onClick={() => handleReplyTo(contextMenu.message)}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-2"
+            >
+              <Reply size={15} className="shrink-0" />
+              Reply
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Modal
+        isOpen={isRenameGroupOpen}
+        onClose={() => setIsRenameGroupOpen(false)}
+        showCloseButton
+        className="max-w-sm w-[92vw] p-6 top-1/2 -translate-y-1/2"
+      >
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Rename group
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              Choose a new name for this group chat.
+            </p>
+          </div>
+          <input
+            type="text"
+            value={renameGroupValue}
+            onChange={(event) => setRenameGroupValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleRenameGroup();
+              }
+            }}
+            placeholder="Group name"
+            className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            autoFocus
+          />
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsRenameGroupOpen(false)}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleRenameGroup()}
+              disabled={!renameGroupValue.trim()}
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:opacity-90 disabled:opacity-60"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
@@ -1216,6 +1444,9 @@ const MessageBubble = ({
   attachmentName,
   attachmentMime,
   goalEvent,
+  replyTo,
+  onClick,
+  onContextMenu,
   onAttachmentClick,
 }: {
   text: string | null;
@@ -1234,6 +1465,9 @@ const MessageBubble = ({
     title: string;
     creatorName: string;
   } | null;
+  replyTo?: ReplyToInfo | null;
+  onClick?: (event: React.MouseEvent) => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   onAttachmentClick?: (payload: {
     url: string;
     mime: string;
@@ -1273,6 +1507,8 @@ const MessageBubble = ({
   return (
     <div
       className={cn("flex w-full mb-1", isMe ? "justify-end" : "justify-start")}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
     >
       <div
         className={cn(
@@ -1313,6 +1549,31 @@ const MessageBubble = ({
               <span className="font-semibold text-xs text-gray-500 dark:text-slate-400 block mb-1">
                 {displayName}
               </span>
+            )}
+
+            {replyTo && (
+              <div
+                className={cn(
+                  "mb-1.5 px-2.5 py-1.5 rounded-lg border-l-2 text-xs cursor-default",
+                  isMe
+                    ? "bg-blue-400/40 border-blue-200 text-blue-100"
+                    : "bg-gray-100 dark:bg-slate-700/60 border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300",
+                )}
+              >
+                <p className={cn(
+                  "font-semibold truncate",
+                  isMe ? "text-blue-100" : "text-blue-600 dark:text-blue-400",
+                )}>
+                  {replyTo.sender_name}
+                </p>
+                <p className="truncate mt-0.5">
+                  {replyTo.text
+                    ? replyTo.text.length > 80
+                      ? `${replyTo.text.slice(0, 80)}...`
+                      : replyTo.text
+                    : replyTo.attachment_name || "Attachment"}
+                </p>
+              </div>
             )}
 
             {attachment && (

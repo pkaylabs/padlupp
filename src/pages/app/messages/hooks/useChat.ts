@@ -5,6 +5,7 @@ import {
   Conversation,
   createMessage,
   getMessages,
+  renameGroupConversation,
 } from "../api";
 
 const WS_BASE_URL = "wss://api.padlupp.com";
@@ -25,10 +26,11 @@ interface UseChatState {
   messages: ChatMessageUI[];
   activeConversationId: number | null;
   setActiveConversationId: (id: number | null) => void;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, replyToMessageId?: number | null) => Promise<void>;
   sendFile: (file: File, caption?: string) => Promise<void>;
   setTyping: (isTyping: boolean) => void;
   markAllRead: () => void;
+  renameGroup: (conversationId: number, name: string) => Promise<void>;
   loadingHistory: boolean;
   sending: boolean;
   connectionState: ConnectionState;
@@ -320,6 +322,7 @@ export const useChat = (): UseChatState => {
         partnership: existingConversation?.partnership ?? 0,
         partner_name: existingConversation?.partner_name ?? null,
         partner_avatar: existingConversation?.partner_avatar ?? null,
+        is_group: existingConversation?.is_group ?? false,
         last_message: message,
         unread_count:
           activeConversationIdRef.current === conversationId
@@ -663,7 +666,7 @@ export const useChat = (): UseChatState => {
   }, []);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, replyToMessageId?: number | null) => {
       if (!activeConversationId) return;
 
       const normalized = text.trim();
@@ -683,6 +686,8 @@ export const useChat = (): UseChatState => {
         attachment_mime: null,
         attachment_size: null,
         is_read: false,
+        reply_to_message_id: replyToMessageId ?? null,
+        reply_to: null,
         created_at: nowISO,
         updated_at: nowISO,
         optimistic: true,
@@ -701,7 +706,11 @@ export const useChat = (): UseChatState => {
       const socketOpen = ws?.readyState === WebSocket.OPEN;
 
       if (socketOpen) {
-        ws?.send(JSON.stringify({ type: "message", text: normalized }));
+        const wsPayload: Record<string, unknown> = { type: "message", text: normalized };
+        if (replyToMessageId) {
+          wsPayload.reply_to_message_id = replyToMessageId;
+        }
+        ws?.send(JSON.stringify(wsPayload));
 
         // If no server echo arrives in time, clear optimistic UI instead of creating
         // a second REST message that could duplicate the websocket event.
@@ -726,6 +735,7 @@ export const useChat = (): UseChatState => {
         const created = await createMessage({
           conversation: activeConversationId,
           text: normalized,
+          ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
         });
         replaceTempMessage(activeConversationId, tempId, created);
       } catch {
@@ -769,6 +779,8 @@ export const useChat = (): UseChatState => {
         attachment_mime: file.type || null,
         attachment_size: file.size,
         is_read: false,
+        reply_to_message_id: null,
+        reply_to: null,
         created_at: nowISO,
         updated_at: nowISO,
         optimistic: true,
@@ -850,6 +862,17 @@ export const useChat = (): UseChatState => {
     sendEvent({ type: "read_all" });
   }, [sendEvent]);
 
+  const renameGroup = useCallback(
+    async (conversationId: number, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+
+      const updated = await renameGroupConversation(conversationId, { name: trimmed });
+      upsertConversation(updated);
+    },
+    [upsertConversation],
+  );
+
   const messages = useMemo(() => {
     if (!activeConversationId) return [];
     return messagesByConversation[activeConversationId] ?? [];
@@ -865,6 +888,7 @@ export const useChat = (): UseChatState => {
     sendFile,
     setTyping,
     markAllRead,
+    renameGroup,
     loadingHistory,
     sending,
     connectionState,

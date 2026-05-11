@@ -4,7 +4,10 @@ import {
   getGoalInvitePreview,
   respondToGoalInvite,
   shareGoalInvites,
+  getGoalPreview,
+  joinGoal,
   type GoalInvitePreview,
+  type GoalPreview,
   type ShareGoalInvitePayload,
 } from "../api";
 
@@ -78,6 +81,30 @@ export function useRespondGoalInvite() {
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Failed to update invite status."));
+    },
+  });
+}
+
+export function useGoalPreview(id: string) {
+  return useQuery<GoalPreview>({
+    queryKey: ["goal-preview", id],
+    queryFn: () => getGoalPreview(id),
+    enabled: Boolean(id),
+    retry: false,
+  });
+}
+
+export function useJoinGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ goalId }: { goalId: string | number }) => joinGoal(goalId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+      toast.success("You have joined the goal successfully.");
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to join goal."));
     },
   });
 }

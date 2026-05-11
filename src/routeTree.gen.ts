@@ -24,6 +24,7 @@ import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/rou
 import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
+import { Route as GoalsIdPreviewRouteImport } from './routes/goals/$id/preview'
 import { Route as AppUsersUserIdRouteImport } from './routes/_app/users/$userId'
 import { Route as AppGoalsIdRouteImport } from './routes/_app/goals/$id'
 import { Route as AuthForgotPasswordVerifyOtpRouteRouteImport } from './routes/_auth/forgot-password/verify-otp/route'
@@ -102,6 +103,11 @@ const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
   path: '/goals/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const GoalsIdPreviewRoute = GoalsIdPreviewRouteImport.update({
+  id: '/goals/$id/preview',
+  path: '/goals/$id/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppUsersUserIdRoute = AppUsersUserIdRouteImport.update({
   id: '/users/$userId',
   path: '/users/$userId',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
+  '/goals/$id/preview': typeof GoalsIdPreviewRoute
   '/goals': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
+  '/goals/$id/preview': typeof GoalsIdPreviewRoute
   '/goals': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesById {
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/_auth/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/_app/goals/$id': typeof AppGoalsIdRoute
   '/_app/users/$userId': typeof AppUsersUserIdRoute
+  '/goals/$id/preview': typeof GoalsIdPreviewRoute
   '/_app/goals/': typeof AppGoalsIndexRoute
 }
 export interface FileRouteTypes {
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/forgot-password/verify-otp'
     | '/goals/$id'
     | '/users/$userId'
+    | '/goals/$id/preview'
     | '/goals'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/forgot-password/verify-otp'
     | '/goals/$id'
     | '/users/$userId'
+    | '/goals/$id/preview'
     | '/goals'
   id:
     | '__root__'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/_auth/forgot-password/verify-otp'
     | '/_app/goals/$id'
     | '/_app/users/$userId'
+    | '/goals/$id/preview'
     | '/_app/goals/'
   fileRoutesById: FileRoutesById
 }
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   OnboardingRouteRoute: typeof OnboardingRouteRoute
   GoalInviteTokenRoute: typeof GoalInviteTokenRoute
+  GoalsIdPreviewRoute: typeof GoalsIdPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -362,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/goals/$id/preview': {
+      id: '/goals/$id/preview'
+      path: '/goals/$id/preview'
+      fullPath: '/goals/$id/preview'
+      preLoaderRoute: typeof GoalsIdPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/users/$userId': {
       id: '/_app/users/$userId'
       path: '/users/$userId'
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRouteRoute: AuthRouteRouteWithChildren,
   OnboardingRouteRoute: OnboardingRouteRoute,
   GoalInviteTokenRoute: GoalInviteTokenRoute,
+  GoalsIdPreviewRoute: GoalsIdPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

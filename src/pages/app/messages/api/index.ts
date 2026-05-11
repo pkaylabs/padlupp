@@ -12,6 +12,14 @@ export interface ChatUser {
   preferred_notification_phone: string;
 }
 
+export interface ReplyToInfo {
+  id: number;
+  sender_name: string;
+  text: string | null;
+  attachment_name?: string | null;
+  attachment_mime?: string | null;
+}
+
 export interface ChatMessage {
   id: number;
   conversation: number;
@@ -22,6 +30,8 @@ export interface ChatMessage {
   attachment_mime: string | null;
   attachment_size: number | null;
   is_read: boolean;
+  reply_to_message_id: number | null;
+  reply_to: ReplyToInfo | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +41,7 @@ export interface Conversation {
   partnership: number;
   partner_name?: string | null;
   partner_avatar?: string | null;
+  is_group: boolean;
   last_message: ChatMessage | null;
   unread_count: number;
   created_at: string;
@@ -54,6 +65,7 @@ export interface GetMessagesParams {
 export interface CreateMessagePayload {
   conversation: number;
   text: string;
+  reply_to_message_id?: number | null;
 }
 
 export interface UpdateMessagePayload {
@@ -100,4 +112,15 @@ export const patchMessage = async (
 
 export const deleteMessage = async (id: string | number): Promise<void> => {
   await api.delete(`/messages/${id}/`);
+};
+
+export const renameGroupConversation = async (
+  id: number,
+  payload: { name: string },
+): Promise<Conversation> => {
+  const { data } = await api.patch<Conversation>(
+    `/conversations/${id}/rename-group/`,
+    payload,
+  );
+  return data;
 };
