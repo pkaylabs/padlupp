@@ -22,7 +22,12 @@ import { format, parseISO, startOfToday } from "date-fns";
 import { CalendarWidget } from "../dashboard/components/calendar-widget";
 import Button from "@/components/core/buttons";
 import { useGoal } from "./hooks/useGoal";
-import { useCreateTask, useDeleteTask, useTasks, useUpdateTask } from "./hooks/useTasks";
+import {
+  useCreateTask,
+  useDeleteTask,
+  useTasks,
+  useUpdateTask,
+} from "./hooks/useTasks";
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
 import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import { Modal } from "@/components/core/modal";
@@ -94,11 +99,17 @@ export function GoalDetailsPage() {
   });
 
   // Mutations
-  const { mutate: updateGoal, mutateAsync: updateGoalAsync, isPending: isUpdatingGoal } =
-    useUpdateGoal();
-  const { mutateAsync: deleteGoal, isPending: isDeletingGoal } = useDeleteGoal();
-  const { mutateAsync: shareGoalInvites, isPending: isSharingGoal } = useShareGoalInvites();
-  const { mutateAsync: createTask, isPending: isCreatingTask } = useCreateTask();
+  const {
+    mutate: updateGoal,
+    mutateAsync: updateGoalAsync,
+    isPending: isUpdatingGoal,
+  } = useUpdateGoal();
+  const { mutateAsync: deleteGoal, isPending: isDeletingGoal } =
+    useDeleteGoal();
+  const { mutateAsync: shareGoalInvites, isPending: isSharingGoal } =
+    useShareGoalInvites();
+  const { mutateAsync: createTask, isPending: isCreatingTask } =
+    useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: deleteTask } = useDeleteTask();
 
@@ -150,7 +161,10 @@ export function GoalDetailsPage() {
   // --- Handlers ---
 
   const handleStatusChange = (newStatus: string) => {
-    updateGoal({ id: goal!.id, data: { status: normalizeStatusForApi(newStatus) } });
+    updateGoal({
+      id: goal!.id,
+      data: { status: normalizeStatusForApi(newStatus) },
+    });
     setStatusPopoverOpen(false);
   };
 
@@ -244,7 +258,11 @@ export function GoalDetailsPage() {
       goalId: goal.id,
       payload,
     });
-    const maybeLink = response.public_share_link || response.share_link || "";
+    const maybeLink =
+      response.public_share_link ||
+      response.share_link ||
+      response.invite_link ||
+      "";
     if (maybeLink) {
       setShareLinkDraft(maybeLink);
     }
@@ -420,7 +438,9 @@ export function GoalDetailsPage() {
         <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
           <AlertCircle size={32} />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">Goal not found</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
+          Goal not found
+        </h2>
         <p className="text-gray-500 dark:text-slate-400 mb-6">
           This goal may have been deleted or does not exist.
         </p>
@@ -544,7 +564,7 @@ export function GoalDetailsPage() {
                   "h-full rounded-full transition-all duration-500",
                   goal.status === "completed"
                     ? "bg-green-500 w-full"
-                    : "bg-blue-500 w-[25%]"
+                    : "bg-blue-500 w-[25%]",
                 )}
               />
             </div>
@@ -559,7 +579,7 @@ export function GoalDetailsPage() {
               <p
                 className={cn(
                   "text-gray-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap",
-                  !isDescExpanded && "line-clamp-3"
+                  !isDescExpanded && "line-clamp-3",
                 )}
               >
                 {goal.description || "No description provided for this goal."}
@@ -607,7 +627,10 @@ export function GoalDetailsPage() {
                 // --- EMPTY STATE FOR SUBTASKS ---
                 <div className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50/50 dark:bg-slate-900/50">
                   <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mb-3">
-                    <ListTodo className="text-gray-400 dark:text-slate-500" size={24} />
+                    <ListTodo
+                      className="text-gray-400 dark:text-slate-500"
+                      size={24}
+                    />
                   </div>
                   <p className="text-gray-900 dark:text-slate-100 font-medium text-sm">
                     No subtasks yet
@@ -644,7 +667,7 @@ export function GoalDetailsPage() {
                         "mt-0.5 transition-colors",
                         pendingTaskIds.includes(task.id)
                           ? "opacity-50 cursor-not-allowed"
-                          : "text-gray-300 dark:text-slate-500 hover:text-blue-500"
+                          : "text-gray-300 dark:text-slate-500 hover:text-blue-500",
                       )}
                     >
                       {isTaskCompleted(task) ? (
@@ -702,7 +725,7 @@ export function GoalDetailsPage() {
                           className={cn(
                             "text-sm text-gray-800 dark:text-slate-200 font-medium",
                             isTaskCompleted(task) &&
-                              "text-gray-400 dark:text-slate-500 line-through"
+                              "text-gray-400 dark:text-slate-500 line-through",
                           )}
                         >
                           {task.title}
@@ -754,7 +777,7 @@ export function GoalDetailsPage() {
                     ? "bg-green-100 text-green-700"
                     : goal.status === "in-progress"
                       ? "bg-orange-100 text-orange-700"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300",
                 )}
               >
                 {goal.status === "completed" ? (
@@ -788,7 +811,7 @@ export function GoalDetailsPage() {
                               ? "bg-gray-400"
                               : status === "In progress"
                                 ? "bg-orange-500"
-                                : "bg-green-500"
+                                : "bg-green-500",
                           )}
                         />
                         {status}
@@ -809,7 +832,10 @@ export function GoalDetailsPage() {
             {/* --- EMPTY STATE FOR ACTIVITIES --- */}
             <div className="bg-gray-50 dark:bg-slate-900 rounded-xl p-6 text-center border border-transparent dark:border-slate-800">
               <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-2 shadow-sm">
-                <Activity size={18} className="text-gray-400 dark:text-slate-500" />
+                <Activity
+                  size={18}
+                  className="text-gray-400 dark:text-slate-500"
+                />
               </div>
               <p className="text-xs text-gray-500 dark:text-slate-400">
                 No recent activity recorded for this goal.
@@ -969,7 +995,10 @@ export function GoalDetailsPage() {
               {editIsPublic ? (
                 <CheckSquare size={18} className="text-blue-600" />
               ) : (
-                <Square size={18} className="text-gray-400 dark:text-slate-500" />
+                <Square
+                  size={18}
+                  className="text-gray-400 dark:text-slate-500"
+                />
               )}
               <span>Make this goal public</span>
             </label>
@@ -1011,7 +1040,9 @@ export function GoalDetailsPage() {
                 value={editCheckinFrequency}
                 disabled={isUpdatingGoal}
                 onChange={(event) =>
-                  setEditCheckinFrequency(event.target.value as CheckinFrequency)
+                  setEditCheckinFrequency(
+                    event.target.value as CheckinFrequency,
+                  )
                 }
                 className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
               >
@@ -1104,7 +1135,8 @@ export function GoalDetailsPage() {
               Delete goal?
             </h3>
             <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-              This action cannot be undone. The goal and its details will be removed.
+              This action cannot be undone. The goal and its details will be
+              removed.
             </p>
           </div>
 
@@ -1137,10 +1169,7 @@ export function GoalDetailsPage() {
         }}
         goalTitle={goal.title}
         shareLink={
-          shareLinkDraft ||
-          goal.public_share_link ||
-          goal.share_link ||
-          ""
+          shareLinkDraft || goal.public_share_link || goal.share_link || ""
         }
         isSubmitting={isSharingGoal}
         onSendInvites={handleShareGoalInvites}

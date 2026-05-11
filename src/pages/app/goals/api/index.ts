@@ -160,6 +160,7 @@ export interface ShareGoalInviteResponse {
   invited_count?: number;
   public_share_link?: string | null;
   share_link?: string | null;
+  invite_link?: string | null;
 }
 
 export interface GoalInvitePreview {
@@ -182,7 +183,7 @@ export interface GoalInvitePreview {
 }
 
 export const getGoals = async (
-  params: GetGoalsParams
+  params: GetGoalsParams,
 ): Promise<PaginatedResponse<Goal>> => {
   const { data } = await api.get<PaginatedResponse<Goal>>("/goals/", {
     params,
@@ -290,12 +291,16 @@ export interface GoalPreview {
   created_at: string;
 }
 
-export const getGoalPreview = async (id: string | number): Promise<GoalPreview> => {
+export const getGoalPreview = async (
+  id: string | number,
+): Promise<GoalPreview> => {
   const { data } = await api.get<GoalPreview>(`/goals/${id}/`);
   return data;
 };
 
-export const joinGoal = async (goalId: string | number): Promise<{ detail?: string }> => {
+export const joinGoal = async (
+  goalId: string | number,
+): Promise<{ detail?: string }> => {
   const { data } = await api.post<{ detail?: string }>("/goals/join-goal/", {
     goal: goalId,
   });
