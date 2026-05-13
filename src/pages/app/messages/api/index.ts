@@ -118,7 +118,7 @@ export const renameGroupConversation = async (
   id: number,
   payload: { name: string },
 ): Promise<Conversation> => {
-  const { data } = await api.patch<Conversation>(
+  const { data } = await api.post<Conversation>(
     `/conversations/${id}/rename-group/`,
     payload,
   );

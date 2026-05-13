@@ -863,9 +863,11 @@ export const MessagesPage = () => {
                     >
                       {isPeerTyping
                         ? `${peerTypingName || "Someone"} is typing...`
-                        : isActivePartnerOnline
-                          ? "Online"
-                          : formatLastSeen(activePartnerLastSeenAt)}
+                        : activeConversation?.is_group
+                          ? `${onlineUserIds.length} online`
+                          : isActivePartnerOnline
+                            ? "Online"
+                            : formatLastSeen(activePartnerLastSeenAt)}
                     </p>
                   ) : (
                     <p className="text-[11px] md:text-xs text-gray-400 dark:text-slate-500 flex items-center truncate max-w-[50vw] md:max-w-none">
