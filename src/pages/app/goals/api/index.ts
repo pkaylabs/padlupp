@@ -31,6 +31,7 @@ export interface Goal {
   checkin_frequency?: CheckinFrequency | null;
   public_share_link?: string | null;
   share_link?: string | null;
+  invite_link?: string | null;
   description: string;
   start_date: string; // ISO Date string
   start_time?: string | null;

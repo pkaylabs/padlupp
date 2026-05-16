@@ -73,6 +73,55 @@ export interface UpdateMessagePayload {
   text?: string;
 }
 
+export interface GetConversationMediaParams {
+  page?: number;
+  page_size?: number;
+}
+
+export interface ConversationMediaItem {
+  id: number;
+  file?: string | null;
+  attachment?: string | null;
+  attachment_name?: string | null;
+  attachment_mime?: string | null;
+  attachment_size?: number | null;
+  created_at: string;
+  sender_id?: number | null;
+  sender_name?: string | null;
+  sender?: Partial<ChatUser> | null;
+}
+
+type ConversationMediaResponse = PaginatedResponse<ConversationMediaItem> | ConversationMediaItem[];
+
+const normalizeConversationMediaResponse = (
+  payload: ConversationMediaResponse | null | undefined,
+): PaginatedResponse<ConversationMediaItem> => {
+  if (Array.isArray(payload)) {
+    return {
+      count: payload.length,
+      next: null,
+      previous: null,
+      results: payload,
+    };
+  }
+
+  if (payload && Array.isArray(payload.results)) {
+    return {
+      count: typeof payload.count === "number" ? payload.count : payload.results.length,
+      next: payload.next ?? null,
+      previous: payload.previous ?? null,
+      results: payload.results,
+    };
+  }
+
+  return {
+    count: 0,
+    next: null,
+    previous: null,
+    results: [],
+  };
+};
+
 export const getMessages = async (
   params: GetMessagesParams,
 ): Promise<PaginatedResponse<ChatMessage>> => {
@@ -123,4 +172,15 @@ export const renameGroupConversation = async (
     payload,
   );
   return data;
+};
+
+export const getConversationMedia = async (
+  id: number,
+  params?: GetConversationMediaParams,
+) => {
+  const { data } = await api.get<ConversationMediaResponse>(
+    `/conversations/${id}/media/`,
+    { params },
+  );
+  return normalizeConversationMediaResponse(data);
 };

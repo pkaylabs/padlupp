@@ -2,7 +2,7 @@ import { useAuthStore } from "@/features/auth/authStore";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { LoginCredentials, loginUser } from "../api";
-import { DASHBOARD, GOALS } from "@/constants/page-path";
+import { resolvePostAuthRedirect } from "../utils/redirect";
 import { toast } from "sonner";
 
 export function useLogin() {
@@ -17,7 +17,13 @@ export function useLogin() {
 
       router.invalidate();
 
-      router.navigate({ to: GOALS, replace: true });
+      const rawRedirect =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("redirect")
+          : null;
+      const href = resolvePostAuthRedirect(rawRedirect);
+
+      router.navigate({ href, replace: true });
 
       toast.success("Welcome back!");
     },

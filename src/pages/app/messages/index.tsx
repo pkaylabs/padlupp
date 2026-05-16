@@ -1,4 +1,5 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ReportUserModal } from "./components/modals";
 import {
   Check,
@@ -26,7 +27,7 @@ import {
 import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
 import { useChat } from "./hooks/useChat";
 import { useAuthStore } from "@/features/auth/authStore";
-import type { Conversation, ReplyToInfo } from "./api";
+import { getConversationMedia, type Conversation, type ReplyToInfo } from "./api";
 import type { ChatMessageUI } from "./hooks/useChat";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -176,6 +177,36 @@ const getConversationPreview = (conversation: Conversation) => {
   }
 
   return { hasImageAttachment, hasVideoAttachment, lastText };
+};
+
+const getFallbackAttachmentName = (mime: string | null, id: number | string) => {
+  if (mime?.startsWith("image/")) return `image-${id}`;
+  if (mime?.startsWith("video/")) return `video-${id}`;
+  if (mime?.startsWith("audio/")) return `audio-${id}`;
+  return `file-${id}`;
+};
+
+const inferMimeFromUrl = (url?: string | null) => {
+  if (!url) return "application/octet-stream";
+  const cleanUrl = url.split("?")[0].toLowerCase();
+
+  if (/\.(png|jpg|jpeg|gif|webp|bmp|svg)$/.test(cleanUrl)) return "image/*";
+  if (/\.(mp4|mov|webm|m4v|avi|mkv)$/.test(cleanUrl)) return "video/*";
+  if (/\.(mp3|wav|ogg|m4a|aac|flac)$/.test(cleanUrl)) return "audio/*";
+  if (cleanUrl.endsWith(".pdf")) return "application/pdf";
+  return "application/octet-stream";
+};
+
+const getFilenameFromUrl = (url?: string | null) => {
+  if (!url) return "";
+  const cleanUrl = url.split("?")[0];
+  const segments = cleanUrl.split("/");
+  const last = segments[segments.length - 1] || "";
+  try {
+    return decodeURIComponent(last);
+  } catch {
+    return last;
+  }
 };
 
 export const MessagesPage = () => {
@@ -374,6 +405,45 @@ export const MessagesPage = () => {
   const hasSearchQuery = normalizeSearchText(searchValue).length > 0;
   const showConversationListShimmer =
     !hasReceivedConversationsSnapshot && !hasSearchQuery;
+
+  const {
+    data: conversationMediaResponse,
+    isLoading: isConversationMediaLoading,
+    isError: isConversationMediaError,
+  } = useQuery({
+    queryKey: ["conversation-media", activeConversationId],
+    queryFn: () =>
+      getConversationMedia(activeConversationId as number, {
+        page_size: 100,
+      }),
+    enabled: Boolean(activeConversationId) && activeTab === "Shared",
+    staleTime: 30_000,
+  });
+
+  const sharedMediaItems = useMemo(
+    () =>
+      (conversationMediaResponse?.results || [])
+        .map((message) => {
+          const url = message.attachment || message.file || "";
+          const mime = message.attachment_mime || inferMimeFromUrl(url);
+          const name =
+            message.attachment_name ||
+            getFilenameFromUrl(url) ||
+            getFallbackAttachmentName(mime, message.id);
+
+          return {
+            id: message.id,
+            url,
+            name,
+            mime,
+            createdAt: message.created_at,
+            senderName: message.sender?.name || message.sender_name || "",
+            size: message.attachment_size,
+          };
+        })
+        .filter((message) => Boolean(message.url)),
+    [conversationMediaResponse?.results],
+  );
 
   useEffect(() => {
     if (!activeConversationId) return;
@@ -932,18 +1002,21 @@ export const MessagesPage = () => {
             <div className="sticky top-2.5 flex gap-6 px-6 py-4 text-sm font-medium bg-bg-gray dark:bg-slate-950">
               <button
                 onClick={() => setActiveTab("Activities")}
-                className={
+                className={cn(
                   activeTab === "Activities"
                     ? "text-gray-900 dark:text-slate-100"
-                    : "text-gray-400 dark:text-slate-500"
-                }
+                    : "text-gray-400 dark:text-slate-500",
+                )}
               >
                 Activities
               </button>
               <button
-                disabled
-                title="Shared files coming soon"
-                className="text-gray-300 dark:text-slate-600 cursor-not-allowed"
+                onClick={() => setActiveTab("Shared")}
+                className={cn(
+                  activeTab === "Shared"
+                    ? "text-gray-900 dark:text-slate-100"
+                    : "text-gray-400 dark:text-slate-500",
+                )}
               >
                 Shared
               </button>
@@ -955,9 +1028,12 @@ export const MessagesPage = () => {
             className="flex-1 overflow-y-auto scroll-smooth bg-bg-gray dark:bg-slate-950 relative"
           >
             {activeTab === "Shared" && hasActiveConversation ? (
-              <div className="text-center text-gray-500 dark:text-slate-400">
-                <SharedFilesView />
-              </div>
+              <SharedFilesView
+                items={sharedMediaItems}
+                isLoading={isConversationMediaLoading}
+                isError={isConversationMediaError}
+                onOpenAttachment={(payload) => setAttachmentViewer(payload)}
+              />
             ) : (
               <div className="h-full p-4 md:p-6 pb-8 md:pb-10 space-y-6">
                 {!hasActiveConversation ? (
@@ -1330,6 +1406,8 @@ export const MessagesPage = () => {
                 autoPlay
                 className="max-h-[70vh] w-full rounded-md"
               />
+            ) : attachmentViewer.mime.startsWith("audio/") ? (
+              <audio src={attachmentViewer.url} controls autoPlay className="w-full" />
             ) : (
               <a
                 href={attachmentViewer.url}

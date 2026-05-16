@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useAuthStore } from "@/features/auth/authStore";
 import { googleAuthUser, GoogleAuthPayload } from "../api";
-import { DASHBOARD, GOALS } from "@/constants/page-path";
+import { resolvePostAuthRedirect } from "../utils/redirect";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
 import { sanitizeNameInput } from "@/utils/name-validation";
@@ -24,7 +24,12 @@ export function useGoogleAuth() {
         router.navigate({ to: "/onboarding", replace: true });
         toast.success("Account created successfully!");
       } else {
-        router.navigate({ to: GOALS, replace: true });
+        const rawRedirect =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("redirect")
+            : null;
+        const href = resolvePostAuthRedirect(rawRedirect);
+        router.navigate({ href, replace: true });
         toast.success("Welcome back!");
       }
     },

@@ -97,7 +97,6 @@ export function GoalDetailsPage() {
   const { data: tasksData, isLoading: loadingTasks } = useTasks({
     ordering: "created_at",
   });
-
   // Mutations
   const {
     mutate: updateGoal,
@@ -1169,7 +1168,11 @@ export function GoalDetailsPage() {
         }}
         goalTitle={goal.title}
         shareLink={
-          shareLinkDraft || goal.public_share_link || goal.share_link || ""
+          shareLinkDraft ||
+          goal.invite_link ||
+          goal.public_share_link ||
+          goal.share_link ||
+          ""
         }
         isSubmitting={isSharingGoal}
         onSendInvites={handleShareGoalInvites}

@@ -1,365 +1,239 @@
-// src/components/chat/ChatSideViews.tsx
-import React, { useState } from "react";
-import { MoreVertical } from "lucide-react";
-import { ArrowLeft, QuoteDown } from "iconsax-reactjs";
-import { PiTagSimpleDuotone } from "react-icons/pi";
-
+import { useMemo, useState } from "react";
 import {
-  Video,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Mic,
-  FileText,
+  AudioLines,
   Download,
-  Share2,
-  AlignRight, // For the sort icon
+  FileText,
+  PlaySquare,
 } from "lucide-react";
+import { cn } from "@/utils/cs";
 
-// --- Types & Mock Data ---
-export interface ChatPartnerProfile {
-  id: string;
+type SharedMediaFilter = "all" | "image" | "video" | "audio" | "file";
+
+export interface SharedMediaItem {
+  id: number | string;
+  url: string;
   name: string;
-  avatarUrl: string;
-  age?: number;
-  compatibility?: number;
-  rating?: number;
-  seeking?: string;
-  interests?: { label: string }[];
+  mime: string;
+  createdAt?: string;
+  senderName?: string;
+  size?: number | null;
 }
 
-type FileType = "video" | "image" | "link" | "audio" | "doc";
-
-interface SharedFile {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  type: FileType;
-}
-
-const SHARED_FILES_MOCK: SharedFile[] = [
-  {
-    id: "1",
-    title: "Shared screen",
-    date: "4th Dec",
-    time: "3:00pm",
-    type: "video",
-  },
-  {
-    id: "2",
-    title: "Sketches for shared screen",
-    date: "3rd Dec",
-    time: "4:00am",
-    type: "image",
-  },
-  {
-    id: "3",
-    title: "Tutorials",
-    date: "2nd Dec",
-    time: "11:00am",
-    type: "link",
-  },
-  {
-    id: "4",
-    title: "Recording from Friday’s meeting",
-    date: "2nd Dec",
-    time: "5:00am",
-    type: "audio",
-  },
-  {
-    id: "5",
-    title: "Documentation",
-    date: "1st Dec",
-    time: "2:00pm",
-    type: "doc",
-  },
-];
-
-// --- Helper to get Icon ---
-const FileIcon = ({ type }: { type: FileType }) => {
-  const iconProps = {
-    size: 24,
-    className: "text-gray-700 dark:text-slate-300",
-  };
-
-  switch (type) {
-    case "video":
-      return <Video {...iconProps} />;
-    case "image":
-      return <ImageIcon {...iconProps} />;
-    case "link":
-      return <LinkIcon {...iconProps} />; // Rotate icon 45deg via CSS if needed to match perfectly
-    case "audio":
-      return (
-        <div className="border-2 border-gray-700 dark:border-slate-300 rounded-md p-0.5">
-          <div className="w-3 h-3 bg-gray-700 dark:bg-slate-300 rounded-full"></div>
-        </div>
-      ); // Custom shape for "speaker" or use Mic
-    case "doc":
-      return <FileText {...iconProps} />;
-    default:
-      return <FileText {...iconProps} />;
-  }
+const getMediaType = (mime: string): SharedMediaFilter => {
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return "file";
 };
 
-// --- 1. User Profile View ---
-export const UserProfileView = ({
-  person,
-  onBack,
-  onAvatarClick,
+const formatDateTime = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString([], {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatFileSize = (size?: number | null) => {
+  if (!size || size <= 0) return "";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
+const FilterButton = ({
+  label,
+  active,
+  onClick,
 }: {
-  person: ChatPartnerProfile;
-  onBack: () => void;
-  onAvatarClick?: () => void;
-}) => {
-  const hasCompatibility = typeof person.compatibility === "number";
-  const hasInterests = Boolean(person.interests?.length);
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      "px-3 py-1.5 text-xs rounded-full border transition-colors",
+      active
+        ? "bg-blue-500 border-blue-500 text-white"
+        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800",
+    )}
+  >
+    {label}
+  </button>
+);
 
-  return (
-    <div className="h-full flex flex-col bg-bg-gray dark:bg-slate-950 px-4 sm:px-20 pt-8">
-      <div className=" flex justify-between items-center bg-white dark:bg-slate-900 shadow rounded-lg p-6 border border-transparent dark:border-slate-800">
-        <button
-          onClick={onBack}
-          className="flex items-center text-base font-semibold text-[#3D3D3D] dark:text-slate-100"
-        >
-          <ArrowLeft className="mr-3" /> {person.name}
-          {typeof person.age === "number" && (
-            <span className="text-gray-400 dark:text-slate-400 ml-2 text-base font-normal">
-              {" "}
-              • {person.age}
-            </span>
-          )}
-        </button>
-      </div>
-
-      <div className="flex-1 p-6 flex flex-col items-center overflow-y-auto">
-        <div className="relative mb-4">
-          <img
-            src={person.avatarUrl}
-            alt={person.name}
-            className="w-32 h-32 rounded-full border-4 border-white shadow-sm cursor-zoom-in"
-            onClick={onAvatarClick}
-          />
-          {/* Blue dot if online */}
-          <div className="absolute bottom-2 right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full"></div>
-        </div>
-
-        <div className="text-center mb-6">
-          {hasCompatibility && (
-            <p className="text-orange-400 text-base mb-1">
-              {person.compatibility}% compatible
-            </p>
-          )}
-        </div>
-
-        <div className="w-full p-6 py-8 bg-white dark:bg-slate-900 rounded-lg shadow text-sm text-gray-700 dark:text-slate-300 my-4 border border-transparent dark:border-slate-800">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="bg-primary-100/50 p-1 rounded-full ">
-              <QuoteDown size="15" color="#A3CBFA" variant="Bold" />
-            </div>
-            <span className="font-semibold text-sm text-dark-gray dark:text-slate-100">
-              Personal Bio
-            </span>
-          </div>
-          <span className="font-semibold text-base text-dark-gray dark:text-slate-200 pl-4">
-            {person.seeking || "No profile details available yet."}
-          </span>
-        </div>
-
-        <div className="w-full bg-white dark:bg-slate-900 rounded-xl px-6 py-8 shadow border border-transparent dark:border-slate-800">
-          <div className="flex items-center gap-1.5">
-            <PiTagSimpleDuotone size={18} color="#A3CBFA" />
-            <span className="font-semibold text-base text-dark-gray dark:text-slate-100">
-              Interest
-            </span>
-          </div>
-          <div className="flex flex-wrap justify-center  gap-2 my-4">
-            {hasInterests ? (
-              person.interests?.map((interest) => (
-                <div
-                  key={interest.label}
-                  className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1 rounded-sm"
-                >
-                  <span className="text-xs font-medium text-gray-600 dark:text-slate-300">
-                    {interest.label}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <span className="text-xs text-gray-500 dark:text-slate-400">
-                No interests shared yet.
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- 2. Goal Progress View ---
-export const GoalProgressView = ({
-  personName,
-  onBack,
-  onReport,
+export const SharedFilesView = ({
+  items,
+  isLoading,
+  isError,
+  onOpenAttachment,
 }: {
-  personName: string;
-  onBack: () => void;
-  onReport: () => void;
+  items: SharedMediaItem[];
+  isLoading?: boolean;
+  isError?: boolean;
+  onOpenAttachment?: (payload: { url: string; mime: string; name: string }) => void;
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<SharedMediaFilter>("all");
 
-  return (
-    <div className="h-full flex flex-col bg-bg-gray dark:bg-slate-950">
-      <div className="p-4 flex justify-between items-center">
-        <button
-          onClick={onBack}
-          className="flex items-center text-base font-semibold text-[#3D3D3D] dark:text-slate-100"
-        >
-          <ArrowLeft className="mr-3" /> {personName}’s progress
-        </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
-          >
-            <MoreVertical
-              size={20}
-              className="text-gray-600 dark:text-slate-300"
-            />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 top-8 bg-white dark:bg-slate-900 shadow-lg rounded-lg border border-gray-100 dark:border-slate-700 py-1 min-w-[100px] z-10">
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  onReport();
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-              >
-                Report
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="px-4 sm:px-20 mt-6 overflow-y-auto">
-        <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400 text-sm mb-6">
-          <span>📅</span> 30th March, 2025 - 30th May, 2025
-        </div>
-
-        <div className="space-y-4 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-gray-100 dark:border-slate-800 flex items-start justify-between"
-            >
-              <div>
-                <p className="text-gray-700 dark:text-slate-200 text-sm mb-1">
-                  Lorem ipsum dolor sit amet consectetur.
-                </p>
-                <div className="flex items-center gap-2 text-xs text-blue-400 dark:text-blue-300">
-                  <span>5 Apr</span> <span>01:40 PM</span>
-                </div>
-              </div>
-              <div
-                className={`w-4 h-4 rounded-full border ${i === 1 ? "border-4 border-orange-400" : "border-gray-300"}`}
-              ></div>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-green-50 text-green-600 text-xs font-medium px-3 py-1 rounded-full w-fit mb-4">
-          1 completed
-        </div>
-
-        <div className="flex gap-2">
-          <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-            ◎ In progress
-          </span>
-          <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-            ☆ Regular
-          </span>
-          <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-            Briefcase Career building
-          </span>
-        </div>
-      </div>
-    </div>
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) =>
+        activeFilter === "all" ? true : getMediaType(item.mime) === activeFilter,
+      ),
+    [activeFilter, items],
   );
-};
 
-// --- Main Component ---
-export const SharedFilesView: React.FC = () => {
-  return (
-    <div className="h-full px-8 overflow-y-auto">
-      {/* Filter/Sort Header */}
-      <div className="flex justify-end mb-4">
-        <button className="flex items-center gap-2 text-base font-medium text-[#1E1E1E] dark:text-slate-100 hover:text-gray-600 dark:hover:text-slate-300">
-          Name
-          <AlignRight size={24} className="rotate-180" />{" "}
-          {/* Rotated to match the 'sort' lines icon */}
-        </button>
-      </div>
-
-      {/* Files List */}
-      <div className="space-y-1">
-        {SHARED_FILES_MOCK.map((file) => (
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 space-y-3">
+        {[1, 2, 3, 4].map((item) => (
           <div
-            key={file.id}
-            className="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-md hover:shadow transition-shadow border border-transparent dark:border-slate-800"
-          >
-            {/* Icon & Details */}
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 flex items-center justify-center">
-                {/* Custom audio icon logic if standard Mic doesn't fit, otherwise generic icons */}
-                {file.type === "audio" ? (
-                  <Mic
-                    size={24}
-                    className="text-gray-700 dark:text-slate-300"
-                  />
-                ) : (
-                  <FileIcon type={file.type} />
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-[#1E1E1E] dark:text-slate-100">
-                  {file.title}
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  {file.date} <span className="ml-2">{file.time}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-6 pr-4">
-              <button className="flex flex-col items-center gap-1 group">
-                <Download
-                  size={20}
-                  className="text-gray-600 dark:text-slate-300 group-hover:text-blue-600"
-                />
-                <span className="text-[10px] text-gray-500 dark:text-slate-400 group-hover:text-blue-600">
-                  Download
-                </span>
-              </button>
-
-              <button className="flex flex-col items-center gap-1 group">
-                <Share2
-                  size={20}
-                  className="text-gray-600 dark:text-slate-300 group-hover:text-blue-600"
-                />
-                <span className="text-[10px] text-gray-500 dark:text-slate-400 group-hover:text-blue-600">
-                  Share
-                </span>
-              </button>
-            </div>
-          </div>
+            key={item}
+            className="h-16 rounded-xl bg-gray-100 dark:bg-slate-800 animate-pulse"
+          />
         ))}
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 text-sm text-center text-red-600 dark:text-red-400">
+        Failed to load shared media for this conversation.
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full p-4 md:p-6 overflow-y-auto">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <FilterButton
+          label="All"
+          active={activeFilter === "all"}
+          onClick={() => setActiveFilter("all")}
+        />
+        <FilterButton
+          label="Images"
+          active={activeFilter === "image"}
+          onClick={() => setActiveFilter("image")}
+        />
+        <FilterButton
+          label="Videos"
+          active={activeFilter === "video"}
+          onClick={() => setActiveFilter("video")}
+        />
+        <FilterButton
+          label="Audio"
+          active={activeFilter === "audio"}
+          onClick={() => setActiveFilter("audio")}
+        />
+        <FilterButton
+          label="Files"
+          active={activeFilter === "file"}
+          onClick={() => setActiveFilter("file")}
+        />
+      </div>
+
+      {filteredItems.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/40 p-6 text-center">
+          <p className="text-sm font-medium text-gray-700 dark:text-slate-200">
+            No shared media yet
+          </p>
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            Images, videos, audio, and files from this chat will appear here.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredItems.map((item) => {
+            const type = getMediaType(item.mime);
+            const dateLabel = formatDateTime(item.createdAt);
+            const sizeLabel = formatFileSize(item.size);
+
+            return (
+              <div
+                key={`${item.id}`}
+                className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                    {type === "image" ? (
+                      <img
+                        src={item.url}
+                        alt={item.name}
+                        className="w-full h-full object-cover cursor-zoom-in"
+                        onClick={() =>
+                          onOpenAttachment?.({
+                            url: item.url,
+                            mime: item.mime,
+                            name: item.name,
+                          })
+                        }
+                      />
+                    ) : type === "video" ? (
+                      <PlaySquare size={22} className="text-gray-600 dark:text-slate-300" />
+                    ) : type === "audio" ? (
+                      <AudioLines size={22} className="text-gray-600 dark:text-slate-300" />
+                    ) : (
+                      <FileText size={22} className="text-gray-600 dark:text-slate-300" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      className="text-left w-full"
+                      onClick={() =>
+                        onOpenAttachment?.({
+                          url: item.url,
+                          mime: item.mime,
+                          name: item.name,
+                        })
+                      }
+                    >
+                      <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                        {item.name}
+                      </p>
+                    </button>
+
+                    <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 flex flex-wrap gap-x-2">
+                      {item.senderName ? <span>{item.senderName}</span> : null}
+                      {dateLabel ? <span>{dateLabel}</span> : null}
+                      {sizeLabel ? <span>{sizeLabel}</span> : null}
+                    </div>
+                  </div>
+
+                  <a
+                    href={item.url}
+                    download={item.name}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800"
+                    aria-label={`Download ${item.name}`}
+                  >
+                    <Download size={16} className="text-gray-600 dark:text-slate-300" />
+                  </a>
+                </div>
+
+                {type === "audio" ? (
+                  <audio src={item.url} controls className="w-full mt-3" />
+                ) : null}
+                {type === "video" ? (
+                  <video src={item.url} controls className="w-full mt-3 rounded-md max-h-72" />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

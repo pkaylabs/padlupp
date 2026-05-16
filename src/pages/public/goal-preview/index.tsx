@@ -40,7 +40,7 @@ export const GoalPreviewPage = ({ goalId }: GoalPreviewPageProps) => {
     if (!isAuthenticated) {
       void navigate({
         to: "/signin",
-        search: { redirect: window.location.pathname },
+        search: { redirect: `${window.location.pathname}${window.location.search}${window.location.hash}` },
       });
       return;
     }
