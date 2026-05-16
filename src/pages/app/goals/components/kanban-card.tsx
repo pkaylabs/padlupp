@@ -160,7 +160,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={cn(
-            "bg-white dark:bg-slate-800 rounded-[10.25px] p-4 mb-4 shadow-lg dark:shadow-slate-950/40 transition-shadow group border border-transparent dark:border-slate-700",
+            "bg-white dark:bg-slate-800 rounded-[10.25px] p-3 mb-4 shadow-lg dark:shadow-slate-950/40 transition-shadow group border border-transparent dark:border-slate-700",
             snapshot.isDragging
               ? "shadow-xl rotate-2 ring-2 ring-blue-500/20"
               : "hover:shadow-md",
@@ -169,7 +169,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className=" flex items-center gap-1.5 text-nowrap text-ellipsis">
                 {columnId === "inProgress" && (
                   <span className="bg-[#EB612C] text-white text-[10px] font-medium px-2 py-1 rounded-[2.56px] flex items-center w-fit gap-1">
                     <Clock size={12} /> Ongoing

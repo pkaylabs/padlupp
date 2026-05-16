@@ -21,13 +21,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/utils/cs";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  SharedFilesView,
-} from "./components/chat-side-views";
+import { SharedFilesView } from "./components/chat-side-views";
 import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
 import { useChat } from "./hooks/useChat";
 import { useAuthStore } from "@/features/auth/authStore";
-import { getConversationMedia, type Conversation, type ReplyToInfo } from "./api";
+import {
+  getConversationMedia,
+  type Conversation,
+  type ReplyToInfo,
+} from "./api";
 import type { ChatMessageUI } from "./hooks/useChat";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -99,7 +101,8 @@ const formatLastSeen = (isoString?: string) => {
 };
 
 const getConversationName = (conversation: Conversation) =>
-  toDisplayText(conversation.partner_name) || `Conversation #${conversation.id}`;
+  toDisplayText(conversation.partner_name) ||
+  `Conversation #${conversation.id}`;
 
 const getConversationAvatar = (conversation: Conversation) =>
   toDisplayText(conversation.partner_avatar);
@@ -158,6 +161,7 @@ const getConversationPreview = (conversation: Conversation) => {
   const lastAttachmentMime = conversation.last_message?.attachment_mime ?? "";
   const hasImageAttachment = lastAttachmentMime.startsWith("image/");
   const hasVideoAttachment = lastAttachmentMime.startsWith("video/");
+  const hasAudioAttachment = lastAttachmentMime.startsWith("audio/");
 
   let lastText =
     conversation.last_message?.text ||
@@ -165,7 +169,9 @@ const getConversationPreview = (conversation: Conversation) => {
       ? "Image"
       : hasVideoAttachment
         ? "Video"
-        : "No messages yet");
+        : hasAudioAttachment
+          ? "Voice note"
+          : "No messages yet");
 
   if (conversation.last_message?.reply_to && conversation.last_message.text) {
     const replySnippet = conversation.last_message.reply_to.text
@@ -176,10 +182,18 @@ const getConversationPreview = (conversation: Conversation) => {
     lastText = `↪ ${replySnippet}: ${lastText}`;
   }
 
-  return { hasImageAttachment, hasVideoAttachment, lastText };
+  return {
+    hasImageAttachment,
+    hasVideoAttachment,
+    hasAudioAttachment,
+    lastText,
+  };
 };
 
-const getFallbackAttachmentName = (mime: string | null, id: number | string) => {
+const getFallbackAttachmentName = (
+  mime: string | null,
+  id: number | string,
+) => {
   if (mime?.startsWith("image/")) return `image-${id}`;
   if (mime?.startsWith("video/")) return `video-${id}`;
   if (mime?.startsWith("audio/")) return `audio-${id}`;
@@ -259,6 +273,9 @@ export const MessagesPage = () => {
   } | null>(null);
   const [isRenameGroupOpen, setIsRenameGroupOpen] = useState(false);
   const [renameGroupValue, setRenameGroupValue] = useState("");
+  const [filePickerMode, setFilePickerMode] = useState<"media" | "voice">(
+    "media",
+  );
   const messagesScrollRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const lastMessageCountRef = useRef(0);
@@ -329,7 +346,17 @@ export const MessagesPage = () => {
   }, [connections, finderProfiles]);
 
   const activePartnerProfile = useMemo<
-    | (Pick<BuddyConnection, "bio" | "experience" | "location" | "time_zone" | "availability" | "communication_styles" | "focus_areas" | "interests"> & {
+    | (Pick<
+        BuddyConnection,
+        | "bio"
+        | "experience"
+        | "location"
+        | "time_zone"
+        | "availability"
+        | "communication_styles"
+        | "focus_areas"
+        | "interests"
+      > & {
         id: string;
         name: string;
         avatarUrl: string;
@@ -371,22 +398,27 @@ export const MessagesPage = () => {
       userId: matchedConnection?.user?.id,
       compatibility:
         typeof matchedConnection?.compatibility_score === "number"
-          ? Math.max(0, Math.min(100, Math.round(matchedConnection.compatibility_score)))
+          ? Math.max(
+              0,
+              Math.min(100, Math.round(matchedConnection.compatibility_score)),
+            )
           : undefined,
       bio: toDisplayText(matchedConnection?.bio),
       experience: toDisplayText(matchedConnection?.experience),
       location: toDisplayText(matchedConnection?.location),
       time_zone: toDisplayText(matchedConnection?.time_zone),
       availability: toDisplayText(matchedConnection?.availability),
-      communication_styles: toDisplayText(matchedConnection?.communication_styles),
+      communication_styles: toDisplayText(
+        matchedConnection?.communication_styles,
+      ),
       focus_areas: toDisplayText(matchedConnection?.focus_areas),
       interests: Array.isArray(matchedConnection?.interests)
         ? matchedConnection.interests
             .map((interest) => toDisplayText(interest))
             .filter(Boolean)
         : toDisplayText(matchedConnection?.interests)
-            ? [toDisplayText(matchedConnection?.interests)]
-            : [],
+          ? [toDisplayText(matchedConnection?.interests)]
+          : [],
     };
   }, [activeConversation, activePartnerUserId, availableProfiles]);
 
@@ -578,7 +610,8 @@ export const MessagesPage = () => {
     void navigate({ to: "/goals" });
   };
 
-  const handlePickFile = () => {
+  const handlePickFile = (mode: "media" | "voice" = "media") => {
+    setFilePickerMode(mode);
     fileInputRef.current?.click();
   };
 
@@ -591,8 +624,12 @@ export const MessagesPage = () => {
       return;
     }
 
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-      toast.error("Only image and video files are supported.");
+    if (
+      !file.type.startsWith("image/") &&
+      !file.type.startsWith("video/") &&
+      !file.type.startsWith("audio/")
+    ) {
+      toast.error("Only image, video, and audio files are supported.");
       return;
     }
 
@@ -633,7 +670,10 @@ export const MessagesPage = () => {
   useEffect(() => {
     if (activeConversation) {
       setRenameGroupValue(
-        getConversationName(activeConversation).replace(/^Conversation #\d+$/, ""),
+        getConversationName(activeConversation).replace(
+          /^Conversation #\d+$/,
+          "",
+        ),
       );
     }
   }, [activeConversation]);
@@ -733,8 +773,12 @@ export const MessagesPage = () => {
                 const isActive = activeConversationId === conversation.id;
                 const name = getConversationName(conversation);
                 const avatarUrl = getConversationAvatar(conversation);
-                const { hasImageAttachment, hasVideoAttachment, lastText } =
-                  getConversationPreview(conversation);
+                const {
+                  hasImageAttachment,
+                  hasVideoAttachment,
+                  hasAudioAttachment,
+                  lastText,
+                } = getConversationPreview(conversation);
                 const timeText = formatMessageTime(
                   conversation.last_message?.created_at ??
                     conversation.updated_at,
@@ -795,6 +839,11 @@ export const MessagesPage = () => {
                         ) : hasVideoAttachment ? (
                           <span className="inline-flex items-center gap-1">
                             <Video size={14} className="shrink-0" />
+                            {lastText}
+                          </span>
+                        ) : hasAudioAttachment ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Mic size={14} className="shrink-0" />
                             {lastText}
                           </span>
                         ) : (
@@ -893,7 +942,9 @@ export const MessagesPage = () => {
                       disabled={!hasActiveConversation}
                       onClick={() => {
                         if (activeConversation?.is_group) {
-                          setRenameGroupValue(getConversationName(activeConversation));
+                          setRenameGroupValue(
+                            getConversationName(activeConversation),
+                          );
                           setIsRenameGroupOpen(true);
                         } else {
                           setIsProfileModalOpen(true);
@@ -912,7 +963,9 @@ export const MessagesPage = () => {
                         type="button"
                         onClick={() => {
                           if (!activeConversation) return;
-                          setRenameGroupValue(getConversationName(activeConversation));
+                          setRenameGroupValue(
+                            getConversationName(activeConversation),
+                          );
                           setIsRenameGroupOpen(true);
                         }}
                         className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
@@ -1092,14 +1145,16 @@ export const MessagesPage = () => {
                 <div ref={messagesEndRef} />
               </div>
             )}
-
           </div>
 
           {hasActiveConversation && (
             <div className="relative pt-2 px-4 pb-5 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
               {replyingTo && (
                 <div className="mb-2 flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-3 py-2">
-                  <CornerDownLeft size={14} className="shrink-0 text-blue-500" />
+                  <CornerDownLeft
+                    size={14}
+                    className="shrink-0 text-blue-500"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
                       {replyingTo.sender?.id === authUser?.id
@@ -1143,7 +1198,7 @@ export const MessagesPage = () => {
                       Create goal
                     </button>
                     <button
-                      onClick={handlePickFile}
+                      onClick={() => handlePickFile("media")}
                       className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left"
                     >
                       <FileText
@@ -1152,6 +1207,16 @@ export const MessagesPage = () => {
                       />
                       File
                     </button>
+                    {/* <button
+                      onClick={() => handlePickFile("voice")}
+                      className="flex items-center w-full p-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-slate-200 rounded-md text-left"
+                    >
+                      <Mic
+                        size={16}
+                        className="text-gray-500 dark:text-slate-400 mr-2"
+                      />
+                      Voice note
+                    </button> */}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1204,7 +1269,11 @@ export const MessagesPage = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,video/*"
+                  accept={
+                    filePickerMode === "voice"
+                      ? "audio/*"
+                      : "image/*,video/*,audio/*"
+                  }
                   className="hidden"
                   onChange={(event) => void handleFileChange(event)}
                 />
@@ -1224,6 +1293,14 @@ export const MessagesPage = () => {
                       src={selectedFilePreviewUrl}
                       className="w-12 h-12 rounded-md object-cover"
                     />
+                  ) : selectedFilePreviewUrl &&
+                    selectedFile.type.startsWith("audio/") ? (
+                    <div className="w-12 h-12 rounded-md bg-white dark:bg-slate-900 flex items-center justify-center border border-gray-200 dark:border-slate-700">
+                      <Mic
+                        size={18}
+                        className="text-gray-500 dark:text-slate-300"
+                      />
+                    </div>
                   ) : (
                     <div className="w-12 h-12 rounded-md bg-white dark:bg-slate-900 flex items-center justify-center">
                       <FileText
@@ -1319,15 +1396,30 @@ export const MessagesPage = () => {
                 Profile details
               </p>
               <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                <ProfileField label="Experience" value={activePartnerProfile.experience} />
-                <ProfileField label="Location" value={activePartnerProfile.location} />
-                <ProfileField label="Time zone" value={activePartnerProfile.time_zone} />
-                <ProfileField label="Availability" value={activePartnerProfile.availability} />
+                <ProfileField
+                  label="Experience"
+                  value={activePartnerProfile.experience}
+                />
+                <ProfileField
+                  label="Location"
+                  value={activePartnerProfile.location}
+                />
+                <ProfileField
+                  label="Time zone"
+                  value={activePartnerProfile.time_zone}
+                />
+                <ProfileField
+                  label="Availability"
+                  value={activePartnerProfile.availability}
+                />
                 <ProfileField
                   label="Communication"
                   value={activePartnerProfile.communication_styles}
                 />
-                <ProfileField label="Focus areas" value={activePartnerProfile.focus_areas} />
+                <ProfileField
+                  label="Focus areas"
+                  value={activePartnerProfile.focus_areas}
+                />
               </div>
             </div>
 
@@ -1407,7 +1499,12 @@ export const MessagesPage = () => {
                 className="max-h-[70vh] w-full rounded-md"
               />
             ) : attachmentViewer.mime.startsWith("audio/") ? (
-              <audio src={attachmentViewer.url} controls autoPlay className="w-full" />
+              <audio
+                src={attachmentViewer.url}
+                controls
+                autoPlay
+                className="w-full"
+              />
             ) : (
               <a
                 href={attachmentViewer.url}
@@ -1558,6 +1655,7 @@ const MessageBubble = ({
   const displayName = isMe ? myName : senderName;
   const isImage = Boolean(attachment && attachmentMime?.startsWith("image/"));
   const isVideo = Boolean(attachment && attachmentMime?.startsWith("video/"));
+  const isAudio = Boolean(attachment && attachmentMime?.startsWith("audio/"));
 
   if (goalEvent) {
     return (
@@ -1640,10 +1738,12 @@ const MessageBubble = ({
                     : "bg-gray-100 dark:bg-slate-700/60 border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300",
                 )}
               >
-                <p className={cn(
-                  "font-semibold truncate",
-                  isMe ? "text-blue-100" : "text-blue-600 dark:text-blue-400",
-                )}>
+                <p
+                  className={cn(
+                    "font-semibold truncate",
+                    isMe ? "text-blue-100" : "text-blue-600 dark:text-blue-400",
+                  )}
+                >
                   {replyTo.sender_name}
                 </p>
                 <p className="truncate mt-0.5">
@@ -1684,6 +1784,8 @@ const MessageBubble = ({
                       })
                     }
                   />
+                ) : isAudio ? (
+                  <audio src={attachment} controls className="max-w-[260px]" />
                 ) : (
                   <a
                     href={attachment}

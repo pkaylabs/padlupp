@@ -17,3 +17,8 @@ const RootLayout = () => (
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
 });
+
+// todos
+// - add a small confirmation modal before member removal from a goal
+// - remove that explicit “Voice note” option from the chat + modal.
+// - I want us to implement a voice audio recorder in the chat at where the MIC icon is placed and the way those voice notes are sent is the same as the way media is sent.

@@ -6,6 +6,9 @@ import {
   shareGoalInvites,
   getGoalPreview,
   joinGoal,
+  getGoalMembers,
+  removeGoalMember,
+  type GoalMember,
   type GoalInvitePreview,
   type GoalPreview,
   type ShareGoalInvitePayload,
@@ -98,13 +101,49 @@ export function useJoinGoal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ goalId }: { goalId: string | number }) => joinGoal(goalId),
+    mutationFn: ({
+      goalId,
+      sharedId,
+    }: {
+      goalId: string | number;
+      sharedId?: string | null;
+    }) => joinGoal(goalId, sharedId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals"] });
       toast.success("You have joined the goal successfully.");
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Failed to join goal."));
+    },
+  });
+}
+
+export function useGoalMembers(goalId?: string | number) {
+  return useQuery<GoalMember[]>({
+    queryKey: ["goal-members", goalId],
+    queryFn: () => getGoalMembers(goalId!),
+    enabled: Boolean(goalId),
+  });
+}
+
+export function useRemoveGoalMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      userId,
+    }: {
+      goalId: string | number;
+      userId: string | number;
+    }) => removeGoalMember(goalId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goal-members"] });
+      queryClient.invalidateQueries({ queryKey: ["goal"] });
+      toast.success("Member removed from goal.");
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to remove member."));
     },
   });
 }

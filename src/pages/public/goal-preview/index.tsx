@@ -9,9 +9,10 @@ import logo from "@/assets/images/logo.png";
 
 interface GoalPreviewPageProps {
   goalId: string;
+  sharedId?: string;
 }
 
-export const GoalPreviewPage = ({ goalId }: GoalPreviewPageProps) => {
+export const GoalPreviewPage = ({ goalId, sharedId }: GoalPreviewPageProps) => {
   const { data, isLoading, isError } = useGoalPreview(goalId);
   const { mutateAsync: joinGoal, isPending: isJoining } = useJoinGoal();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -46,7 +47,7 @@ export const GoalPreviewPage = ({ goalId }: GoalPreviewPageProps) => {
     }
 
     try {
-      await joinGoal({ goalId });
+      await joinGoal({ goalId, sharedId });
       setHasJoined(true);
     } catch {
       // error toast handled by hook

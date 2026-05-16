@@ -44,6 +44,22 @@ export interface Goal {
   updated_at: string;
 }
 
+export interface GoalMember {
+  id: number;
+  user_id?: number;
+  email?: string;
+  name?: string | null;
+  avatar?: string | null;
+  user?: {
+    id?: number;
+    email?: string;
+    name?: string | null;
+    avatar?: string | null;
+  } | null;
+  role?: string | null;
+  joined_at?: string | null;
+}
+
 // --- 2. API Request/Response Types ---
 
 // Generic Pagination Wrapper (Reusable for other endpoints)
@@ -299,11 +315,27 @@ export const getGoalPreview = async (
   return data;
 };
 
+export const getGoalMembers = async (
+  goalId: string | number,
+): Promise<GoalMember[]> => {
+  const { data } = await api.get<GoalMember[]>(`/goals/${goalId}/members/`);
+  return data;
+};
+
+export const removeGoalMember = async (
+  goalId: string | number,
+  userId: string | number,
+): Promise<void> => {
+  await api.delete(`/goals/${goalId}/members/${userId}/`);
+};
+
 export const joinGoal = async (
   goalId: string | number,
+  sharedId?: string | null,
 ): Promise<{ detail?: string }> => {
   const { data } = await api.post<{ detail?: string }>("/goals/join-goal/", {
     goal: goalId,
+    shared_id: sharedId ?? null,
   });
   return data;
 };

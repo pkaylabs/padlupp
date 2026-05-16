@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
+  Users,
   Square,
   CheckSquare,
 } from "lucide-react";
@@ -35,13 +36,19 @@ import { toast } from "sonner";
 import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
 import { GoalActionsMenu } from "./components/goal-actions-menu";
 import { ShareGoalModal } from "./components/share-goal-modal";
-import { useShareGoalInvites } from "./hooks/useShareGoal";
+import {
+  useGoalMembers,
+  useRemoveGoalMember,
+  useShareGoalInvites,
+} from "./hooks/useShareGoal";
 import { CHECKIN_FREQUENCIES } from "./api";
 import type { CheckinFrequency } from "./api";
+import { useAuthStore } from "@/features/auth/authStore";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
   const navigate = useNavigate();
+  const authUserId = useAuthStore((state) => state.user?.id ?? null);
 
   const normalizeStatusForApi = (status: string) => {
     if (status === "In progress" || status === "in-progress") {
@@ -89,11 +96,16 @@ export function GoalDetailsPage() {
     useState<CheckinFrequency>("DAILY");
   const [editIsPublic, setEditIsPublic] = useState(false);
   const [shareLinkDraft, setShareLinkDraft] = useState<string>("");
+  const [pendingRemovedUserId, setPendingRemovedUserId] = useState<
+    number | null
+  >(null);
 
   const actionsMenuRef = useRef<HTMLDivElement>(null);
 
   // Data Fetching
   const { data: goal, isLoading: loadingGoal, isError } = useGoal(id);
+  const { data: goalMembers = [], isLoading: isLoadingGoalMembers } =
+    useGoalMembers(id);
   const { data: tasksData, isLoading: loadingTasks } = useTasks({
     ordering: "created_at",
   });
@@ -107,6 +119,8 @@ export function GoalDetailsPage() {
     useDeleteGoal();
   const { mutateAsync: shareGoalInvites, isPending: isSharingGoal } =
     useShareGoalInvites();
+  const { mutateAsync: removeGoalMember, isPending: isRemovingGoalMember } =
+    useRemoveGoalMember();
   const { mutateAsync: createTask, isPending: isCreatingTask } =
     useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
@@ -408,6 +422,34 @@ export function GoalDetailsPage() {
           avatar: goal?.partner?.avatar || goal?.partner_avatar || "",
         }
       : null;
+  const isGoalOwner = Boolean(authUserId && goal?.user?.id === authUserId);
+  const membersCount = goalMembers.length;
+
+  const getMemberUserId = (member: {
+    id?: number;
+    user_id?: number;
+    user?: { id?: number } | null;
+  }) => member.user_id ?? member.user?.id ?? member.id ?? null;
+
+  const handleRemoveGoalMember = async (member: {
+    id?: number;
+    user_id?: number;
+    name?: string | null;
+  }) => {
+    if (!goal || !isGoalOwner) return;
+    const memberUserId = getMemberUserId(member);
+    if (!memberUserId || memberUserId === goal.user.id) return;
+
+    setPendingRemovedUserId(memberUserId);
+    try {
+      await removeGoalMember({
+        goalId: goal.id,
+        userId: memberUserId,
+      });
+    } finally {
+      setPendingRemovedUserId(null);
+    }
+  };
 
   // --- LOADING STATE (SKELETON) ---
   if (loadingGoal) {
@@ -592,6 +634,112 @@ export function GoalDetailsPage() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Members */}
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                <Users size={16} />
+                Members
+                <span className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs">
+                  {membersCount}
+                </span>
+              </h3>
+              {isGoalOwner ? (
+                <span className="text-xs text-gray-500 dark:text-slate-400">
+                  You can remove members
+                </span>
+              ) : null}
+            </div>
+
+            {isLoadingGoalMembers ? (
+              <div className="space-y-2">
+                {[1, 2].map((item) => (
+                  <div
+                    key={item}
+                    className="h-14 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : membersCount === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-900/50 p-5 text-center">
+                <p className="text-sm text-gray-600 dark:text-slate-300">
+                  No members found for this goal yet.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {goalMembers.map((member) => {
+                  const memberUserId = getMemberUserId(member);
+                  const memberName =
+                    member.name?.trim() ||
+                    member.user?.name?.trim() ||
+                    "Goal member";
+                  const memberAvatar =
+                    member.avatar?.trim() || member.user?.avatar?.trim() || "";
+                  const isCreator = Boolean(goal.user.id && memberUserId === goal.user.id);
+                  const canRemove =
+                    isGoalOwner &&
+                    !isCreator &&
+                    Boolean(memberUserId) &&
+                    !isRemovingGoalMember;
+
+                  return (
+                    <div
+                      key={`${memberUserId ?? member.id}`}
+                      className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 px-3 py-2.5 flex items-center justify-between gap-3"
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openProfileFromIndicator({
+                            id: memberUserId,
+                            name: memberName,
+                            avatar: memberAvatar,
+                          })
+                        }
+                        disabled={!memberUserId}
+                        className="flex items-center gap-3 min-w-0 text-left disabled:cursor-default"
+                      >
+                        {memberAvatar ? (
+                          <img
+                            src={memberAvatar}
+                            alt={memberName}
+                            className="w-9 h-9 rounded-full object-cover border border-gray-100 dark:border-slate-700"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 flex items-center justify-center text-xs font-semibold border border-gray-100 dark:border-slate-700">
+                            {getInitials(memberName)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                            {memberName}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            {isCreator ? "Owner" : "Member"}
+                          </p>
+                        </div>
+                      </button>
+
+                      {canRemove && memberUserId ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleRemoveGoalMember(member)}
+                          disabled={pendingRemovedUserId === memberUserId}
+                          className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-60"
+                        >
+                          {pendingRemovedUserId === memberUserId
+                            ? "Removing..."
+                            : "Remove"}
+                        </button>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Subtasks Section */}
