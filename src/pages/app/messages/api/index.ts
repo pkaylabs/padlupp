@@ -41,6 +41,9 @@ export interface Conversation {
   partnership: number;
   partner_name?: string | null;
   partner_avatar?: string | null;
+  partner_user_id?: number | null;
+  partner_last_seen_at?: string | null;
+  last_seen_at?: string | null;
   is_group: boolean;
   last_message: ChatMessage | null;
   unread_count: number;

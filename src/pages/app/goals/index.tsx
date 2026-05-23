@@ -422,10 +422,10 @@ export const GoalsPage = () => {
             <DragDropContext onDragEnd={onDragEnd}>
               <div
                 className={cn(
-                  "grid gap-6 w-full h-full transition-all",
+                  "grid gap-5 w-full h-full items-start transition-all",
                   activeTab === "All"
-                    ? "grid-cols-1 md:grid-cols-3"
-                    : "grid-cols-1 md:grid-cols-1 md:max-w-md",
+                    ? "grid-cols-1 md:grid-cols-2 2xl:grid-cols-3"
+                    : "grid-cols-1 max-w-xl",
                 )}
               >
                 {visibleColumns.map((column) => (

@@ -25,7 +25,7 @@ export const GoalColumn: React.FC<GoalColumnProps> = ({
   onShareGoal,
 }) => {
   return (
-    <div className="flex flex-col h-fit sm:w-[300px] bg-[#F5F5F5] dark:bg-slate-900 rounded-xl p-3 border border-transparent dark:border-slate-800">
+    <div className="flex flex-col h-fit w-full min-w-0 bg-[#F5F5F5] dark:bg-slate-900 rounded-xl p-3 border border-transparent dark:border-slate-800">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">

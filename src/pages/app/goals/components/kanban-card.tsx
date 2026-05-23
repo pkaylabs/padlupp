@@ -99,20 +99,20 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   };
 
   const dateTimeFooter = (
-    <div className="pt-2 border-t border-gray-50 dark:border-slate-700 text-[#44424C] text-nowrap dark:text-slate-300">
+    <div className="pt-2 border-t border-gray-50 dark:border-slate-700 text-[#44424C] dark:text-slate-300">
       <div className="bg-[#F5F6F8] dark:bg-slate-700 flex items-center justify-between gap-1.5 py-2.5 px-2 rounded-[10.25px]">
-        <div className="flex items-center gap-0.5 text-[11px]">
+        <div className="flex items-center gap-0.5 text-[11px] min-w-0">
           <div className="size-6 flex justify-center items-center bg-white dark:bg-slate-800 border border-[#D6D6D6] dark:border-slate-600 shadow rounded-full">
             <Calendar color="#3D89FB" size={14} />
           </div>
 
-          <span>{task.date}</span>
+          <span className="truncate">{task.date}</span>
         </div>
-        <div className="flex items-center gap-0.5 text-[11px]">
+        <div className="flex items-center gap-0.5 text-[11px] min-w-0">
           <div className="size-6 flex justify-center items-center bg-white dark:bg-slate-800 border border-[#D6D6D6] dark:border-slate-600 shadow rounded-full">
             <AlarmClock size={14} className="text-[#F29268]" />
           </div>
-          <span>{timeText}</span>
+          <span className="truncate">{timeText}</span>
         </div>
       </div>
     </div>
@@ -238,7 +238,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             }}
             className="w-full text-left"
           >
-            <h4 className="font-semibold text-[#0D062D] dark:text-slate-100 mb-1">
+            <h4 className="font-semibold text-[#0D062D] dark:text-slate-100 mb-1 break-words">
               {task.title}
             </h4>
             <p className="text-xs text-[#787486] dark:text-slate-400 mb-3 line-clamp-2">

@@ -9,6 +9,7 @@ import {
   CornerDownLeft,
   FileText,
   Image as ImageIcon,
+  Loader2,
   Pencil,
   PhoneCall,
   Mic,
@@ -16,6 +17,8 @@ import {
   Reply,
   Search,
   Send,
+  Square,
+  Trash2,
   Video,
   X,
 } from "lucide-react";
@@ -42,6 +45,7 @@ import {
   useConnections,
 } from "@/pages/app/buddy-finder/hooks/useBuddies";
 import type { BuddyConnection } from "@/pages/app/buddy-finder/api";
+import { PROMPTS_LIST } from "@/constants";
 
 type ActiveModal = "none" | "report";
 type ComingSoonFeature = "none" | "voice_call" | "video_call";
@@ -223,6 +227,31 @@ const getFilenameFromUrl = (url?: string | null) => {
   }
 };
 
+const getConversationPartnerUserId = (conversation: Conversation) => {
+  const candidateKeys = ["partner_user_id", "partner_id", "user_id"];
+  const valueRecord = conversation as unknown as Record<string, unknown>;
+  for (const key of candidateKeys) {
+    const value = valueRecord[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return null;
+};
+
+const getConversationLastSeenAt = (conversation: Conversation) => {
+  const candidateKeys = [
+    "partner_last_seen_at",
+    "last_seen_at",
+    "last_seen",
+    "partner_last_seen",
+  ];
+  const valueRecord = conversation as unknown as Record<string, unknown>;
+  for (const key of candidateKeys) {
+    const value = valueRecord[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return undefined;
+};
+
 export const MessagesPage = () => {
   const navigate = useNavigate();
   const {
@@ -276,6 +305,9 @@ export const MessagesPage = () => {
   const [filePickerMode, setFilePickerMode] = useState<"media" | "voice">(
     "media",
   );
+  const [isRecordingVoiceNote, setIsRecordingVoiceNote] = useState(false);
+  const [recordingElapsedSeconds, setRecordingElapsedSeconds] = useState(0);
+  const [isSendingVoiceNote, setIsSendingVoiceNote] = useState(false);
   const messagesScrollRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const lastMessageCountRef = useRef(0);
@@ -285,6 +317,10 @@ export const MessagesPage = () => {
   const inputPopoverRef = useRef<HTMLDivElement | null>(null);
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<BlobPart[]>([]);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingTickRef = useRef<number | null>(null);
 
   useClickAway(inputPopoverRef, () => {
     setInputPopoverOpen(false);
@@ -326,12 +362,16 @@ export const MessagesPage = () => {
   );
 
   const activePartnerUserId = useMemo(() => {
+    const fromConversation = activeConversation
+      ? getConversationPartnerUserId(activeConversation)
+      : null;
+    if (fromConversation) return fromConversation;
     if (!authUser?.id) return null;
     const partnerMessage = messages.find(
       (message) => message.sender?.id && message.sender.id !== authUser.id,
     );
     return partnerMessage?.sender?.id ?? null;
-  }, [authUser?.id, messages]);
+  }, [activeConversation, authUser?.id, messages]);
 
   const availableProfiles = useMemo(() => {
     const merged = [...connections, ...finderProfiles];
@@ -428,9 +468,13 @@ export const MessagesPage = () => {
   }, [activePartnerProfile?.userId, onlineUserIds]);
   const currentUserName = authUser?.name?.trim() || "Me";
   const activePartnerLastSeenAt = useMemo(() => {
+    const fromConversation = activeConversation
+      ? getConversationLastSeenAt(activeConversation)
+      : undefined;
+    if (fromConversation) return fromConversation;
     if (!activePartnerProfile?.userId) return undefined;
     return lastSeenAtByUserId[activePartnerProfile.userId];
-  }, [activePartnerProfile?.userId, lastSeenAtByUserId]);
+  }, [activeConversation, activePartnerProfile?.userId, lastSeenAtByUserId]);
 
   const hasConversations = conversations.length > 0;
   const hasActiveConversation = Boolean(activeConversation);
@@ -615,6 +659,103 @@ export const MessagesPage = () => {
     fileInputRef.current?.click();
   };
 
+  const cleanupVoiceRecording = () => {
+    if (recordingTickRef.current) {
+      window.clearInterval(recordingTickRef.current);
+      recordingTickRef.current = null;
+    }
+    if (recordingStreamRef.current) {
+      recordingStreamRef.current.getTracks().forEach((track) => track.stop());
+      recordingStreamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+    recordingChunksRef.current = [];
+  };
+
+  const startVoiceRecording = async () => {
+    if (!hasActiveConversation || isRecordingVoiceNote || isSendingVoiceNote) return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("Voice recording is not supported on this browser.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordingChunksRef.current.push(event.data);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecordingElapsedSeconds(0);
+      setIsRecordingVoiceNote(true);
+      recordingTickRef.current = window.setInterval(() => {
+        setRecordingElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch {
+      toast.error("Microphone permission is required to record voice notes.");
+      cleanupVoiceRecording();
+    }
+  };
+
+  const stopVoiceRecording = async (shouldSend: boolean) => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === "inactive") {
+      cleanupVoiceRecording();
+      setIsRecordingVoiceNote(false);
+      setRecordingElapsedSeconds(0);
+      return;
+    }
+
+    setIsRecordingVoiceNote(false);
+    if (recordingTickRef.current) {
+      window.clearInterval(recordingTickRef.current);
+      recordingTickRef.current = null;
+    }
+
+    const blob = await new Promise<Blob>((resolve) => {
+      recorder.onstop = () => {
+        const mimeType = recorder.mimeType || "audio/webm";
+        resolve(new Blob(recordingChunksRef.current, { type: mimeType }));
+      };
+      recorder.stop();
+    });
+
+    if (!shouldSend) {
+      cleanupVoiceRecording();
+      setRecordingElapsedSeconds(0);
+      return;
+    }
+
+    if (blob.size === 0) {
+      toast.error("Voice note is empty.");
+      cleanupVoiceRecording();
+      setRecordingElapsedSeconds(0);
+      return;
+    }
+
+    const extension = blob.type.includes("ogg")
+      ? "ogg"
+      : blob.type.includes("mp4")
+        ? "m4a"
+        : "webm";
+    const voiceFile = new File([blob], `voice-note-${Date.now()}.${extension}`, {
+      type: blob.type || "audio/webm",
+    });
+
+    try {
+      setIsSendingVoiceNote(true);
+      await sendFile(voiceFile);
+      setRecordingElapsedSeconds(0);
+    } catch {
+      toast.error("Failed to send voice note.");
+    } finally {
+      setIsSendingVoiceNote(false);
+      cleanupVoiceRecording();
+    }
+  };
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -712,6 +853,7 @@ export const MessagesPage = () => {
 
   useEffect(() => {
     return () => {
+      cleanupVoiceRecording();
       if (selectedFilePreviewUrl?.startsWith("blob:")) {
         URL.revokeObjectURL(selectedFilePreviewUrl);
       }
@@ -1232,35 +1374,77 @@ export const MessagesPage = () => {
                 >
                   <Plus size={20} />
                 </button>
+                {isRecordingVoiceNote ? (
+                  <div className="flex-1 min-w-0 rounded-xl border border-red-100 dark:border-red-900/30 bg-red-50/80 dark:bg-red-900/10 px-3 py-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                    <span className="text-sm text-red-700 dark:text-red-300 font-medium tabular-nums">
+                      {new Date(recordingElapsedSeconds * 1000)
+                        .toISOString()
+                        .substring(14, 19)}
+                    </span>
+                    <span className="text-xs text-red-600/80 dark:text-red-300/80 truncate">
+                      Recording voice note...
+                    </span>
+                  </div>
+                ) : (
+                  <textarea
+                    ref={messageInputRef}
+                    value={inputValue}
+                    onChange={(event) => setInputValue(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void handleSend();
+                      }
+                    }}
+                    disabled={!activeConversationId}
+                    placeholder={
+                      activeConversationId
+                        ? selectedFile
+                          ? "Add a caption (optional)"
+                          : "Type a message"
+                        : "Select a conversation"
+                    }
+                    rows={1}
+                    className="py-2 min-h-10 max-h-[140px] flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500 leading-5"
+                  />
+                )}
                 <button
-                  disabled
-                  className="text-[#3D3D3D] disabled:opacity-30 dark:text-slate-300 hover:text-gray-600 dark:hover:text-slate-200 hidden md:block"
-                >
-                  <Mic strokeWidth={1.5} size={20} />
-                </button>
-                <textarea
-                  ref={messageInputRef}
-                  value={inputValue}
-                  onChange={(event) => setInputValue(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      void handleSend();
+                  type="button"
+                  onClick={() => {
+                    if (isRecordingVoiceNote) {
+                      void stopVoiceRecording(false);
+                    } else {
+                      void startVoiceRecording();
                     }
                   }}
-                  disabled={!activeConversationId}
-                  placeholder={
-                    activeConversationId
-                      ? selectedFile
-                        ? "Add a caption (optional)"
-                        : "Type a message"
-                      : "Select a conversation"
-                  }
-                  rows={1}
-                  className="py-2 min-h-10 max-h-[140px] flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none focus:outline-none focus:ring-0 focus:border-0 text-gray-800 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 disabled:text-gray-400 dark:disabled:text-slate-500 leading-5"
-                />
+                  disabled={!activeConversationId || isSendingVoiceNote}
+                  className="p-2 rounded-lg text-[#3D3D3D] dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={isRecordingVoiceNote ? "Cancel voice note" : "Record voice note"}
+                  title={isRecordingVoiceNote ? "Cancel recording" : "Record voice note"}
+                >
+                  {isSendingVoiceNote ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : isRecordingVoiceNote ? (
+                    <Trash2 size={20} className="text-red-500" />
+                  ) : (
+                    <Mic strokeWidth={1.5} size={20} />
+                  )}
+                </button>
+                {isRecordingVoiceNote && (
+                  <button
+                    type="button"
+                    onClick={() => void stopVoiceRecording(true)}
+                    disabled={isSendingVoiceNote}
+                    className="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-60"
+                    aria-label="Send voice note"
+                    title="Send voice note"
+                  >
+                    <Square size={16} fill="currentColor" />
+                  </button>
+                )}
                 <button
-                  disabled={!activeConversationId || sending}
+                  disabled={!activeConversationId || sending || isRecordingVoiceNote}
                   onClick={() => void handleSend()}
                   className="p-2 bg-blue-200 dark:bg-blue-900/40 rounded-lg text-[#3D3D3D] dark:text-slate-100 hover:bg-[#B6D8FF] dark:hover:bg-blue-900/60 transition-colors disabled:opacity-60"
                 >
@@ -1323,6 +1507,28 @@ export const MessagesPage = () => {
                   >
                     Remove
                   </button>
+                </div>
+              )}
+              {hasActiveConversation && !loadingHistory && messages.length === 0 && (
+                <div className="mt-3 rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 p-3">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                    Conversation starters
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {PROMPTS_LIST.slice(0, 4).map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => {
+                          setInputValue(prompt);
+                          messageInputRef.current?.focus();
+                        }}
+                        className="text-xs px-2.5 py-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-white/90 dark:bg-slate-900 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
