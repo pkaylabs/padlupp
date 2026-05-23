@@ -57,9 +57,54 @@ type AttachmentViewerState = {
 const OPEN_CREATE_GOAL_FROM_CHAT_KEY = "open_create_goal_from_chat";
 const CREATE_GOAL_CONVERSATION_ID_KEY = "create_goal_conversation_id";
 
+const parseApiDate = (value?: string) => {
+  if (!value) return new Date(Number.NaN);
+  const source = value.trim();
+  if (!source) return new Date(Number.NaN);
+
+  const match = source.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})$/,
+  );
+
+  if (!match) {
+    const fallback = new Date(source);
+    return Number.isNaN(fallback.getTime()) ? new Date(Number.NaN) : fallback;
+  }
+
+  const [
+    ,
+    yearStr,
+    monthStr,
+    dayStr,
+    hourStr,
+    minuteStr,
+    secondStr,
+    fractionStr = "",
+    tzStr,
+  ] = match;
+
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const hour = Number(hourStr);
+  const minute = Number(minuteStr);
+  const second = Number(secondStr);
+  const millisecond = Number((fractionStr + "000").slice(0, 3));
+
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+
+  if (tzStr === "Z") return new Date(utcMs);
+
+  const sign = tzStr.startsWith("-") ? -1 : 1;
+  const [offsetHourStr, offsetMinuteStr] = tzStr.slice(1).split(":");
+  const offsetMinutes = Number(offsetHourStr) * 60 + Number(offsetMinuteStr);
+  const adjustedMs = utcMs - sign * offsetMinutes * 60 * 1000;
+  return new Date(adjustedMs);
+};
+
 const formatMessageTime = (isoString?: string) => {
   if (!isoString) return "";
-  const date = new Date(isoString);
+  const date = parseApiDate(isoString);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleTimeString([], {
     hour: "2-digit",
@@ -69,7 +114,7 @@ const formatMessageTime = (isoString?: string) => {
 
 const formatMessageDateTime = (isoString?: string) => {
   if (!isoString) return "";
-  const date = new Date(isoString);
+  const date = parseApiDate(isoString);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleString([], {
     hour: "2-digit",
@@ -82,7 +127,7 @@ const formatMessageDateTime = (isoString?: string) => {
 
 const formatLastSeen = (isoString?: string) => {
   if (!isoString) return "Last seen recently";
-  const lastSeenDate = new Date(isoString);
+  const lastSeenDate = parseApiDate(isoString);
   if (Number.isNaN(lastSeenDate.getTime())) return "Last seen recently";
 
   const now = new Date();
@@ -463,18 +508,36 @@ export const MessagesPage = () => {
   }, [activeConversation, activePartnerUserId, availableProfiles]);
 
   const isActivePartnerOnline = useMemo(() => {
-    if (!activePartnerProfile?.userId) return onlineUserIds.length > 0;
-    return onlineUserIds.includes(activePartnerProfile.userId);
-  }, [activePartnerProfile?.userId, onlineUserIds]);
+    const resolvedPartnerUserId =
+      activePartnerUserId ?? activePartnerProfile?.userId;
+    if (!resolvedPartnerUserId) return false;
+    return onlineUserIds.includes(resolvedPartnerUserId);
+  }, [activePartnerProfile?.userId, activePartnerUserId, onlineUserIds]);
   const currentUserName = authUser?.name?.trim() || "Me";
   const activePartnerLastSeenAt = useMemo(() => {
     const fromConversation = activeConversation
       ? getConversationLastSeenAt(activeConversation)
       : undefined;
     if (fromConversation) return fromConversation;
-    if (!activePartnerProfile?.userId) return undefined;
-    return lastSeenAtByUserId[activePartnerProfile.userId];
-  }, [activeConversation, activePartnerProfile?.userId, lastSeenAtByUserId]);
+    const resolvedPartnerUserId =
+      activePartnerUserId ?? activePartnerProfile?.userId;
+    if (resolvedPartnerUserId && lastSeenAtByUserId[resolvedPartnerUserId]) {
+      return lastSeenAtByUserId[resolvedPartnerUserId];
+    }
+
+    // Fallback: if partner id resolution fails, use any presence last-seen value
+    // (excluding the signed-in user) instead of showing generic "recently".
+    const fallbackEntries = Object.entries(lastSeenAtByUserId)
+      .filter(([, value]) => typeof value === "string" && value.trim().length > 0)
+      .sort((a, b) => new Date(b[1]).getTime() - new Date(a[1]).getTime());
+
+    return fallbackEntries[0]?.[1];
+  }, [
+    activeConversation,
+    activePartnerProfile?.userId,
+    activePartnerUserId,
+    lastSeenAtByUserId,
+  ]);
 
   const hasConversations = conversations.length > 0;
   const hasActiveConversation = Boolean(activeConversation);
@@ -673,7 +736,8 @@ export const MessagesPage = () => {
   };
 
   const startVoiceRecording = async () => {
-    if (!hasActiveConversation || isRecordingVoiceNote || isSendingVoiceNote) return;
+    if (!hasActiveConversation || isRecordingVoiceNote || isSendingVoiceNote)
+      return;
     if (!navigator.mediaDevices?.getUserMedia) {
       toast.error("Voice recording is not supported on this browser.");
       return;
@@ -740,9 +804,13 @@ export const MessagesPage = () => {
       : blob.type.includes("mp4")
         ? "m4a"
         : "webm";
-    const voiceFile = new File([blob], `voice-note-${Date.now()}.${extension}`, {
-      type: blob.type || "audio/webm",
-    });
+    const voiceFile = new File(
+      [blob],
+      `voice-note-${Date.now()}.${extension}`,
+      {
+        type: blob.type || "audio/webm",
+      },
+    );
 
     try {
       setIsSendingVoiceNote(true);
@@ -1420,8 +1488,16 @@ export const MessagesPage = () => {
                   }}
                   disabled={!activeConversationId || isSendingVoiceNote}
                   className="p-2 rounded-lg text-[#3D3D3D] dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={isRecordingVoiceNote ? "Cancel voice note" : "Record voice note"}
-                  title={isRecordingVoiceNote ? "Cancel recording" : "Record voice note"}
+                  aria-label={
+                    isRecordingVoiceNote
+                      ? "Cancel voice note"
+                      : "Record voice note"
+                  }
+                  title={
+                    isRecordingVoiceNote
+                      ? "Cancel recording"
+                      : "Record voice note"
+                  }
                 >
                   {isSendingVoiceNote ? (
                     <Loader2 size={20} className="animate-spin" />
@@ -1444,7 +1520,9 @@ export const MessagesPage = () => {
                   </button>
                 )}
                 <button
-                  disabled={!activeConversationId || sending || isRecordingVoiceNote}
+                  disabled={
+                    !activeConversationId || sending || isRecordingVoiceNote
+                  }
                   onClick={() => void handleSend()}
                   className="p-2 bg-blue-200 dark:bg-blue-900/40 rounded-lg text-[#3D3D3D] dark:text-slate-100 hover:bg-[#B6D8FF] dark:hover:bg-blue-900/60 transition-colors disabled:opacity-60"
                 >
@@ -1509,28 +1587,30 @@ export const MessagesPage = () => {
                   </button>
                 </div>
               )}
-              {hasActiveConversation && !loadingHistory && messages.length === 0 && (
-                <div className="mt-3 rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 p-3">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                    Conversation starters
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {PROMPTS_LIST.slice(0, 4).map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => {
-                          setInputValue(prompt);
-                          messageInputRef.current?.focus();
-                        }}
-                        className="text-xs px-2.5 py-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-white/90 dark:bg-slate-900 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
+              {hasActiveConversation &&
+                !loadingHistory &&
+                messages.length === 0 && (
+                  <div className="mt-3 rounded-lg border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 p-3">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      Conversation starters
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {PROMPTS_LIST.slice(0, 4).map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => {
+                            setInputValue(prompt);
+                            messageInputRef.current?.focus();
+                          }}
+                          className="text-xs px-2.5 py-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-white/90 dark:bg-slate-900 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </div>

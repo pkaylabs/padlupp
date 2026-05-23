@@ -551,6 +551,24 @@ export const useChat = (): UseChatState => {
             );
           }
 
+          if (
+            data.last_seen_at_by_user_id &&
+            typeof data.last_seen_at_by_user_id === "object"
+          ) {
+            Object.entries(
+              data.last_seen_at_by_user_id as Record<string, unknown>,
+            ).forEach(([rawUserId, rawLastSeen]) => {
+              const parsedUserId = Number(rawUserId);
+              if (
+                Number.isFinite(parsedUserId) &&
+                parsedUserId > 0 &&
+                typeof rawLastSeen === "string"
+              ) {
+                nextLastSeenByUserId[parsedUserId] = rawLastSeen;
+              }
+            });
+          }
+
           if (Object.keys(nextLastSeenByUserId).length > 0) {
             setLastSeenAtByUserId((prev) => ({
               ...prev,
