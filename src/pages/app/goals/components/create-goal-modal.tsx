@@ -100,6 +100,25 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   const [newSubtask, setNewSubtask] = useState("");
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
 
+  const popoverContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        activePopover &&
+        popoverContainerRef.current &&
+        !popoverContainerRef.current.contains(event.target as Node)
+      ) {
+        setActivePopover(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activePopover]);
+
   const handleCreate = async () => {
     // Validation
     // if (!title.trim()) return toast.error("Title required");
@@ -219,7 +238,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={() => {}}
-        className="max-w-md w-full p-12 flex flex-col items-center justify-center top-1/2 -translate-y-1/2 "
+        className="max-w-md w-full p-8 sm:p-12 flex flex-col items-center justify-center top-1/2 -translate-y-1/2"
       >
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
@@ -240,7 +259,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       showCloseButton
-      className="max-w-xl w-full p-8 overflow-visible top-1/2 -translate-y-1/2"
+      className="max-w-xl w-full p-4 sm:p-8 top-1/2 -translate-y-1/2"
     >
       <div className="relative">
         <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 text-center mb-8">
@@ -292,16 +311,18 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               {/* DATE POPOVER */}
               <AnimatePresence>
                 {activePopover === "date" && (
-                  <DatePickerView
-                    disabled={isPending}
-                    range={dateRange}
-                    onChange={(r: any) => {
-                      setDateRange(
-                        r,
-                      ); /* Don't close immediately to allow range selection */
-                    }}
-                    onClose={() => setActivePopover(null)}
-                  />
+                  <div ref={popoverContainerRef}>
+                    <DatePickerView
+                      disabled={isPending}
+                      range={dateRange}
+                      onChange={(r: any) => {
+                        setDateRange(
+                          r,
+                        );
+                      }}
+                      onClose={() => setActivePopover(null)}
+                    />
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -320,13 +341,15 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               {/* TIME POPOVER */}
               <AnimatePresence>
                 {activePopover === "time" && (
-                  <TimePickerView
-                    onSave={(t: any) => {
-                      setTime(t);
-                      setActivePopover(null);
-                    }}
-                    onClose={() => setActivePopover(null)}
-                  />
+                  <div ref={popoverContainerRef}>
+                    <TimePickerView
+                      onSave={(t: any) => {
+                        setTime(t);
+                        setActivePopover(null);
+                      }}
+                      onClose={() => setActivePopover(null)}
+                    />
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -395,20 +418,22 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               />
               <AnimatePresence>
                 {activePopover === "status" && (
-                  <SelectionPopover
-                    title=""
-                    options={["To-do", "In progress", "Completed"]}
-                    colors={[
-                      "text-blue-500",
-                      "text-orange-500",
-                      "text-green-500",
-                    ]}
-                    selected={status}
-                    onSelect={(s: any) => {
-                      setStatus(s);
-                      setActivePopover(null);
-                    }}
-                  />
+                  <div ref={popoverContainerRef}>
+                    <SelectionPopover
+                      title=""
+                      options={["To-do", "In progress", "Completed"]}
+                      colors={[
+                        "text-blue-500",
+                        "text-orange-500",
+                        "text-green-500",
+                      ]}
+                      selected={status}
+                      onSelect={(s: any) => {
+                        setStatus(s);
+                        setActivePopover(null);
+                      }}
+                    />
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -422,27 +447,29 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               />
               <AnimatePresence>
                 {activePopover === "priority" && (
-                  <SelectionPopover
-                    title=""
-                    options={[
-                      "Urgent",
-                      "Important",
-                      "Regular",
-                      "Not important",
-                    ]}
-                    colors={[
-                      "text-red-500",
-                      "text-orange-400",
-                      "text-teal-500",
-                      "text-green-500",
-                    ]}
-                    icons={true}
-                    selected={priority}
-                    onSelect={(s: any) => {
-                      setPriority(s);
-                      setActivePopover(null);
-                    }}
-                  />
+                  <div ref={popoverContainerRef}>
+                    <SelectionPopover
+                      title=""
+                      options={[
+                        "Urgent",
+                        "Important",
+                        "Regular",
+                        "Not important",
+                      ]}
+                      colors={[
+                        "text-red-500",
+                        "text-orange-400",
+                        "text-teal-500",
+                        "text-green-500",
+                      ]}
+                      icons={true}
+                      selected={priority}
+                      onSelect={(s: any) => {
+                        setPriority(s);
+                        setActivePopover(null);
+                      }}
+                    />
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -456,13 +483,15 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               />
               <AnimatePresence>
                 {activePopover === "category" && (
-                  <CategoryPopover
-                    selected={category}
-                    onSelect={(c: any) => {
-                      setCategory(normalizeCategory(c));
-                      setActivePopover(null);
-                    }}
-                  />
+                  <div ref={popoverContainerRef}>
+                    <CategoryPopover
+                      selected={category}
+                      onSelect={(c: any) => {
+                        setCategory(normalizeCategory(c));
+                        setActivePopover(null);
+                      }}
+                    />
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -476,14 +505,16 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               />
               <AnimatePresence>
                 {activePopover === "checkin" && (
-                  <CheckinFrequencyPopover
-                    options={CHECKIN_FREQUENCIES}
-                    selected={checkinFrequency}
-                    onSelect={(value: CheckinFrequency) => {
-                      setCheckinFrequency(value);
-                      setActivePopover(null);
-                    }}
-                  />
+                  <div ref={popoverContainerRef}>
+                    <CheckinFrequencyPopover
+                      options={CHECKIN_FREQUENCIES}
+                      selected={checkinFrequency}
+                      onSelect={(value: CheckinFrequency) => {
+                        setCheckinFrequency(value);
+                        setActivePopover(null);
+                      }}
+                    />
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -642,10 +673,10 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute top-8 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 flex overflow-hidden w-[600px]"
+      className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[100] bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 flex overflow-hidden w-auto max-w-[600px] mx-auto max-h-[90vh] overflow-y-auto"
     >
       {/* Sidebar */}
-      <div className="w-40 bg-gray-50 dark:bg-slate-800 p-4 flex flex-col gap-2 border-r border-gray-100 dark:border-slate-700">
+      <div className="w-32 sm:w-40 bg-gray-50 dark:bg-slate-800 p-3 sm:p-4 flex flex-col gap-2 border-r border-gray-100 dark:border-slate-700">
         {(
           [
             "Today",
@@ -658,7 +689,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
           <button
             key={label}
             onClick={() => handlePresetClick(label)}
-            className="text-left text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-slate-100 px-3 py-2 rounded transition-colors font-medium"
+            className="text-left text-xs sm:text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-slate-100 px-2 sm:px-3 py-2 rounded transition-colors font-medium"
           >
             {label}
           </button>
@@ -666,7 +697,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
       </div>
 
       {/* Calendar */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-3 sm:p-4 min-w-0">
         <div className="flex justify-between items-center mb-4">
           <button
             onClick={() => setCurrentMonth((d) => addMonths(d, -1))}
@@ -676,19 +707,19 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
             <ChevronLeft size={16} />
           </button>
 
-          <span className="font-semibold text-sm text-gray-800 dark:text-slate-100">
+          <span className="font-semibold text-xs sm:text-sm text-gray-800 dark:text-slate-100">
             {format(currentMonth, "MMM yyyy")}
           </span>
 
           <button
-            onClick={() => setCurrentMonth((d) => addMonths(d, 1))} // Changed to addMonths
+            onClick={() => setCurrentMonth((d) => addMonths(d, 1))}
             className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400"
           >
             <ChevronRight size={16} />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-400 dark:text-slate-500 font-medium">
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-xs mb-2 text-gray-400 dark:text-slate-500 font-medium">
           {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
             <span key={d}>{d}</span>
           ))}
@@ -715,7 +746,7 @@ const DatePickerView = ({ range, onChange, onClose }: any) => {
                 disabled={isPastDate}
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "w-8 h-8 text-sm rounded-full flex items-center justify-center transition-all",
+                  "w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm rounded-full flex items-center justify-center transition-all",
                   isSelected
                     ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
                     : isInRange && !isSelected
@@ -814,7 +845,7 @@ export const TimePickerView = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute top-8 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-6 w-auto min-w-[280px]"
+      className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[100] bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-4 sm:p-6 w-auto max-w-[320px] mx-auto"
     >
       <div className="flex items-center justify-center gap-2 mb-6">
         {/* Hours */}
@@ -866,7 +897,7 @@ const SelectionPopover = ({
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-      className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-2 w-48"
+      className="fixed inset-x-4 bottom-20 z-[100] bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-2 w-auto max-w-[200px] mx-auto"
     >
       {options.map((opt: string, idx: number) => (
         <button
@@ -903,7 +934,7 @@ const CategoryPopover = ({ selected, onSelect }: any) => {
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-      className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-gray-100 dark:border-slate-700 p-4 w-80"
+      className="fixed inset-x-4 bottom-20 z-[100] bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-gray-100 dark:border-slate-700 p-4 w-auto max-w-[340px] mx-auto max-h-[70vh] overflow-y-auto"
     >
       <div className="grid grid-cols-2 gap-4">
         {CATEGORIES.map((cat) => (
@@ -947,7 +978,7 @@ const CheckinFrequencyPopover = ({
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.95 }}
-      className="absolute bottom-full mb-2 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-2 w-52 max-h-64 overflow-y-auto"
+      className="fixed inset-x-4 bottom-20 z-[100] bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-100 dark:border-slate-700 p-2 w-auto max-w-[220px] mx-auto max-h-64 overflow-y-auto"
     >
       {options.map((frequency) => (
         <button

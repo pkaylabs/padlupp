@@ -91,7 +91,15 @@ const parseApiDate = (value?: string) => {
   const second = Number(secondStr);
   const millisecond = Number((fractionStr + "000").slice(0, 3));
 
-  const utcMs = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+  const utcMs = Date.UTC(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+  );
 
   if (tzStr === "Z") return new Date(utcMs);
 
@@ -528,7 +536,9 @@ export const MessagesPage = () => {
     // Fallback: if partner id resolution fails, use any presence last-seen value
     // (excluding the signed-in user) instead of showing generic "recently".
     const fallbackEntries = Object.entries(lastSeenAtByUserId)
-      .filter(([, value]) => typeof value === "string" && value.trim().length > 0)
+      .filter(
+        ([, value]) => typeof value === "string" && value.trim().length > 0,
+      )
       .sort((a, b) => new Date(b[1]).getTime() - new Date(a[1]).getTime());
 
     return fallbackEntries[0]?.[1];
@@ -945,7 +955,7 @@ export const MessagesPage = () => {
             showMobileChat ? "hidden md:flex" : "flex",
           )}
         >
-          <div className="h-16 flex items-center px-4 text-gray-500 dark:text-slate-400 text-sm font-medium">
+          {/* <div className="h-16 flex items-center px-4 text-gray-500 dark:text-slate-400 text-sm font-medium">
             <ArrowLeft2 size="16" color="#636363" />
             <ArrowRight2 size="16" color="#636363" className="mx-2" />
             <span className="cursor-pointer hover:text-gray-900 dark:hover:text-slate-200">
@@ -957,9 +967,9 @@ export const MessagesPage = () => {
             </span>
             <span className="mx-2">/</span>
             <span className="text-gray-900 dark:text-slate-100">Messages</span>
-          </div>
+          </div> */}
 
-          <div className="px-4 mb-2">
+          <div className="px-4 my-2">
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1662,11 +1672,11 @@ export const MessagesPage = () => {
                 : formatLastSeen(activePartnerLastSeenAt)}
             </p>
 
-            {typeof activePartnerProfile.compatibility === "number" && (
+            {/* {typeof activePartnerProfile.compatibility === "number" && (
               <p className="mt-2 text-sm font-medium text-orange-500">
                 {activePartnerProfile.compatibility}% compatible
               </p>
-            )}
+            )} */}
 
             <div className="mt-5 w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 px-4 py-3 text-left">
               <p className="text-xs font-medium text-gray-500 dark:text-slate-400">

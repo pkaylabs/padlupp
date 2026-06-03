@@ -2,7 +2,10 @@ import { useMemo, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, Clock3, Target, UserRound } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { useConnections, useBuddyFinder } from "@/pages/app/buddy-finder/hooks/useBuddies";
+import {
+  useConnections,
+  useBuddyFinder,
+} from "@/pages/app/buddy-finder/hooks/useBuddies";
 import { useGoals } from "@/pages/app/goals/hooks/useGoals";
 
 type UserProfileSearch = {
@@ -31,9 +34,7 @@ function UserProfilePage() {
   const knownProfile = useMemo(() => {
     if (!hasValidUserId) return null;
     const allProfiles = [...connections, ...finderProfiles];
-    return (
-      allProfiles.find((item) => item.user?.id === numericUserId) ?? null
-    );
+    return allProfiles.find((item) => item.user?.id === numericUserId) ?? null;
   }, [connections, finderProfiles, hasValidUserId, numericUserId]);
 
   const relatedGoals = useMemo(() => {
@@ -44,9 +45,7 @@ function UserProfilePage() {
   }, [goalsData?.results, hasValidUserId, numericUserId]);
 
   const displayName =
-    knownProfile?.user?.name?.trim() ||
-    search.name?.trim() ||
-    "Unknown user";
+    knownProfile?.user?.name?.trim() || search.name?.trim() || "Unknown user";
   const displayAvatar =
     knownProfile?.user?.avatar?.trim() || search.avatar?.trim() || "";
   const bio = knownProfile?.bio?.trim() || "";
@@ -117,12 +116,12 @@ function UserProfilePage() {
               </div>
             </div>
 
-            <Link
-              to="/goals"
+            <button
+              onClick={() => window.history.back()}
               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
             >
-              Back to goals
-            </Link>
+              Back
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
@@ -139,7 +138,9 @@ function UserProfilePage() {
             <InfoTile
               icon={<UserRound size={16} />}
               label="Profile"
-              value={knownProfile ? "Connected network profile" : "Basic profile"}
+              value={
+                knownProfile ? "Connected network profile" : "Basic profile"
+              }
             />
           </div>
         </div>

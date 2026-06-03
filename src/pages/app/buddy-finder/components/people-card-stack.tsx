@@ -31,7 +31,8 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
   };
 
   const previewInterests = person?.interests?.slice(0, 6) ?? [];
-  const hasMoreInterests = (person?.interests?.length ?? 0) > previewInterests.length;
+  const hasMoreInterests =
+    (person?.interests?.length ?? 0) > previewInterests.length;
 
   return (
     <div className="relative w-full mx-auto h-180">
@@ -68,9 +69,9 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
               </div>
             </div>
 
-            <span className="text-[#F18E69] ">
+            {/* <span className="text-[#F18E69] ">
               {person?.compatibility}% compatible
-            </span>
+            </span> */}
             <div className="w-full p-4 sm:p-6 py-8 bg-white dark:bg-slate-900 rounded-lg shadow text-sm text-gray-700 dark:text-slate-300 my-4 border border-transparent dark:border-slate-800">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="bg-primary-100/50 p-1 rounded-full ">
@@ -169,11 +170,7 @@ export const PeopleCardStack: React.FC<PeopleCardStackProps> = ({
                   key={`modal-${interest?.interest}`}
                   className="flex items-center bg-[#4E92F426] dark:bg-blue-500/20 gap-1.5 px-2.5 py-1.5 rounded-md"
                 >
-                  <interest.icon
-                    size={15}
-                    color="#141B34"
-                    variant="TwoTone"
-                  />
+                  <interest.icon size={15} color="#141B34" variant="TwoTone" />
                   <span className="text-xs font-medium text-gray-700 dark:text-slate-200">
                     {interest?.interest}
                   </span>
