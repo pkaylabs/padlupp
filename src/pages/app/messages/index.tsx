@@ -5,6 +5,7 @@ import {
   Check,
   CheckCheck,
   CheckCircle,
+  Circle,
   Clock3,
   CornerDownLeft,
   FileText,
@@ -19,6 +20,7 @@ import {
   Send,
   Square,
   Trash2,
+  Users,
   Video,
   X,
 } from "lucide-react";
@@ -336,6 +338,7 @@ export const MessagesPage = () => {
   const [searchValue, setSearchValue] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ActiveModal>("none");
   const [inputPopoverOpen, setInputPopoverOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -521,6 +524,21 @@ export const MessagesPage = () => {
     if (!resolvedPartnerUserId) return false;
     return onlineUserIds.includes(resolvedPartnerUserId);
   }, [activePartnerProfile?.userId, activePartnerUserId, onlineUserIds]);
+
+  const groupMembers = useMemo(() => {
+    if (!activeConversation?.is_group) return [];
+    const seen = new Map<number, { id: number; name: string; avatar: string }>();
+    messages.forEach((msg) => {
+      if (msg.sender?.id && !seen.has(msg.sender.id)) {
+        seen.set(msg.sender.id, {
+          id: msg.sender.id,
+          name: toDisplayText(msg.sender.name) || "Unknown",
+          avatar: toDisplayText(msg.sender.avatar) || "",
+        });
+      }
+    });
+    return Array.from(seen.values());
+  }, [activeConversation?.is_group, messages]);
   const currentUserName = authUser?.name?.trim() || "Me";
   const activePartnerLastSeenAt = useMemo(() => {
     const fromConversation = activeConversation
@@ -612,6 +630,7 @@ export const MessagesPage = () => {
       setContextMenu(null);
       setReplyingTo(null);
       setIsRenameGroupOpen(false);
+      setIsGroupInfoOpen(false);
       setActiveConversationId(null);
     };
 
@@ -1162,10 +1181,7 @@ export const MessagesPage = () => {
                       disabled={!hasActiveConversation}
                       onClick={() => {
                         if (activeConversation?.is_group) {
-                          setRenameGroupValue(
-                            getConversationName(activeConversation),
-                          );
-                          setIsRenameGroupOpen(true);
+                          setIsGroupInfoOpen(true);
                         } else {
                           setIsProfileModalOpen(true);
                         }
@@ -1842,6 +1858,83 @@ export const MessagesPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Modal
+        isOpen={isGroupInfoOpen}
+        onClose={() => setIsGroupInfoOpen(false)}
+        showCloseButton
+        className="max-w-lg w-[92vw] p-5 md:p-6 top-1/2 -translate-y-1/2"
+      >
+        {activeConversation?.is_group && (
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-2xl font-semibold">
+              {getInitials(
+                getConversationName(activeConversation),
+              )}
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+              {getConversationName(activeConversation)}
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+              {onlineUserIds.length > 0
+                ? `${onlineUserIds.length} online`
+                : "No one online"}
+            </p>
+
+            <div className="mt-5 w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 px-4 py-3 text-left">
+              <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                Members
+              </p>
+              {groupMembers.length > 0 ? (
+                <div className="mt-2 space-y-2">
+                  {groupMembers.map((member) => {
+                    const isOnline = onlineUserIds.includes(member.id);
+                    return (
+                      <div
+                        key={member.id}
+                        className="flex items-center gap-3 py-1"
+                      >
+                        {member.avatar ? (
+                          <img
+                            src={member.avatar}
+                            alt={member.name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold">
+                            {getInitials(member.name)}
+                          </div>
+                        )}
+                        <span className="text-sm text-gray-700 dark:text-slate-200 flex-1 text-left">
+                          {member.name}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-xs flex items-center gap-1",
+                            isOnline
+                              ? "text-green-500"
+                              : "text-gray-400 dark:text-slate-500",
+                          )}
+                        >
+                          <Circle
+                            size={6}
+                            className={isOnline ? "fill-green-500" : "fill-gray-400 dark:fill-slate-500"}
+                          />
+                          {isOnline ? "Online" : "Offline"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+                  No members information available yet.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         isOpen={isRenameGroupOpen}

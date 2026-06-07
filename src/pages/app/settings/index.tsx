@@ -35,6 +35,7 @@ import {
   useUpdateUserAccount,
   useUserProfile,
   useUpdateUserAvatar,
+  useUpdateNotificationPreferences,
 } from "@/pages/auth/hooks/useProfile";
 import { toast } from "sonner";
 import { INTERESTS_LIST, LANGUAGES } from "@/constants";
@@ -62,7 +63,7 @@ const StyledSwitch = ({
     aria-checked={checked}
     onClick={() => onChange(!checked)}
     className={cn(
-      "relative inline-flex h-5 w-9 items-center rounded-full border transition-all duration-200",
+      "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors duration-200",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900",
       checked
         ? "border-blue-500 bg-blue-500"
@@ -71,9 +72,9 @@ const StyledSwitch = ({
   >
     <span
       className={cn(
-        "pointer-events-none absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm",
-        "transition-transform duration-200",
-        checked ? "translate-x-4" : "translate-x-0",
+        "pointer-events-none absolute top-[4px] size-4 rounded-full bg-white shadow-sm",
+        "transition-transform duration-200 ease-out",
+        checked ? "translate-x-[20px]" : "translate-x-[4px]",
       )}
     />
   </button>
@@ -476,6 +477,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   const { mutate: logout, isPending } = useLogout();
   const { mutate: deleteAccount, isPending: isDeletingAccount } =
     useDeleteAccount();
+  const { mutate: updateNotifPrefs } = useUpdateNotificationPreferences();
 
   const [view, setView] = useState<SettingsView>("menu");
   const [theme, setTheme] = useState<AppTheme>(() =>
@@ -517,6 +519,11 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         phone: userProfile.user.phone || "",
         location: userProfile.location || "Not Set",
       }));
+      setEmailSettings({
+        autoWatch: userProfile.user.notify_on_reminders ?? false,
+        newMessages: userProfile.user.notify_on_new_message ?? false,
+        newMatches: userProfile.user.notify_on_new_match ?? false,
+      });
     }
   }, [userProfile]);
 
@@ -793,25 +800,28 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             <SubViewHeader title="Email" />
             <div className="mt-2 divide-y divide-gray-50">
               <SwitchItem
-                label="Auto watch tasks I am involved in"
+                label="New Reminders"
                 checked={emailSettings.autoWatch}
-                onChange={(v) =>
-                  setEmailSettings((s) => ({ ...s, autoWatch: v }))
-                }
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, autoWatch: v }));
+                  updateNotifPrefs({ notify_on_reminders: v });
+                }}
               />
               <SwitchItem
                 label="New Messages"
                 checked={emailSettings.newMessages}
-                onChange={(v) =>
-                  setEmailSettings((s) => ({ ...s, newMessages: v }))
-                }
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, newMessages: v }));
+                  updateNotifPrefs({ notify_on_new_message: v });
+                }}
               />
               <SwitchItem
                 label="New Matches"
                 checked={emailSettings.newMatches}
-                onChange={(v) =>
-                  setEmailSettings((s) => ({ ...s, newMatches: v }))
-                }
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, newMatches: v }));
+                  updateNotifPrefs({ notify_on_new_match: v });
+                }}
               />
             </div>
           </div>

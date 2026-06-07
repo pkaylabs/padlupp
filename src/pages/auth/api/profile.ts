@@ -12,6 +12,9 @@ export interface User {
   email_verified: boolean;
   preferred_notification_email: string;
   preferred_notification_phone: string;
+  notify_on_new_message: boolean;
+  notify_on_new_match: boolean;
+  notify_on_reminders: boolean;
 }
 
 export interface UserProfile {
@@ -67,6 +70,12 @@ export interface DeleteAccountPayload {
   reason: string;
 }
 
+export interface NotificationPreferencesPayload {
+  notify_on_new_message?: boolean;
+  notify_on_new_match?: boolean;
+  notify_on_reminders?: boolean;
+}
+
 // --- API Functions ---
 
 // 1. GET Full Profile
@@ -120,4 +129,11 @@ export const deleteAccount = async (
   payload: DeleteAccountPayload,
 ): Promise<void> => {
   await api.post("/auth/delete-account/", payload);
+};
+
+// 6. PATCH Notification Preferences
+export const updateNotificationPreferences = async (
+  payload: NotificationPreferencesPayload,
+): Promise<void> => {
+  await api.patch("/auth/notification-preferences/", payload);
 };

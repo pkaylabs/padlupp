@@ -1,5 +1,5 @@
 // src/components/settings/SettingsSidebar.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronRight,
   ChevronLeft,
@@ -19,6 +19,10 @@ import { DualRangeSlider } from "./dual-range-slider";
 import { LANGUAGES } from "@/constants/data";
 import { Check } from "iconsax-reactjs";
 import { StyledSwitch } from "@/routes/_app/-components/toggle";
+import {
+  useUserProfile,
+  useUpdateNotificationPreferences,
+} from "@/pages/auth/hooks/useProfile";
 
 type SettingsView =
   | "menu"
@@ -34,6 +38,9 @@ type Theme = "system" | "light" | "dark";
 export const SettingsSidebar: React.FC = () => {
   const [view, setView] = useState<SettingsView>("menu");
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 35]);
+
+  const { data: userProfile } = useUserProfile();
+  const { mutate: updateNotifPrefs } = useUpdateNotificationPreferences();
 
   const [theme, setTheme] = useState<Theme>("system");
   const [displayLanguage, setDisplayLanguage] = useState("English");
@@ -60,6 +67,16 @@ export const SettingsSidebar: React.FC = () => {
     location: "Lagos, Nigeria",
     // Add other fields here as needed
   });
+
+  useEffect(() => {
+    if (userProfile) {
+      setEmailSettings({
+        autoWatch: userProfile.user.notify_on_reminders ?? false,
+        newMessages: userProfile.user.notify_on_new_message ?? false,
+        newMatches: userProfile.user.notify_on_new_match ?? false,
+      });
+    }
+  }, [userProfile]);
 
   // --- 2. Handlers to satisfy TextInputProps ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,25 +318,28 @@ export const SettingsSidebar: React.FC = () => {
             <SubViewHeader title="Email" />
             <div className="mt-2 divide-y divide-gray-50">
               <SwitchItem
-                label="Auto watch tasks I am involved in"
+                label="New Reminders"
                 checked={emailSettings.autoWatch}
-                onChange={(v) =>
-                  setEmailSettings((s) => ({ ...s, autoWatch: v }))
-                }
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, autoWatch: v }));
+                  updateNotifPrefs({ notify_on_reminders: v });
+                }}
               />
               <SwitchItem
                 label="New Messages"
                 checked={emailSettings.newMessages}
-                onChange={(v) =>
-                  setEmailSettings((s) => ({ ...s, newMessages: v }))
-                }
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, newMessages: v }));
+                  updateNotifPrefs({ notify_on_new_message: v });
+                }}
               />
               <SwitchItem
                 label="New Matches"
                 checked={emailSettings.newMatches}
-                onChange={(v) =>
-                  setEmailSettings((s) => ({ ...s, newMatches: v }))
-                }
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, newMatches: v }));
+                  updateNotifPrefs({ notify_on_new_match: v });
+                }}
               />
             </div>
           </div>

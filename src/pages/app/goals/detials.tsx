@@ -72,7 +72,6 @@ export function GoalDetailsPage() {
 
   // UI State
   const [isDescExpanded, setIsDescExpanded] = useState(false);
-  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(startOfToday());
   const [isAddSubtaskModalOpen, setIsAddSubtaskModalOpen] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
@@ -178,7 +177,6 @@ export function GoalDetailsPage() {
       id: goal!.id,
       data: { status: normalizeStatusForApi(newStatus) },
     });
-    setStatusPopoverOpen(false);
   };
 
   const handleOpenEditGoalModal = () => {
@@ -915,58 +913,49 @@ export function GoalDetailsPage() {
 
           {/* Status Actions */}
           <div className="flex items-center gap-4 mb-12">
-            <div className="relative">
-              <button
-                onClick={() => setStatusPopoverOpen(!statusPopoverOpen)}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors",
-                  goal.status === "completed"
-                    ? "bg-green-100 text-green-700"
-                    : goal.status === "in-progress"
-                      ? "bg-orange-100 text-orange-700"
-                      : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300",
-                )}
-              >
-                {goal.status === "completed" ? (
-                  <CheckCircle2 size={16} />
-                ) : (
-                  <Circle size={16} />
-                )}
-                <span className="capitalize">
-                  {goal.status.replace("-", " ")}
-                </span>
-              </button>
-
-              <AnimatePresence>
-                {statusPopoverOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 p-1.5 z-30"
+            <div className="flex items-center gap-2">
+              {["To-do", "In progress", "Completed"].map((statusOption) => {
+                const isSelected =
+                  normalizeStatusForUi(goal.status) === statusOption;
+                return (
+                  <button
+                    key={statusOption}
+                    onClick={() => handleStatusChange(statusOption)}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
+                      statusOption === "To-do" && isSelected
+                        ? "bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-slate-200 ring-2 ring-gray-400"
+                        : statusOption === "To-do"
+                          ? "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+                          : statusOption === "In progress" && isSelected
+                            ? "bg-orange-200 text-orange-800 ring-2 ring-orange-400"
+                            : statusOption === "In progress"
+                              ? "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                              : statusOption === "Completed" && isSelected
+                                ? "bg-green-200 text-green-800 ring-2 ring-green-400"
+                                : "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30",
+                    )}
                   >
-                    {["To-do", "In progress", "Completed"].map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => handleStatusChange(status)}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                      >
-                        <div
-                          className={cn(
-                            "w-2 h-2 rounded-full",
-                            status === "To-do"
-                              ? "bg-gray-400"
-                              : status === "In progress"
-                                ? "bg-orange-500"
-                                : "bg-green-500",
-                          )}
-                        />
-                        {status}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {statusOption === "To-do" ? (
+                      <Circle
+                        size={16}
+                        className={isSelected ? "" : "text-gray-400 dark:text-slate-500"}
+                      />
+                    ) : statusOption === "In progress" ? (
+                      <Activity
+                        size={16}
+                        className={isSelected ? "" : ""}
+                      />
+                    ) : (
+                      <CheckCircle2
+                        size={16}
+                        className={isSelected ? "" : ""}
+                      />
+                    )}
+                    {statusOption}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

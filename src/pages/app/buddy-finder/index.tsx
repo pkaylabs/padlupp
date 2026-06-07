@@ -231,6 +231,7 @@ export const BuddyFinderPage = () => {
                   // We don't pass static people mock anymore, the component fetches it
                   communityGoals={COMMUNITY_MOCK}
                   onInvite={handleOpenInviteModal}
+                  category={selectedCategory}
                 />
               )
             ) : (

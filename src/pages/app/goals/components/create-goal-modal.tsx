@@ -9,6 +9,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   CheckCircle2,
   Trash2,
 } from "lucide-react";
@@ -229,6 +230,13 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       )}
     >
       <span>{icon}</span> {label}
+      <ChevronDown
+        size={12}
+        className={cn(
+          "transition-transform",
+          activePopover === type && "rotate-180",
+        )}
+      />
     </button>
   );
 

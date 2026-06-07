@@ -7,8 +7,10 @@ import {
   updateUserAccount,
   updateExtendedProfile,
   updateUserAvatar,
+  updateNotificationPreferences,
   UpdateExperiencePayload,
   UpdateAvatarPayload,
+  NotificationPreferencesPayload,
 } from "../api/profile";
 import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/authStore";
@@ -93,5 +95,18 @@ export function useUpdateUserAvatar() {
 export function useDeleteAccount() {
   return useMutation({
     mutationFn: (payload: DeleteAccountPayload) => deleteAccount(payload),
+  });
+}
+
+export function useUpdateNotificationPreferences() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: NotificationPreferencesPayload) =>
+      updateNotificationPreferences(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notification-preferences"] });
+    },
+    onError: () => toast.error("Failed to update notification preferences"),
   });
 }

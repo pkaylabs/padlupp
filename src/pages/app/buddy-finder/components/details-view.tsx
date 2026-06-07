@@ -12,6 +12,7 @@ interface DetailsViewProps {
   searchQuery: string;
   communityGoals: CommunityGoal[];
   onInvite: (person: Person | null) => void;
+  category?: string | null;
 }
 
 export const DetailsView: React.FC<DetailsViewProps> = ({
@@ -19,6 +20,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
   searchQuery,
   communityGoals,
   onInvite,
+  category,
 }) => {
   const normalizedQuery = searchQuery.trim();
   const isSearchMode = normalizedQuery.length > 0;
@@ -27,12 +29,12 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     data: potentialBuddies,
     isLoading: isFinderLoading,
     isError: isFinderError,
-  } = useBuddyFinder();
+  } = useBuddyFinder(category ?? undefined);
   const {
     data: searchedBuddies,
     isLoading: isSearchLoading,
     isError: isSearchError,
-  } = useBuddySearch(normalizedQuery);
+  } = useBuddySearch(normalizedQuery, category ?? undefined);
 
   const sourceBuddies = isSearchMode ? searchedBuddies : potentialBuddies;
   const isLoading = isSearchMode ? isSearchLoading : isFinderLoading;

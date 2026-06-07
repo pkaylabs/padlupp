@@ -20,19 +20,19 @@ export function useConnections() {
   });
 }
 
-export function useBuddyFinder() {
+export function useBuddyFinder(category?: string) {
   return useQuery({
-    queryKey: ["buddies", "finder"],
-    queryFn: getBuddyFinder,
+    queryKey: ["buddies", "finder", category],
+    queryFn: () => getBuddyFinder(category),
   });
 }
 
-export function useBuddySearch(query: string) {
+export function useBuddySearch(query: string, category?: string) {
   const normalizedQuery = query.trim();
 
   return useQuery({
-    queryKey: ["buddies", "search", normalizedQuery],
-    queryFn: () => searchBuddies(normalizedQuery),
+    queryKey: ["buddies", "search", normalizedQuery, category],
+    queryFn: () => searchBuddies(normalizedQuery, category),
     enabled: normalizedQuery.length > 0,
   });
 }

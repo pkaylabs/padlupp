@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { normalizeCategory } from "@/constants/categories";
 
 // --- Shared Types ---
 
@@ -71,15 +72,21 @@ export const getConnections = async () => {
 };
 
 // GET: Buddy Finder (Discovery)
-export const getBuddyFinder = async () => {
-  const { data } = await api.get<PotentialBuddy[]>("/buddies/finder/");
+export const getBuddyFinder = async (category?: string) => {
+  const normalizedCategory = category ? normalizeCategory(category) : undefined;
+  const { data } = await api.get<PotentialBuddy[]>("/buddies/finder/", {
+    params: normalizedCategory ? { category: normalizedCategory } : undefined,
+  });
   return data;
 };
 
 // GET: Global Buddy Search
-export const searchBuddies = async (query: string) => {
+export const searchBuddies = async (query: string, category?: string) => {
+  const normalizedCategory = category ? normalizeCategory(category) : undefined;
+  const params: Record<string, string> = { query };
+  if (normalizedCategory) params.category = normalizedCategory;
   const { data } = await api.get<BuddyConnection[]>("/buddies/search/", {
-    params: { query },
+    params,
   });
   return data;
 };
