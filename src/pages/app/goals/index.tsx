@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { startOfToday, isSameDay, parseISO, format } from "date-fns";
-import { Target, Plus, ClipboardList, Square, CheckSquare } from "lucide-react"; // Added Icons
+import { Target, Plus, ClipboardList, Square, CheckSquare, Search } from "lucide-react"; // Added Icons
 import { TodayProgress } from "../dashboard/components/progress";
 import { GoalColumn } from "./components/goal-column";
 import { CalendarWidget } from "../dashboard/components/calendar-widget";
@@ -76,6 +76,9 @@ export const GoalsPage = () => {
   const [editCheckinFrequency, setEditCheckinFrequency] =
     useState<CheckinFrequency>("DAILY");
   const [editIsPublic, setEditIsPublic] = useState(false);
+	const [goalSearch, setGoalSearch] = useState("");
+	const [goalOrdering, setGoalOrdering] = useState("target_date");
+	const deferredGoalSearch = useDeferredValue(goalSearch);
 
   useEffect(() => {
     if (localStorage.getItem(OPEN_CREATE_GOAL_FROM_CHAT_KEY) === "1") {
@@ -98,9 +101,10 @@ export const GoalsPage = () => {
   };
 
   // 1. Fetch Goals
-  const { data: goalsData, isLoading } = useGoals({ ordering: "target_date" });
-
-  console.log(goalsData, "goals data");
+	const { data: goalsData, isLoading } = useGoals({
+		ordering: goalOrdering,
+		search: deferredGoalSearch.trim() || undefined,
+	});
 
   // 2. Mutation for Drag & Drop
   const {
@@ -153,7 +157,7 @@ export const GoalsPage = () => {
 
   const openShareGoalModal = (goal: Goal) => {
     setSelectedGoal(goal);
-    setShareLinkDraft(goal.public_share_link || goal.share_link || "");
+		setShareLinkDraft(goal.invite_link || goal.public_share_link || goal.share_link || "");
     setIsShareGoalModalOpen(true);
   };
 
@@ -352,7 +356,7 @@ export const GoalsPage = () => {
             </div>
           </div>
 
-          <div className="mb-6 flex justify-between items-center">
+			<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="font-monts text-lg sm:text-xl font-semibold text-[#636363] dark:text-slate-200">
               {!selectedDate
                 ? "All goals"
@@ -371,6 +375,34 @@ export const GoalsPage = () => {
               </button>
             )}
           </div>
+			<div className="mb-6 flex flex-col gap-3 sm:flex-row" aria-label="Goal search and sorting">
+				<label className="relative flex-1">
+					<span className="sr-only">Search goals</span>
+					<Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+					<input
+						type="search"
+						value={goalSearch}
+						onChange={(event) => setGoalSearch(event.target.value)}
+						placeholder="Search goals by title, description, or category"
+						className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+					/>
+				</label>
+				<label>
+					<span className="sr-only">Sort goals</span>
+					<select
+						value={goalOrdering}
+						onChange={(event) => setGoalOrdering(event.target.value)}
+						className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 sm:w-52"
+					>
+						<option value="title">Title A-Z</option>
+						<option value="-title">Title Z-A</option>
+						<option value="created_at">Created oldest</option>
+						<option value="-created_at">Created newest</option>
+						<option value="target_date">Due soonest</option>
+						<option value="-target_date">Due latest</option>
+					</select>
+				</label>
+			</div>
 
           {isLoading ? (
             <div className="flex gap-4">
@@ -398,7 +430,7 @@ export const GoalsPage = () => {
               </h3>
               <p className="text-gray-500 dark:text-slate-400 mb-6 text-sm max-w-xs text-center mt-1">
                 {activeTab === "Completed"
-                  ? "Keep working! Once you finish a task, it will appear here."
+					? "Keep working! Once you finish a goal, it will appear here."
                   : !selectedDate
                     ? `No ${activeTab.toLowerCase()} goals found yet.`
                     : isSameDay(selectedDate, startOfToday())
@@ -711,6 +743,7 @@ export const GoalsPage = () => {
         goalTitle={selectedGoal?.title || "Goal"}
         shareLink={
           shareLinkDraft ||
+			selectedGoal?.invite_link ||
           selectedGoal?.public_share_link ||
           selectedGoal?.share_link ||
           ""

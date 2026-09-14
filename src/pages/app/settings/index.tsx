@@ -9,8 +9,6 @@ import {
   ChevronLeft,
   Mail,
   Phone,
-  Globe,
-  Share2,
   Bell,
   ChevronsUp,
   Search,
@@ -18,6 +16,7 @@ import {
   User,
   Check,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
 import clsx, { ClassValue } from "clsx";
@@ -26,7 +25,6 @@ import { twMerge } from "tailwind-merge";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import TextInput from "@/components/core/inputs";
-import { DualRangeSlider } from "./components/dual-range-slider";
 import { useLogout } from "./hooks/useLogout";
 import {
   useDeleteAccount,
@@ -100,7 +98,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
     "none" | "prompt_select" | "prompt_answer" | "interest"
   >("none");
 
-  const [selectedPrompt, setSelectedPrompt] = useState("Bio / About Me");
+  const selectedPrompt = "Bio / About Me";
   const [promptAnswer, setPromptAnswer] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [tempAnswer, setTempAnswer] = useState("");
@@ -131,14 +129,6 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onMobileBack }) => {
   }, [userProfile]);
 
   // --- HANDLERS ---
-  const handlePromptSelect = (prompt: string) => {
-    setSelectedPrompt(prompt);
-    // If selecting a preset prompt, we might want to prepend it to the answer or just set context
-    // For now, keeping logic simple
-    setTempAnswer("");
-    setActiveModal("prompt_answer");
-  };
-
   const handlePromptSave = () => {
     // Just update local UI state. API call happens on "Save Profile"
     setPromptAnswer(tempAnswer);
@@ -472,8 +462,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   const { data: userProfile } = useUserProfile();
   const { mutate: updateAccount, isPending: isUpdatingAccount } =
     useUpdateUserAccount();
-  const { mutate: updateProfile, isPending: isUpdatingProfile } =
-    useUpdateExtendedProfile();
+  const { mutate: updateProfile } = useUpdateExtendedProfile();
   const { mutate: logout, isPending } = useLogout();
   const { mutate: deleteAccount, isPending: isDeletingAccount } =
     useDeleteAccount();
@@ -485,7 +474,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   );
   const [displayLanguage, setDisplayLanguage] = useState("English");
   const [searchQuery, setSearchQuery] = useState("");
-  const [ageRange, setAgeRange] = useState<[number, number]>([18, 35]);
 
   // Notification Settings State
   const [emailSettings, setEmailSettings] = useState({
@@ -569,6 +557,18 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   const errors = {};
   const touched = {};
 
+  interface MenuItemProps {
+    icon?: LucideIcon;
+    label: string;
+    value?: string;
+    onClick?: () => void;
+    isDestructive?: boolean;
+    isExternal?: boolean;
+    isSelected?: boolean;
+    hasChevron?: boolean;
+    disabled?: boolean;
+  }
+
   // Helper for Menu Items
   const MenuItem = ({
     icon: Icon,
@@ -580,7 +580,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     isSelected,
     hasChevron = true,
     disabled = false,
-  }: any) => (
+  }: MenuItemProps) => (
     <button
       onClick={onClick}
       disabled={disabled}

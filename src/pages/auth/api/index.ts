@@ -33,33 +33,35 @@ export interface ForgotPasswordResetPayload {
   confirm_password: string;
 }
 
-// export interface AuthResponse {
-//   token: string;
-//   user: {
-//     id: string;
-//     email: string;
-//     name?: string;
-//     role?: 'admin' | 'user';
-//   };
-// }
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: number;
+    email: string;
+    name?: string;
+  };
+}
 
 // Pure Async Function
 export const loginUser = async (
   credentials: LoginCredentials,
-): Promise<any> => {
-  const { data } = await api.post<any>("/auth/login/", credentials);
+): Promise<AuthResponse> => {
+  const { data } = await api.post<AuthResponse>("/auth/login/", credentials);
   return data;
 };
 
 export const registerUser = async (
   credentials: RegisterCredentials,
-): Promise<any> => {
-  const { data } = await api.post<any>("/onboarding/register/", credentials);
+): Promise<AuthResponse> => {
+  const { data } = await api.post<AuthResponse>(
+    "/onboarding/register/",
+    credentials,
+  );
   return data;
 };
 
 export const googleAuthUser = async (payload: GoogleAuthPayload) => {
-  const response = await api.post("/auth/google-auth/", payload);
+  const response = await api.post<AuthResponse>("/auth/google-auth/", payload);
   return {
     data: response.data,
     status: response.status,

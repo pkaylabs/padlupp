@@ -25,11 +25,16 @@ export interface ChatMessage {
   conversation: number;
   sender: ChatUser;
   text: string | null;
+	kind?: "user" | "goal" | "checkin";
+	metadata?: Record<string, unknown>;
   attachment: string | null;
   attachment_name: string | null;
   attachment_mime: string | null;
   attachment_size: number | null;
   is_read: boolean;
+	recalled_at?: string | null;
+	is_recalled?: boolean;
+	can_recall?: boolean;
   reply_to_message_id: number | null;
   reply_to: ReplyToInfo | null;
   created_at: string;
@@ -39,6 +44,9 @@ export interface ChatMessage {
 export interface Conversation {
   id: number;
   partnership: number;
+	goal?: number | null;
+	name?: string | null;
+	members?: ChatUser[];
   partner_name?: string | null;
   partner_avatar?: string | null;
   partner_user_id?: number | null;
@@ -47,6 +55,8 @@ export interface Conversation {
   is_group: boolean;
   last_message: ChatMessage | null;
   unread_count: number;
+	archived_at?: string | null;
+	is_archived?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -164,6 +174,27 @@ export const patchMessage = async (
 
 export const deleteMessage = async (id: string | number): Promise<void> => {
   await api.delete(`/messages/${id}/`);
+};
+
+export const recallMessage = async (id: string | number): Promise<ChatMessage> => {
+	const { data } = await api.post<ChatMessage>(`/messages/${id}/recall/`);
+	return data;
+};
+
+export const archiveConversation = async (id: number): Promise<void> => {
+	await api.post(`/conversations/${id}/archive/`);
+};
+
+export const restoreConversation = async (id: number): Promise<Conversation> => {
+	const { data } = await api.post<Conversation>(`/conversations/${id}/restore/`);
+	return data;
+};
+
+export const getArchivedConversations = async (): Promise<Conversation[]> => {
+	const { data } = await api.get<Conversation[] | PaginatedResponse<Conversation>>(
+		"/conversations/archived/",
+	);
+	return Array.isArray(data) ? data : data.results;
 };
 
 export const renameGroupConversation = async (

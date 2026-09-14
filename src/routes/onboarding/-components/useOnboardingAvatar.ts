@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { DASHBOARD, GOALS } from "@/constants/page-path";
+import { GOALS } from "@/constants/page-path";
 import { OnboardingPayload, setOnboardingAvatar } from "./api";
 import { toast } from "sonner";
 

@@ -10,7 +10,7 @@ import { ChevronUpDownIcon } from "@heroicons/react/16/solid";
 import _ from "lodash";
 import { cn } from "@/utils/cs";
 
-interface FilterDropdownProps<T = any> {
+interface FilterDropdownProps<T> {
   id?: string;
   label?: string;
   required?: string;
@@ -22,7 +22,7 @@ interface FilterDropdownProps<T = any> {
   touched?: unknown;
 }
 
-const SelectDropdown: React.FC<FilterDropdownProps> = ({
+const SelectDropdown = <T,>({
   id,
   label,
   required,
@@ -32,7 +32,7 @@ const SelectDropdown: React.FC<FilterDropdownProps> = ({
   className,
   errors,
   touched,
-}) => {
+}: FilterDropdownProps<T>) => {
   const selectedOption = options?.find((opt) => opt.value === value) || null;
   return (
     <div className="">
@@ -71,7 +71,7 @@ const SelectDropdown: React.FC<FilterDropdownProps> = ({
           <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base ring-1 shadow-lg ring-black/5 focus:outline-none sm:text-sm">
             {options?.map((option, idx) => (
               <ListboxOption
-                key={option.value}
+                key={`${option.label}-${idx}`}
                 value={option.value}
                 className="group relative cursor-default py-2 pr-9 pl-3 text-gray-900 select-none data-focus:bg-primary-600 data-focus:text-white"
               >

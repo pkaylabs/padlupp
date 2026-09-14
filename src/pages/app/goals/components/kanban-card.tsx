@@ -8,6 +8,7 @@ import { Calendar } from "iconsax-reactjs";
 import { useNavigate } from "@tanstack/react-router";
 import { GoalActionsMenu } from "./goal-actions-menu";
 import type { Goal } from "../api";
+import { useAuthStore } from "@/features/auth/authStore";
 
 interface KanbanCardProps {
   task: Task;
@@ -29,6 +30,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   onShareGoal,
 }) => {
   const navigate = useNavigate();
+	const authUserId = useAuthStore((state) => state.user?.id);
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const timeText = task.time?.trim() || "No time set";
@@ -209,6 +211,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                   </button>
                   <GoalActionsMenu
                     isOpen={isMenuOpen}
+					canShare={goal.user.id === authUserId}
+					canDelete={goal.user.id === authUserId}
                     onEdit={() => {
                       setIsMenuOpen(false);
                       onEditGoal(goal);

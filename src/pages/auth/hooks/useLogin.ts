@@ -4,6 +4,7 @@ import { useRouter } from "@tanstack/react-router";
 import { LoginCredentials, loginUser } from "../api";
 import { resolvePostAuthRedirect } from "../utils/redirect";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export function useLogin() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => loginUser(credentials),
 
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       login(data.token, data.user);
 
       router.invalidate();
@@ -28,10 +29,10 @@ export function useLogin() {
       toast.success("Welcome back!");
     },
 
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // Handle errors globally for this action
       console.error("Login failed:", error);
-      toast.error(error.response?.data?.detail || "Login failed");
+      toast.error(getApiErrorMessage(error, "Login failed"));
     },
   });
 }

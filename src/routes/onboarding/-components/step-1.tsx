@@ -2,21 +2,16 @@
 import React, { useEffect, useState } from "react";
 import {
   Book,
-  Smile,
-  Plane,
-  Coffee,
   Briefcase,
-  Monitor,
   CheckSquare,
   BarChart,
-  List,
-  Projector,
+  HeartPulse,
+  Palette,
 } from "lucide-react";
 import { SelectableTag } from "./select-tag";
 import Button from "@/components/core/buttons";
-import { Link } from "@tanstack/react-router";
-import { DASHBOARD } from "@/constants/page-path";
 import ButtonLoader from "@/components/loaders/button";
+import { INTEREST_GROUPS } from "@/constants";
 
 interface Step1Props {
   onContinue: (interests: string[]) => void;
@@ -25,18 +20,7 @@ interface Step1Props {
   initialSelected?: string[];
 }
 
-const interestOptions = [
-  { icon: <Book size={18} />, label: "Book and media" },
-  { icon: <Smile size={18} />, label: "Hobbies" },
-  { icon: <Plane size={18} />, label: "Travel" },
-  { icon: <Coffee size={18} />, label: "Food and nutrition" },
-  { icon: <Briefcase size={18} />, label: "Career building" },
-  { icon: <Monitor size={18} />, label: "Site or blog" },
-  { icon: <CheckSquare size={18} />, label: "Habit tracking" },
-  { icon: <BarChart size={18} />, label: "Personal finance" },
-  { icon: <List size={18} />, label: "To-do list" },
-  { icon: <Projector size={18} />, label: "Project tracking" },
-];
+const groupIcons = [Briefcase, Book, HeartPulse, CheckSquare, Palette, BarChart];
 
 export const Step1Interests: React.FC<Step1Props> = ({
   onContinue,
@@ -68,16 +52,28 @@ export const Step1Interests: React.FC<Step1Props> = ({
         {selected.length} selected
       </p>
 
-      <div className="grid grid-cols-2 gap-3 w-full mb-8">
-        {interestOptions.map((item) => (
-          <SelectableTag
-            key={item.label}
-            icon={item.icon}
-            label={item.label}
-            isSelected={selected.includes(item.label)}
-            onClick={() => toggleInterest(item.label)}
-          />
-        ))}
+      <div className="w-full mb-8 space-y-6 max-h-[52vh] overflow-y-auto pr-1">
+        {INTEREST_GROUPS.map((group, groupIndex) => {
+          const Icon = groupIcons[groupIndex];
+          return (
+            <section key={group.name} aria-labelledby={`interest-${groupIndex}`}>
+              <h2 id={`interest-${groupIndex}`} className="mb-2 text-sm font-semibold text-gray-800">
+                {group.name}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {group.interests.map((label) => (
+                  <SelectableTag
+                    key={`${group.name}-${label}`}
+                    icon={<Icon size={18} />}
+                    label={label}
+                    isSelected={selected.includes(label)}
+                    onClick={() => toggleInterest(label)}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <div className="w-full space-y-3">

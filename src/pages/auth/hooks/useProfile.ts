@@ -11,6 +11,8 @@ import {
   UpdateExperiencePayload,
   UpdateAvatarPayload,
   NotificationPreferencesPayload,
+  UpdateProfilePayload,
+  UpdateUserPayload,
 } from "../api/profile";
 import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/authStore";
@@ -49,7 +51,7 @@ export function useUpdateUserAccount() {
   const token = useAuthStore((state) => state.token);
 
   return useMutation({
-    mutationFn: (payload: any) => updateUserAccount(payload),
+    mutationFn: (payload: UpdateUserPayload) => updateUserAccount(payload),
     onSuccess: (updatedUser) => {
       // 1. Refresh Profile Query
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
@@ -70,7 +72,7 @@ export function useUpdateExtendedProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: any) => updateExtendedProfile(payload),
+    mutationFn: (payload: UpdateProfilePayload) => updateExtendedProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
     },

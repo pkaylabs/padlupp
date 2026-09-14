@@ -23,6 +23,7 @@ import logo from "@/assets/images/logo.png";
 import { MESSAGES, SETTINGS } from "@/constants/page-path";
 import { TopNav } from "./-components/top-nav";
 import { useAuthStore } from "@/features/auth/authStore";
+import { useAppPresence } from "@/hooks/useAppPresence";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: ({ location }) => {
@@ -40,8 +41,12 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
+  useAppPresence();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const matchRoute = useMatchRoute();
+  const usesFullWidthLayout = Boolean(
+    matchRoute({ to: MESSAGES }) || matchRoute({ to: SETTINGS }),
+  );
   return (
     <>
       <div className="bg-bg-gray dark:bg-bg-gray dark:text-gray-100">
@@ -249,7 +254,7 @@ function AppLayout() {
 
           <main className="flex-1 h-full bg-bg-gray dark:bg-slate-950">
             <div
-              className={`h-full ${matchRoute({ to: MESSAGES }) || (matchRoute({ to: SETTINGS }) ? "p-0" : "p-4 sm:p-6")} `}
+              className={`h-full ${usesFullWidthLayout ? "p-0" : "p-4 sm:p-6"}`}
             >
               <Outlet />
             </div>

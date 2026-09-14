@@ -13,7 +13,7 @@ interface GoalPreviewPageProps {
 }
 
 export const GoalPreviewPage = ({ goalId, sharedId }: GoalPreviewPageProps) => {
-  const { data, isLoading, isError } = useGoalPreview(goalId);
+  const { data, isLoading, isError } = useGoalPreview(goalId, sharedId);
   const { mutateAsync: joinGoal, isPending: isJoining } = useJoinGoal();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
@@ -135,7 +135,7 @@ export const GoalPreviewPage = ({ goalId, sharedId }: GoalPreviewPageProps) => {
             <div className="flex flex-wrap gap-3">
               <div className="inline-flex items-center gap-1.5 text-xs rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 px-3 py-1.5 text-gray-700 dark:text-slate-300">
                 <User2 size={13} />
-                {data.user?.name || "Creator"}
+				{data.owner?.name || "Creator"}
               </div>
               {startDateLabel && (
                 <div className="inline-flex items-center gap-1.5 text-xs rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 px-3 py-1.5 text-gray-700 dark:text-slate-300">
@@ -154,19 +154,9 @@ export const GoalPreviewPage = ({ goalId, sharedId }: GoalPreviewPageProps) => {
               )}
             </div>
 
-            {(data.partner || data.partner_name) && (
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-                <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center justify-center text-[11px] font-semibold">
-                  {(data.partner?.name || data.partner_name || "P")[0]?.toUpperCase()}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Shared with{" "}
-                  <span className="font-medium text-gray-700 dark:text-slate-200">
-                    {data.partner?.name || data.partner_name || "a partner"}
-                  </span>
-                </p>
-              </div>
-            )}
+			<div className="pt-2 border-t border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400">
+				{data.member_count} {data.member_count === 1 ? "member" : "members"} in this Paddie Pod
+			</div>
           </div>
 
           {hasJoined ? (

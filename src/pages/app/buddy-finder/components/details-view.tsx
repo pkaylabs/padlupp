@@ -6,6 +6,8 @@ import { PeopleCardStack } from "./people-card-stack";
 import { CommunityCardStack } from "./community-card-stack";
 import { useBuddyFinder, useBuddySearch } from "../hooks/useBuddies";
 import { SearchX } from "lucide-react";
+import { DocumentCode } from "iconsax-reactjs";
+import type { BuddyConnection } from "../api";
 
 interface DetailsViewProps {
   activeTab: "People" | "Community";
@@ -40,7 +42,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
   const isLoading = isSearchMode ? isSearchLoading : isFinderLoading;
   const isError = isSearchMode ? isSearchError : isFinderError;
 
-  const people: any = (sourceBuddies || []).map((buddy: any) => ({
+  const people: Person[] = (sourceBuddies || []).map((buddy: BuddyConnection) => ({
     ...(typeof buddy.compatibility_score === "number"
       ? { compatibility: Math.max(0, Math.min(100, buddy.compatibility_score)) }
       : { compatibility: 0 }),
@@ -56,12 +58,15 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     interests: Array.isArray(buddy.interests)
       ? buddy.interests.map((interest: string) => ({
           interest,
-          icon: () => null,
+          icon: DocumentCode,
         }))
       : [],
     sharedGoals: 0, // Not in API yet, defaulting
     tags: buddy.interests,
-    status: buddy.connection_status === "connected" ? "connected" : "connect",
+    status:
+      "connection_status" in buddy && buddy.connection_status === "connected"
+        ? "connected"
+        : "connect",
   }));
 
   if (isLoading) {

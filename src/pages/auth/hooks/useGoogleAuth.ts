@@ -7,6 +7,7 @@ import { resolvePostAuthRedirect } from "../utils/redirect";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
 import { sanitizeNameInput } from "@/utils/name-validation";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export function useGoogleAuth() {
   const router = useRouter();
@@ -33,11 +34,9 @@ export function useGoogleAuth() {
         toast.success("Welcome back!");
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Google Backend Error:", error);
-      toast.error(
-        error.response?.data?.detail || "Google authentication failed",
-      );
+      toast.error(getApiErrorMessage(error, "Google authentication failed"));
     },
   });
 
@@ -48,7 +47,7 @@ export function useGoogleAuth() {
     }
 
     try {
-      const decoded: any = jwtDecode(response.credential);
+      const decoded = jwtDecode<{ name?: unknown }>(response.credential);
       const sanitizedName = sanitizeNameInput(
         String(decoded.name || ""),
       ).trim();

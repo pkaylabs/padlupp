@@ -3,8 +3,6 @@ import React, { useRef } from "react";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import Button from "@/components/core/buttons";
-import { useNavigate } from "@tanstack/react-router";
-import { DASHBOARD } from "@/constants/page-path";
 import ButtonLoader from "@/components/loaders/button";
 
 interface Step3Props {
@@ -21,12 +19,9 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
   onFileSelect,
   onBack,
   onFinish,
-  onSkip,
   isPending,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const navigate = useNavigate();
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

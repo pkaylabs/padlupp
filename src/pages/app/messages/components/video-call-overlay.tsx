@@ -21,6 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/utils/cs";
 import { Modal } from "@/components/core/modal";
+import type { LucideIcon } from "lucide-react";
 
 interface VideoCallOverlayProps {
   isOpen: boolean;
@@ -143,7 +144,7 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
                   {/* Settings Menu Popover */}
                   <AnimatePresence>
                     {activePopup === "settings" && (
-                      <SettingsMenu onClose={() => setActivePopup(null)} />
+                      <SettingsMenu />
                     )}
                   </AnimatePresence>
                 </div>
@@ -254,7 +255,15 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
 // SUB-COMPONENTS
 // ----------------------------------------------------------------------
 
-const ControlBtn = ({ icon: Icon, active, onClick }: any) => (
+const ControlBtn = ({
+  icon: Icon,
+  active,
+  onClick,
+}: {
+  icon: LucideIcon;
+  active?: boolean;
+  onClick?: () => void;
+}) => (
   <button
     onClick={onClick}
     className={cn(
@@ -268,7 +277,17 @@ const ControlBtn = ({ icon: Icon, active, onClick }: any) => (
   </button>
 );
 
-const ChatMessage = ({ sender, time, text, isMe }: any) => (
+const ChatMessage = ({
+  sender,
+  time,
+  text,
+  isMe,
+}: {
+  sender: string;
+  time: string;
+  text: string;
+  isMe: boolean;
+}) => (
   <div className="flex gap-3">
     <img
       src={`https://placehold.co/40x40/${isMe ? "336699" : "EEDDAA"}/FFF?text=${sender[0]}`}
@@ -286,7 +305,7 @@ const ChatMessage = ({ sender, time, text, isMe }: any) => (
 );
 
 // --- SETTINGS MENU (Popover) ---
-const SettingsMenu = ({ onClose }: { onClose: () => void }) => (
+const SettingsMenu = () => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -335,7 +354,15 @@ const ScreenShareModal = ({
 }) => {
   const [selected, setSelected] = useState<number | null>(null);
 
-  const ScreenOption = ({ id, label, color }: any) => (
+  const ScreenOption = ({
+    id,
+    label,
+    color,
+  }: {
+    id: number;
+    label: string;
+    color: string;
+  }) => (
     <div
       onClick={() => setSelected(id)}
       className={cn(

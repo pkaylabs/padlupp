@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/features/auth/authStore";
+import { api } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -10,9 +11,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      // await api.post('/auth/logout');
-
-      return Promise.resolve();
+      await api.post("/auth/logout/");
     },
     onSuccess: () => {
       logoutAction();

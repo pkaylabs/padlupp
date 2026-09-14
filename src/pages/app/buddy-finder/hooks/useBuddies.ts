@@ -10,6 +10,7 @@ import {
   sendConnectionRequest,
 } from "../api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 // --- QUERIES (GET) ---
 
@@ -58,10 +59,8 @@ export function useSendRequest() {
       queryClient.invalidateQueries({ queryKey: ["buddies", "finder"] });
       toast.success("Connection request sent!");
     },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || "Failed to send request.",
-      );
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, "Failed to send request."));
     },
   });
 }

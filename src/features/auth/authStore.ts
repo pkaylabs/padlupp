@@ -36,8 +36,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         });
         localStorage.removeItem("auth-storage");
-
-        window.location.href = "/signin";
       },
     }),
     {

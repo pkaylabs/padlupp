@@ -15,7 +15,7 @@ export function useCreateGoal() {
       // We will handle the UI success state in the component.
     },
 
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Failed to create goal", error);
       //   toast.error('Failed to create goal. Please try again.');
     },

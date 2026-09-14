@@ -1,8 +1,8 @@
 // src/hooks/usePomodoroTimer.ts
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useInterval } from "react-use";
 
-interface TimerConfig {
+export interface TimerConfig {
   focusMinutes: number;
   shortBreakMinutes: number;
   longBreakMinutes: number;
@@ -16,10 +16,15 @@ export const usePomodoroTimer = (initialConfig: TimerConfig) => {
   const [time, setTime] = useState(config.focusMinutes * 60);
   const [isActive, setIsActive] = useState(false);
 
-  // Update time when config changes
+  const restart = useCallback(() => {
+    setIsActive(false);
+    const minutes = config[`${mode}Minutes`];
+    setTime(minutes * 60);
+  }, [config, mode]);
+
   useEffect(() => {
     restart();
-  }, [config, mode]);
+  }, [restart]);
 
   useInterval(
     () => {
@@ -37,23 +42,6 @@ export const usePomodoroTimer = (initialConfig: TimerConfig) => {
 
   const toggle = () => {
     setIsActive(!isActive);
-  };
-
-  const restart = () => {
-    setIsActive(false);
-    let newTime;
-    switch (mode) {
-      case "focus":
-        newTime = config.focusMinutes * 60;
-        break;
-      case "shortBreak":
-        newTime = config.shortBreakMinutes * 60;
-        break;
-      case "longBreak":
-        newTime = config.longBreakMinutes * 60;
-        break;
-    }
-    setTime(newTime);
   };
 
   const skip = () => {

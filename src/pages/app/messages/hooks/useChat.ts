@@ -1,14 +1,18 @@
 import { useAuthStore } from "@/features/auth/authStore";
+import { WS_BASE_URL } from "@/constants";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChatMessage,
   Conversation,
+	archiveConversation as archiveConversationRequest,
   createMessage,
+	getArchivedConversations,
   getMessages,
+	recallMessage as recallMessageRequest,
   renameGroupConversation,
+	restoreConversation as restoreConversationRequest,
 } from "../api";
 
-const WS_BASE_URL = "wss://api.padlupp.com";
 const MAX_RETRIES = 8;
 const MAX_BACKOFF_MS = 20_000;
 const SEND_TIMEOUT_MS = 7_000;
@@ -22,6 +26,7 @@ export interface ChatMessageUI extends Omit<ChatMessage, "id"> {
 
 interface UseChatState {
   conversations: Conversation[];
+	archivedConversations: Conversation[];
   hasReceivedConversationsSnapshot: boolean;
   messages: ChatMessageUI[];
   activeConversationId: number | null;
@@ -31,6 +36,10 @@ interface UseChatState {
   setTyping: (isTyping: boolean) => void;
   markAllRead: () => void;
   renameGroup: (conversationId: number, name: string) => Promise<void>;
+	recallMessage: (messageId: number) => Promise<void>;
+	archiveConversation: (conversationId: number) => Promise<void>;
+	restoreConversation: (conversationId: number) => Promise<void>;
+	loadArchivedConversations: () => Promise<void>;
   loadingHistory: boolean;
   sending: boolean;
   connectionState: ConnectionState;
@@ -121,6 +130,7 @@ export const useChat = (): UseChatState => {
   const authUserId = useAuthStore((state) => state.user?.id ?? null);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+	const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([]);
   const [hasReceivedConversationsSnapshot, setHasReceivedConversationsSnapshot] =
     useState(false);
   const [messagesByConversation, setMessagesByConversation] = useState<
@@ -257,7 +267,8 @@ export const useChat = (): UseChatState => {
             existingRealMessage.text !== nextMessage.text ||
             existingRealMessage.attachment !== nextMessage.attachment ||
             existingRealMessage.attachment_name !== nextMessage.attachment_name ||
-            existingRealMessage.attachment_mime !== nextMessage.attachment_mime;
+			existingRealMessage.attachment_mime !== nextMessage.attachment_mime ||
+			existingRealMessage.recalled_at !== nextMessage.recalled_at;
 
           if (!didChange) return prev;
 
@@ -578,9 +589,14 @@ export const useChat = (): UseChatState => {
           return;
         }
 
-        if (data.type === "ack" || data.type === "delivered") {
-          return;
-        }
+		if (data.type === "ack" || data.type === "delivered") {
+			return;
+		}
+
+		if (data.type === "message_updated" && isChatMessage(data.message)) {
+			appendMessage(data.message);
+			return;
+		}
 
         if (data.type === "read") {
           const eventConversationId =
@@ -762,7 +778,14 @@ export const useChat = (): UseChatState => {
         setSending(false);
       }
     },
-    [activeConversationId, authUserId, createOptimisticSender, removeTempMessage, replaceTempMessage],
+    [
+      activeConversationId,
+      authUserId,
+      clearFallbackTimer,
+      createOptimisticSender,
+      removeTempMessage,
+      replaceTempMessage,
+    ],
   );
 
   const sendFile = useCallback(
@@ -891,6 +914,27 @@ export const useChat = (): UseChatState => {
     [upsertConversation],
   );
 
+	const recallMessage = useCallback(async (messageId: number) => {
+		const updated = await recallMessageRequest(messageId);
+		appendMessage(updated);
+	}, [appendMessage]);
+
+	const archiveConversation = useCallback(async (conversationId: number) => {
+		await archiveConversationRequest(conversationId);
+		setConversations((prev) => prev.filter((item) => item.id !== conversationId));
+		setActiveConversationIdState((current) => current === conversationId ? null : current);
+	}, []);
+
+	const loadArchivedConversations = useCallback(async () => {
+		setArchivedConversations(sortConversations(await getArchivedConversations()));
+	}, []);
+
+	const restoreConversation = useCallback(async (conversationId: number) => {
+		const restored = await restoreConversationRequest(conversationId);
+		setArchivedConversations((prev) => prev.filter((item) => item.id !== conversationId));
+		upsertConversation(restored);
+	}, [upsertConversation]);
+
   const messages = useMemo(() => {
     if (!activeConversationId) return [];
     return messagesByConversation[activeConversationId] ?? [];
@@ -898,6 +942,7 @@ export const useChat = (): UseChatState => {
 
   return {
     conversations,
+		archivedConversations,
     hasReceivedConversationsSnapshot,
     messages,
     activeConversationId,
@@ -907,6 +952,10 @@ export const useChat = (): UseChatState => {
     setTyping,
     markAllRead,
     renameGroup,
+		recallMessage,
+		archiveConversation,
+		restoreConversation,
+		loadArchivedConversations,
     loadingHistory,
     sending,
     connectionState,

@@ -5,6 +5,8 @@ import {
   Check,
   CheckCheck,
   CheckCircle,
+	Archive,
+	ArchiveRestore,
   Circle,
   Clock3,
   CornerDownLeft,
@@ -20,14 +22,13 @@ import {
   Send,
   Square,
   Trash2,
-  Users,
   Video,
   X,
 } from "lucide-react";
 import { cn } from "@/utils/cs";
 import { AnimatePresence, motion } from "framer-motion";
 import { SharedFilesView } from "./components/chat-side-views";
-import { ArrowLeft2, ArrowRight2, CallCalling } from "iconsax-reactjs";
+import { ArrowLeft2, CallCalling } from "iconsax-reactjs";
 import { useChat } from "./hooks/useChat";
 import { useAuthStore } from "@/features/auth/authStore";
 import {
@@ -48,6 +49,7 @@ import {
 } from "@/pages/app/buddy-finder/hooks/useBuddies";
 import type { BuddyConnection } from "@/pages/app/buddy-finder/api";
 import { PROMPTS_LIST } from "@/constants";
+import { openGoalCheckinEvidence } from "@/pages/app/goals/api";
 
 type ActiveModal = "none" | "report";
 type ComingSoonFeature = "none" | "voice_call" | "video_call";
@@ -311,6 +313,7 @@ export const MessagesPage = () => {
   const navigate = useNavigate();
   const {
     conversations,
+		archivedConversations,
     hasReceivedConversationsSnapshot,
     messages,
     activeConversationId,
@@ -320,6 +323,10 @@ export const MessagesPage = () => {
     sendFile,
     markAllRead,
     renameGroup,
+		recallMessage,
+		archiveConversation,
+		restoreConversation,
+		loadArchivedConversations,
     loadingHistory,
     sending,
     isPeerTyping,
@@ -336,6 +343,7 @@ export const MessagesPage = () => {
     "Activities",
   );
   const [searchValue, setSearchValue] = useState("");
+	const [showArchived, setShowArchived] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
@@ -386,11 +394,12 @@ export const MessagesPage = () => {
     setContextMenu(null);
   });
 
-  const filteredConversations = useMemo(() => {
+	const displayedConversations = showArchived ? archivedConversations : conversations;
+	const filteredConversations = useMemo(() => {
     const trimmed = normalizeSearchText(searchValue);
-    if (!trimmed) return conversations;
+		if (!trimmed) return displayedConversations;
 
-    return conversations.filter((conversation) => {
+		return displayedConversations.filter((conversation) => {
       const name = normalizeSearchText(getConversationName(conversation));
       const lastMessageText = normalizeSearchText(
         conversation.last_message?.text,
@@ -409,7 +418,7 @@ export const MessagesPage = () => {
         attachmentMime.includes(trimmed)
       );
     });
-  }, [conversations, searchValue]);
+	}, [displayedConversations, searchValue]);
 
   const activeConversation = useMemo(
     () =>
@@ -527,6 +536,13 @@ export const MessagesPage = () => {
 
   const groupMembers = useMemo(() => {
     if (!activeConversation?.is_group) return [];
+		if (activeConversation.members?.length) {
+			return activeConversation.members.map((member) => ({
+				id: member.id,
+				name: toDisplayText(member.name) || "Unknown",
+				avatar: toDisplayText(member.avatar) || "",
+			}));
+		}
     const seen = new Map<number, { id: number; name: string; avatar: string }>();
     messages.forEach((msg) => {
       if (msg.sender?.id && !seen.has(msg.sender.id)) {
@@ -538,7 +554,11 @@ export const MessagesPage = () => {
       }
     });
     return Array.from(seen.values());
-  }, [activeConversation?.is_group, messages]);
+	}, [activeConversation, messages]);
+
+	useEffect(() => {
+		if (showArchived) void loadArchivedConversations();
+	}, [loadArchivedConversations, showArchived]);
   const currentUserName = authUser?.name?.trim() || "Me";
   const activePartnerLastSeenAt = useMemo(() => {
     const fromConversation = activeConversation
@@ -948,6 +968,29 @@ export const MessagesPage = () => {
     messageInputRef.current?.focus();
   };
 
+	const handleRecallMessage = async (message: ChatMessageUI) => {
+		if (typeof message.id !== "number") return;
+		try {
+			await recallMessage(message.id);
+			toast.success("Message recalled.");
+		} catch {
+			toast.error("This message can no longer be recalled.");
+		} finally {
+			setContextMenu(null);
+		}
+	};
+
+	const handleArchiveConversation = async () => {
+		if (!activeConversationId) return;
+		try {
+			await archiveConversation(activeConversationId);
+			setShowMobileChat(false);
+			toast.success("Conversation moved to archive.");
+		} catch {
+			toast.error("Could not archive this conversation.");
+		}
+	};
+
   useEffect(() => {
     return () => {
       cleanupVoiceRecording();
@@ -1002,6 +1045,17 @@ export const MessagesPage = () => {
                 className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-[#CDDAE9] dark:border-slate-700 rounded-xl text-sm text-gray-800 dark:text-slate-200 focus:outline-none transition-colors"
               />
             </div>
+			<button
+				type="button"
+				onClick={() => {
+					setShowArchived((current) => !current);
+					setActiveConversationId(null);
+				}}
+				className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+			>
+				{showArchived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+				{showArchived ? "Back to messages" : "Archived conversations"}
+			</button>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -1027,6 +1081,7 @@ export const MessagesPage = () => {
                   <div
                     key={conversation.id}
                     onClick={() => {
+							if (showArchived) return;
                       setActiveConversationId(conversation.id);
                       setIsProfileModalOpen(false);
                       setShowMobileChat(true);
@@ -1100,6 +1155,18 @@ export const MessagesPage = () => {
                           {conversation.unread_count}
                         </div>
                       )}
+						{showArchived && (
+							<button
+								type="button"
+								onClick={(event) => {
+									event.stopPropagation();
+									void restoreConversation(conversation.id);
+								}}
+								className="min-h-9 rounded-md px-2 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-700"
+							>
+								Restore
+							</button>
+						)}
                     </div>
                   </div>
                 );
@@ -1237,6 +1304,15 @@ export const MessagesPage = () => {
               </div>
 
               <div className="flex items-center text-gray-400 dark:text-slate-500 gap-1 md:gap-0">
+				<button
+					type="button"
+					onClick={() => void handleArchiveConversation()}
+					className="flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-[#4E92F421] dark:hover:bg-slate-800"
+					aria-label="Archive conversation"
+					title="Archive conversation"
+				>
+					<Archive size={20} />
+				</button>
                 <div
                   onClick={() =>
                     hasActiveConversation && setComingSoonFeature("voice_call")
@@ -1360,10 +1436,12 @@ export const MessagesPage = () => {
                     timestamp={formatMessageDateTime(message.created_at)}
                     pending={Boolean(message.optimistic)}
                     isRead={Boolean(message.is_read)}
+					isRecalled={Boolean(message.is_recalled || message.recalled_at)}
                     attachment={message.attachment}
                     attachmentName={message.attachment_name}
                     attachmentMime={message.attachment_mime}
                     goalEvent={parseGoalCreatedEvent(message.text)}
+					checkinEvent={message.kind === "checkin" ? message.metadata : null}
                     replyTo={message.reply_to ?? null}
                     onClick={(event) => handleMessageClick(event, message)}
                     onContextMenu={(event) => handleContextMenu(event, message)}
@@ -1855,6 +1933,16 @@ export const MessagesPage = () => {
               <Reply size={15} className="shrink-0" />
               Reply
             </button>
+			{contextMenu.message.can_recall && typeof contextMenu.message.id === "number" && (
+				<button
+					type="button"
+					onClick={() => void handleRecallMessage(contextMenu.message)}
+					className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800"
+				>
+					<Trash2 size={15} className="shrink-0" />
+					Recall message
+				</button>
+			)}
           </motion.div>
         )}
       </AnimatePresence>
@@ -2006,10 +2094,12 @@ const MessageBubble = ({
   timestamp,
   pending,
   isRead,
+	isRecalled,
   attachment,
   attachmentName,
   attachmentMime,
   goalEvent,
+	checkinEvent,
   replyTo,
   onClick,
   onContextMenu,
@@ -2023,6 +2113,7 @@ const MessageBubble = ({
   timestamp: string;
   pending: boolean;
   isRead: boolean;
+	isRecalled: boolean;
   attachment?: string | null;
   attachmentName?: string | null;
   attachmentMime?: string | null;
@@ -2031,6 +2122,7 @@ const MessageBubble = ({
     title: string;
     creatorName: string;
   } | null;
+	checkinEvent?: Record<string, unknown> | null;
   replyTo?: ReplyToInfo | null;
   onClick?: (event: React.MouseEvent) => void;
   onContextMenu?: (event: React.MouseEvent) => void;
@@ -2045,6 +2137,40 @@ const MessageBubble = ({
   const isImage = Boolean(attachment && attachmentMime?.startsWith("image/"));
   const isVideo = Boolean(attachment && attachmentMime?.startsWith("video/"));
   const isAudio = Boolean(attachment && attachmentMime?.startsWith("audio/"));
+	const checkinId = typeof checkinEvent?.checkin_id === "number" ? checkinEvent.checkin_id : null;
+	const checkinGoalId = typeof checkinEvent?.goal_id === "number" ? checkinEvent.goal_id : null;
+	const checkinGoalTitle = typeof checkinEvent?.goal_title === "string" ? checkinEvent.goal_title : "Goal check-in";
+	const checkinPercent = typeof checkinEvent?.completion_percent === "number" ? checkinEvent.completion_percent : 0;
+	const checkinStatus = typeof checkinEvent?.status === "string" ? checkinEvent.status : "updated";
+	const checkinBlocker = typeof checkinEvent?.blocker === "string" ? checkinEvent.blocker : "";
+	const checkinHasEvidence = Boolean(checkinEvent?.has_evidence);
+
+	if (checkinId && checkinGoalId) {
+		return (
+			<div className="w-full py-1">
+				<div className="mx-auto max-w-[88%] rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:max-w-[72%]">
+					<div className="flex items-center justify-between gap-3">
+						<button type="button" onClick={() => void navigate({ to: "/goals/$id", params: { id: String(checkinGoalId) } })} className="truncate text-left text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">{checkinGoalTitle}</button>
+						<span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold capitalize text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{checkinStatus}</span>
+					</div>
+					<div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800"><div className="h-full bg-blue-500" style={{ width: `${checkinPercent}%` }} /></div>
+					<p className="mt-2 text-xs text-gray-600 dark:text-slate-300">{senderName} checked in at {checkinPercent}% complete.</p>
+					{checkinBlocker && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">Blocker: {checkinBlocker}</p>}
+					{checkinHasEvidence && <button type="button" onClick={() => void openGoalCheckinEvidence(checkinId)} className="mt-2 min-h-9 rounded-lg border border-gray-200 px-3 text-xs font-medium dark:border-slate-700">View evidence</button>}
+				</div>
+			</div>
+		);
+	}
+
+	if (isRecalled) {
+		return (
+			<div className={cn("flex w-full mb-1", isMe ? "justify-end" : "justify-start")}>
+				<div className="rounded-xl border border-dashed border-gray-300 px-3 py-2 text-xs italic text-gray-500 dark:border-slate-700 dark:text-slate-400">
+					Message recalled
+				</div>
+			</div>
+		);
+	}
 
   if (goalEvent) {
     return (

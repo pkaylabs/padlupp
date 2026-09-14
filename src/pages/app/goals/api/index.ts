@@ -22,6 +22,8 @@ export interface Goal {
   id: number;
   user: User;
   partnership?: number | null;
+	members?: User[];
+	member_count?: number;
   partner?: GoalPartner | null;
   partner_name?: string | null;
   partner_avatar?: string | null;
@@ -39,6 +41,7 @@ export interface Goal {
   is_active: boolean;
   is_public?: boolean;
   is_shared?: boolean;
+  can_edit?: boolean;
   status: string;
   created_at: string;
   updated_at: string;
@@ -178,6 +181,7 @@ export interface ShareGoalInviteResponse {
   public_share_link?: string | null;
   share_link?: string | null;
   invite_link?: string | null;
+  direct_link?: string | null;
 }
 
 export interface GoalInvitePreview {
@@ -291,27 +295,22 @@ export interface GoalPreview {
   importance?: string | null;
   start_date: string;
   target_date: string;
-  is_public: boolean;
   status: string;
-  user: {
+  owner: {
     id: number;
     name: string;
     avatar?: string | null;
   };
-  partner?: {
-    id: number;
-    name: string;
-    avatar?: string | null;
-  } | null;
-  partner_name?: string | null;
-  partner_avatar?: string | null;
-  created_at: string;
+	member_count: number;
 }
 
 export const getGoalPreview = async (
   id: string | number,
+  sharedId?: string | null,
 ): Promise<GoalPreview> => {
-  const { data } = await api.get<GoalPreview>(`/goals/${id}/`);
+  const { data } = await api.get<GoalPreview>(`/goals/${id}/public-preview/`, {
+    params: { shared_id: sharedId },
+  });
   return data;
 };
 
@@ -330,12 +329,74 @@ export const removeGoalMember = async (
 };
 
 export const joinGoal = async (
-  goalId: string | number,
+  _goalId: string | number,
   sharedId?: string | null,
 ): Promise<{ detail?: string }> => {
   const { data } = await api.post<{ detail?: string }>("/goals/join-goal/", {
-    goal: goalId,
     shared_id: sharedId ?? null,
   });
   return data;
+};
+
+export type CheckinStatus = "completed" | "partial" | "blocked" | "missed" | "pending";
+
+export interface GoalCheckin {
+	id: number;
+	goal: number;
+	goal_title: string;
+	user: User;
+	scheduled_for: string;
+	status: CheckinStatus;
+	completion_percent: number;
+	update_text: string;
+	blocker: string;
+	evidence_url?: string | null;
+	evidence_view_once: boolean;
+	evidence_expires_at?: string | null;
+	submitted_at?: string | null;
+	has_badge: boolean;
+	reactions: Array<{ id: number; user: User; reaction: "support" | "celebrate" }>;
+}
+
+export interface SubmitGoalCheckinPayload {
+	goal: number;
+	scheduled_for: string;
+	status: "completed" | "partial" | "blocked";
+	completion_percent: number;
+	update_text?: string;
+	blocker?: string;
+	evidence?: File | null;
+	evidence_view_once?: boolean;
+}
+
+export const getGoalCheckins = async (goalId: string | number): Promise<GoalCheckin[]> => {
+	const { data } = await api.get<PaginatedResponse<GoalCheckin> | GoalCheckin[]>("/checkins/", {
+		params: { goal: goalId, ordering: "-scheduled_for" },
+	});
+	return Array.isArray(data) ? data : data.results;
+};
+
+export const submitGoalCheckin = async (payload: SubmitGoalCheckinPayload): Promise<GoalCheckin> => {
+	const form = new FormData();
+	Object.entries(payload).forEach(([key, value]) => {
+		if (value === undefined || value === null) return;
+		form.append(key, value instanceof File ? value : String(value));
+	});
+	const { data } = await api.post<GoalCheckin>("/checkins/", form);
+	return data;
+};
+
+export const reactToGoalCheckin = async (
+	checkinId: number,
+	reaction: "support" | "celebrate",
+): Promise<GoalCheckin> => {
+	const { data } = await api.post<GoalCheckin>(`/checkins/${checkinId}/react/`, { reaction });
+	return data;
+};
+
+export const openGoalCheckinEvidence = async (checkinId: number): Promise<void> => {
+	const { data } = await api.get<Blob>(`/checkins/${checkinId}/evidence/`, { responseType: "blob" });
+	const url = URL.createObjectURL(data);
+	window.open(url, "_blank", "noopener,noreferrer");
+	window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };

@@ -1,7 +1,6 @@
 import "./App.css";
 import { useAuthStore } from "./features/auth/authStore";
 import { router } from "./main";
-import NotificationProvider from "./notifications";
 import { RouterProvider } from "@tanstack/react-router";
 
 function App() {

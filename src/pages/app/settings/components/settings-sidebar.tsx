@@ -7,12 +7,12 @@ import {
   Phone,
   Globe,
   Share2,
-  MapPin,
   Bell,
   ChevronsUp,
   Search,
   ExternalLink,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/utils/cs";
 import TextInput from "@/components/core/inputs";
 import { DualRangeSlider } from "./dual-range-slider";
@@ -37,7 +37,7 @@ type Theme = "system" | "light" | "dark";
 
 export const SettingsSidebar: React.FC = () => {
   const [view, setView] = useState<SettingsView>("menu");
-  const [ageRange, setAgeRange] = useState<[number, number]>([18, 35]);
+  const [, setAgeRange] = useState<[number, number]>([18, 35]);
 
   const { data: userProfile } = useUserProfile();
   const { mutate: updateNotifPrefs } = useUpdateNotificationPreferences();
@@ -100,6 +100,18 @@ export const SettingsSidebar: React.FC = () => {
     // await api.updateProfile(formData);
   };
 
+  interface MenuItemProps {
+    icon?: LucideIcon;
+    label: string;
+    value?: string;
+    onClick?: () => void;
+    isDestructive?: boolean;
+    isExternal?: boolean;
+    isSelected?: boolean;
+    hasChevron?: boolean;
+    disabled?: boolean;
+  }
+
   // Helper for Menu Items
   const MenuItem = ({
     icon: Icon,
@@ -111,7 +123,7 @@ export const SettingsSidebar: React.FC = () => {
     isSelected,
     hasChevron = true,
     disabled = false,
-  }: any) => (
+  }: MenuItemProps) => (
     <button
       onClick={onClick}
       disabled={disabled}

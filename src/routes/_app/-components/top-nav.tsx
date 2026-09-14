@@ -1,10 +1,7 @@
 // src/components/layout/TopNav.tsx
 import React, { useEffect, useState } from "react";
 import { Bell, ChevronRight, User } from "lucide-react";
-import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
-import { TimerModal } from "./timer-modal";
-import { TimerStart } from "iconsax-reactjs";
 import { ThemeToggle } from "./toggle-theme";
 import { useUserProfile } from "@/pages/auth/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +30,6 @@ const resolveCurrentStreak = (payload?: StreakStatsResponse): number => {
 };
 
 export const TopNav: React.FC = () => {
-  const [isTimerOpen, setIsTimerOpen] = useState(false);
   const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     getResolvedTheme(getStoredThemePreference()),
