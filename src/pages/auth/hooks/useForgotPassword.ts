@@ -8,13 +8,14 @@ import {
   verifyForgotPasswordOtp,
 } from "../api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export function useRequestForgotPasswordOtp() {
   return useMutation({
     mutationFn: (payload: ForgotPasswordOtpRequestPayload) =>
       requestForgotPasswordOtp(payload),
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "Failed to request OTP.");
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, "Failed to request OTP."));
     },
   });
 }
@@ -23,8 +24,8 @@ export function useVerifyForgotPasswordOtp() {
   return useMutation({
     mutationFn: (payload: ForgotPasswordVerifyOtpPayload) =>
       verifyForgotPasswordOtp(payload),
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "OTP verification failed.");
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, "OTP verification failed."));
     },
   });
 }
@@ -33,8 +34,8 @@ export function useResetForgotPassword() {
   return useMutation({
     mutationFn: (payload: ForgotPasswordResetPayload) =>
       resetForgotPassword(payload),
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "Password reset failed.");
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, "Password reset failed."));
     },
   });
 }

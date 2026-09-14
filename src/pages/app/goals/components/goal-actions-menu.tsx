@@ -5,6 +5,8 @@ interface GoalActionsMenuProps {
   onEdit: () => void;
   onShare: () => void;
   onDelete: () => void;
+	canShare?: boolean;
+	canDelete?: boolean;
 }
 
 export const GoalActionsMenu = ({
@@ -12,6 +14,8 @@ export const GoalActionsMenu = ({
   onEdit,
   onShare,
   onDelete,
+	canShare = true,
+	canDelete = true,
 }: GoalActionsMenuProps) => {
   return (
     <AnimatePresence>
@@ -22,20 +26,20 @@ export const GoalActionsMenu = ({
           exit={{ opacity: 0, y: -6 }}
           className="absolute right-0 top-11 w-44 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg z-40 p-1.5"
         >
-          <button
+			{canShare && <button
             type="button"
             onClick={onEdit}
             className="w-full text-left px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
           >
             Edit goal
-          </button>
-          <button
+			</button>}
+			{canDelete && <button
             type="button"
             onClick={onShare}
             className="w-full text-left px-3 py-2.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
           >
             Share goal
-          </button>
+			</button>}
           <button
             type="button"
             onClick={onDelete}

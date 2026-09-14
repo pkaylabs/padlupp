@@ -6,7 +6,6 @@ import { Divider } from "@/components/system/divider";
 import TextInput from "@/components/core/inputs";
 import Button from "@/components/core/buttons";
 import { Link } from "@tanstack/react-router";
-import { GoogleIcon } from "../signup";
 import ButtonLoader from "@/components/loaders/button";
 import { useLogin } from "../hooks/useLogin";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
@@ -25,10 +24,7 @@ export const SignIn: React.FC = () => {
   const {
     handleGoogleSuccess,
     handleGoogleError,
-    isPending: isGoogleLoading,
   } = useGoogleAuth();
-
-  const isGlobalLoading = isEmailLoading || isGoogleLoading;
 
   const formik = useFormik({
     initialValues: {
@@ -124,7 +120,7 @@ export const SignIn: React.FC = () => {
           onError={handleGoogleError}
           theme="outline"
           size="large"
-          width="100%"
+		  width="300"
           text="signin_with"
           shape="circle"
         />

@@ -1,7 +1,7 @@
 // src/components/goals/CommunityCardStack.tsx
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
+import { Calendar, Clock } from "lucide-react";
 import { CommunityGoal, Person } from "@/constants/goals-data";
 import Button from "@/components/core/buttons";
 import { ArrowLeft2, ArrowRight2 } from "iconsax-reactjs";

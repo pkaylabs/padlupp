@@ -42,7 +42,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const firstDayOfWeek = (getDay(firstDayOfMonth) + 6) % 7;
 
   // Create empty cells for padding
-  const paddingDays = Array.from({ length: firstDayOfWeek }, (_, i) => null);
+  const paddingDays = Array.from({ length: firstDayOfWeek }, () => null);
 
   const allDays = [...paddingDays, ...daysInMonth];
 

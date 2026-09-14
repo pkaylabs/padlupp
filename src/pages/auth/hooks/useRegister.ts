@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { RegisterCredentials, registerUser } from "../api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export function useRegister() {
   const router = useRouter();
@@ -19,9 +20,9 @@ export function useRegister() {
       router.navigate({ to: "/onboarding" });
     },
 
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Login failed:", error);
-      toast.error(error.response?.data?.detail || "Login failed");
+      toast.error(getApiErrorMessage(error, "Registration failed"));
     },
   });
 }

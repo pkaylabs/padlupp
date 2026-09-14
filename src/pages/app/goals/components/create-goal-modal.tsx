@@ -6,7 +6,6 @@ import {
   Square,
   CheckSquare,
   Plus,
-  X,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -61,6 +60,8 @@ type PopoverType =
   | "sm"
   | null;
 
+type GoalDateRange = { start?: Date; end?: Date };
+
 // --- Category Data ---
 const CATEGORIES = CORE_CATEGORIES.map((item) => ({
   label: item.label,
@@ -87,7 +88,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
   // Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({});
+  const [dateRange, setDateRange] = useState<GoalDateRange>({});
   const [time, setTime] = useState("");
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [status, setStatus] = useState("To-do");
@@ -323,11 +324,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                     <DatePickerView
                       disabled={isPending}
                       range={dateRange}
-                      onChange={(r: any) => {
-                        setDateRange(
-                          r,
-                        );
-                      }}
+                      onChange={setDateRange}
                       onClose={() => setActivePopover(null)}
                     />
                   </div>
@@ -351,7 +348,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                 {activePopover === "time" && (
                   <div ref={popoverContainerRef}>
                     <TimePickerView
-                      onSave={(t: any) => {
+                      onSave={(t: string) => {
                         setTime(t);
                         setActivePopover(null);
                       }}
@@ -436,7 +433,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                         "text-green-500",
                       ]}
                       selected={status}
-                      onSelect={(s: any) => {
+                      onSelect={(s: string) => {
                         setStatus(s);
                         setActivePopover(null);
                       }}
@@ -472,7 +469,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                       ]}
                       icons={true}
                       selected={priority}
-                      onSelect={(s: any) => {
+                      onSelect={(s: string) => {
                         setPriority(s);
                         setActivePopover(null);
                       }}
@@ -494,7 +491,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                   <div ref={popoverContainerRef}>
                     <CategoryPopover
                       selected={category}
-                      onSelect={(c: any) => {
+                      onSelect={(c: string) => {
                         setCategory(normalizeCategory(c));
                         setActivePopover(null);
                       }}
@@ -577,7 +574,14 @@ type PresetOption =
   | "Next week"
   | "Later";
 
-const DatePickerView = ({ range, onChange, onClose }: any) => {
+interface DatePickerViewProps {
+  range: GoalDateRange;
+  onChange: (range: GoalDateRange) => void;
+  onClose: () => void;
+  disabled?: boolean;
+}
+
+const DatePickerView = ({ range, onChange, onClose }: DatePickerViewProps) => {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const popoverRef = useRef<HTMLDivElement>(null);
   const today = startOfToday();
@@ -899,7 +903,14 @@ const SelectionPopover = ({
   onSelect,
   colors,
   icons,
-}: any) => {
+}: {
+  options: string[];
+  selected: string;
+  onSelect: (option: string) => void;
+  colors: string[];
+  icons?: boolean;
+  title?: string;
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 5, scale: 0.95 }}
@@ -936,7 +947,13 @@ const SelectionPopover = ({
 };
 
 // 4. CATEGORY POPOVER (Grid)
-const CategoryPopover = ({ selected, onSelect }: any) => {
+const CategoryPopover = ({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (category: string) => void;
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 5, scale: 0.95 }}

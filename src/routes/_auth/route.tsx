@@ -1,6 +1,6 @@
 import ConcaveShape from "@/components/shapes/concave";
 import { AuthLeftPanel } from "@/pages/auth/components/left-panel";
-import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 import logo from "@/assets/images/logo.png";
 
 export const Route = createFileRoute("/_auth")({

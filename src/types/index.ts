@@ -43,7 +43,7 @@ type Priority = "High" | "Medium" | "Low";
 export type ObjectiveFormData = {
   name: string;
   description: string;
-  numIndicators: any;
+  numIndicators: number;
   status: Status;
   priority: Priority;
   assignedTo: string;

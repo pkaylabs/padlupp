@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/utils/cs";
-import { usePomodoroTimer } from "@/hooks/usePomodoroTimer";
+import { usePomodoroTimer, type TimerConfig } from "@/hooks/usePomodoroTimer";
 import Button from "@/components/core/buttons";
 import { Setting2 } from "iconsax-reactjs";
 import { PiKeyReturnFill } from "react-icons/pi";
@@ -18,7 +18,16 @@ import { StyledNumberInput } from "./styled_num-input";
 import { StyledSelectInput } from "./dropdown";
 import { StyledSwitch } from "./toggle";
 
-type TimerMode = "focus" | "shortBreak" | "longBreak";
+interface TimerTheme {
+  bg: string;
+  tagBg: string;
+  tagText: string;
+  tagIcon: string;
+  buttonBg: string;
+  buttonIcon: string;
+  buttonLarge: string;
+  timeText: string;
+}
 
 export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [timerSettings, setTimerSettings] = useState(false);
@@ -107,7 +116,7 @@ export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <TimerSettings
             key="settings"
             config={config}
-            onSave={(newConfig: any) => {
+            onSave={(newConfig: TimerConfig) => {
               setConfig(newConfig);
               setTimerSettings(false);
             }}
@@ -119,7 +128,18 @@ export const TimerModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-const TimerView: React.FC<any> = ({
+interface TimerViewProps {
+  theme: TimerTheme;
+  minutes: string;
+  seconds: string;
+  isActive: boolean;
+  onToggle: () => void;
+  onSkip: () => void;
+  onRestart: () => void;
+  onShowSettings: () => void;
+}
+
+const TimerView: React.FC<TimerViewProps> = ({
   theme,
   minutes,
   seconds,
@@ -253,7 +273,17 @@ const TimerView: React.FC<any> = ({
 };
 
 // --- Settings View Component ---
-const TimerSettings: React.FC<any> = ({ config, onSave, onClose }) => {
+interface TimerSettingsProps {
+  config: TimerConfig;
+  onSave: (config: TimerConfig) => void;
+  onClose: () => void;
+}
+
+const TimerSettings: React.FC<TimerSettingsProps> = ({
+  config,
+  onSave,
+  onClose,
+}) => {
   const [localConfig, setLocalConfig] = useState(config);
   const [soundOn, setSoundOn] = useState(false);
   const [notificationsOn, setNotificationsOn] = useState(false);

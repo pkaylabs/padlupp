@@ -88,11 +88,11 @@ export function useRespondGoalInvite() {
   });
 }
 
-export function useGoalPreview(id: string) {
+export function useGoalPreview(id: string, sharedId?: string | null) {
   return useQuery<GoalPreview>({
-    queryKey: ["goal-preview", id],
-    queryFn: () => getGoalPreview(id),
-    enabled: Boolean(id),
+		queryKey: ["goal-preview", id, sharedId],
+		queryFn: () => getGoalPreview(id, sharedId),
+		enabled: Boolean(id && sharedId),
     retry: false,
   });
 }

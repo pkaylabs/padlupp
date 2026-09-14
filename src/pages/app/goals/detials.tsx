@@ -17,7 +17,7 @@ import {
   Square,
   CheckSquare,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/utils/cs";
 import { format, parseISO, startOfToday } from "date-fns";
 import { CalendarWidget } from "../dashboard/components/calendar-widget";
@@ -44,6 +44,7 @@ import {
 import { CHECKIN_FREQUENCIES } from "./api";
 import type { CheckinFrequency } from "./api";
 import { useAuthStore } from "@/features/auth/authStore";
+import { CheckinPanel } from "./components/checkin-panel";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
@@ -75,6 +76,7 @@ export function GoalDetailsPage() {
   const [selectedDate, setSelectedDate] = useState(startOfToday());
   const [isAddSubtaskModalOpen, setIsAddSubtaskModalOpen] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+	const [newSubtaskDueAt, setNewSubtaskDueAt] = useState("");
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
@@ -287,6 +289,7 @@ export function GoalDetailsPage() {
     if (isCreatingTask) return;
     setIsAddSubtaskModalOpen(false);
     setNewSubtaskTitle("");
+		setNewSubtaskDueAt("");
   };
 
   const handleCreateSubtask = async () => {
@@ -297,11 +300,12 @@ export function GoalDetailsPage() {
       goal: goal.id,
       title,
       status: "planned",
-      due_at: new Date().toISOString(),
+		due_at: newSubtaskDueAt ? new Date(newSubtaskDueAt).toISOString() : undefined,
     });
 
     setIsAddSubtaskModalOpen(false);
     setNewSubtaskTitle("");
+		setNewSubtaskDueAt("");
   };
 
   const isTaskCompleted = (task: { completed?: boolean; status?: string }) => {
@@ -562,6 +566,8 @@ export function GoalDetailsPage() {
 
             <GoalActionsMenu
               isOpen={isActionsMenuOpen}
+				canShare={isGoalOwner}
+				canDelete={isGoalOwner}
               onEdit={handleOpenEditGoalModal}
               onShare={handleOpenShareGoalModal}
               onDelete={() => {
@@ -788,7 +794,7 @@ export function GoalDetailsPage() {
                     onClick={handleAddSubtask}
                     className="mt-4 text-xs font-semibold text-blue-600 hover:underline"
                   >
-                    Create first task
+					Create first subtask
                   </button>
                 </div>
               ) : (
@@ -911,6 +917,8 @@ export function GoalDetailsPage() {
             </div>
           </div>
 
+			<CheckinPanel goalId={goal.id} />
+
           {/* Status Actions */}
           <div className="flex items-center gap-4 mb-12">
             <div className="flex items-center gap-2">
@@ -1028,6 +1036,19 @@ export function GoalDetailsPage() {
               className="mt-2 w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
+
+			<div>
+				<label htmlFor="subtask-due-at" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+					Reminder due date (optional)
+				</label>
+				<input
+					id="subtask-due-at"
+					type="datetime-local"
+					value={newSubtaskDueAt}
+					onChange={(event) => setNewSubtaskDueAt(event.target.value)}
+					className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+				/>
+			</div>
 
           <div className="flex items-center justify-end gap-2">
             <button

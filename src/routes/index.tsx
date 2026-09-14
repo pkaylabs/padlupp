@@ -1,4 +1,4 @@
-import { DASHBOARD, GOALS } from "@/constants/page-path";
+import { GOALS } from "@/constants/page-path";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({

@@ -9,83 +9,49 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
-import { Route as AuthRouteRouteImport } from './routes/_auth/route'
-import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as GoalInviteTokenRouteImport } from './routes/goal-invite/$token'
-import { Route as AuthSignupRouteRouteImport } from './routes/_auth/signup/route'
-import { Route as AuthSigninRouteRouteImport } from './routes/_auth/signin/route'
-import { Route as AuthForgotPasswordRouteRouteImport } from './routes/_auth/forgot-password/route'
-import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/route'
-import { Route as AppProfileRouteRouteImport } from './routes/_app/profile/route'
-import { Route as AppMilestonesRouteRouteImport } from './routes/_app/milestones/route'
-import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
-import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
+import { Route as AuthRouteRouteImport } from './routes/_auth/route'
+import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
+import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
+import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
+import { Route as AppMilestonesRouteRouteImport } from './routes/_app/milestones/route'
+import { Route as AppPodsRouteRouteImport } from './routes/_app/pods/route'
+import { Route as AppProfileRouteRouteImport } from './routes/_app/profile/route'
+import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/route'
+import { Route as AuthForgotPasswordRouteRouteImport } from './routes/_auth/forgot-password/route'
+import { Route as AuthSigninRouteRouteImport } from './routes/_auth/signin/route'
+import { Route as AuthSignupRouteRouteImport } from './routes/_auth/signup/route'
+import { Route as GoalInviteTokenRouteImport } from './routes/goal-invite/$token'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
-import { Route as GoalsIdPreviewRouteImport } from './routes/goals/$id/preview'
-import { Route as AppUsersUserIdRouteImport } from './routes/_app/users/$userId'
 import { Route as AppGoalsIdRouteImport } from './routes/_app/goals/$id'
-import { Route as AuthForgotPasswordVerifyOtpRouteRouteImport } from './routes/_auth/forgot-password/verify-otp/route'
+import { Route as AppUsersUserIdRouteImport } from './routes/_app/users/$userId'
 import { Route as AuthForgotPasswordResetPasswordRouteRouteImport } from './routes/_auth/forgot-password/reset-password/route'
+import { Route as AuthForgotPasswordVerifyOtpRouteRouteImport } from './routes/_auth/forgot-password/verify-otp/route'
+import { Route as GoalsIdPreviewRouteImport } from './routes/goals/$id/preview'
 
-const OnboardingRouteRoute = OnboardingRouteRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRouteRoute = AuthRouteRouteImport.update({
-  id: '/_auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRouteRoute = AuthRouteRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GoalInviteTokenRoute = GoalInviteTokenRouteImport.update({
-  id: '/goal-invite/$token',
-  path: '/goal-invite/$token',
+const OnboardingRouteRoute = OnboardingRouteRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthSignupRouteRoute = AuthSignupRouteRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthSigninRouteRoute = AuthSigninRouteRouteImport.update({
-  id: '/signin',
-  path: '/signin',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthForgotPasswordRouteRoute = AuthForgotPasswordRouteRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppMilestonesRouteRoute = AppMilestonesRouteRouteImport.update({
-  id: '/milestones',
-  path: '/milestones',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppMessagesRouteRoute = AppMessagesRouteRouteImport.update({
-  id: '/messages',
-  path: '/messages',
+const AppBuddyFinderRouteRoute = AppBuddyFinderRouteRouteImport.update({
+  id: '/buddy-finder',
+  path: '/buddy-finder',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDashboardRouteRoute = AppDashboardRouteRouteImport.update({
@@ -93,24 +59,54 @@ const AppDashboardRouteRoute = AppDashboardRouteRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppBuddyFinderRouteRoute = AppBuddyFinderRouteRouteImport.update({
-  id: '/buddy-finder',
-  path: '/buddy-finder',
+const AppMessagesRouteRoute = AppMessagesRouteRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const AppMilestonesRouteRoute = AppMilestonesRouteRouteImport.update({
+  id: '/milestones',
+  path: '/milestones',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppPodsRouteRoute = AppPodsRouteRouteImport.update({
+  id: '/pods',
+  path: '/pods',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfileRouteRoute = AppProfileRouteRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AuthForgotPasswordRouteRoute = AuthForgotPasswordRouteRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthSigninRouteRoute = AuthSigninRouteRouteImport.update({
+  id: '/signin',
+  path: '/signin',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthSignupRouteRoute = AuthSignupRouteRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const GoalInviteTokenRoute = GoalInviteTokenRouteImport.update({
+  id: '/goal-invite/$token',
+  path: '/goal-invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
   id: '/goals/',
   path: '/goals/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const GoalsIdPreviewRoute = GoalsIdPreviewRouteImport.update({
-  id: '/goals/$id/preview',
-  path: '/goals/$id/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppUsersUserIdRoute = AppUsersUserIdRouteImport.update({
-  id: '/users/$userId',
-  path: '/users/$userId',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppGoalsIdRoute = AppGoalsIdRouteImport.update({
@@ -118,18 +114,28 @@ const AppGoalsIdRoute = AppGoalsIdRouteImport.update({
   path: '/goals/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AuthForgotPasswordVerifyOtpRouteRoute =
-  AuthForgotPasswordVerifyOtpRouteRouteImport.update({
-    id: '/verify-otp',
-    path: '/verify-otp',
-    getParentRoute: () => AuthForgotPasswordRouteRoute,
-  } as any)
+const AppUsersUserIdRoute = AppUsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AuthForgotPasswordResetPasswordRouteRoute =
   AuthForgotPasswordResetPasswordRouteRouteImport.update({
     id: '/reset-password',
     path: '/reset-password',
     getParentRoute: () => AuthForgotPasswordRouteRoute,
   } as any)
+const AuthForgotPasswordVerifyOtpRouteRoute =
+  AuthForgotPasswordVerifyOtpRouteRouteImport.update({
+    id: '/verify-otp',
+    path: '/verify-otp',
+    getParentRoute: () => AuthForgotPasswordRouteRoute,
+  } as any)
+const GoalsIdPreviewRoute = GoalsIdPreviewRouteImport.update({
+  id: '/goals/$id/preview',
+  path: '/goals/$id/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
   '/milestones': typeof AppMilestonesRouteRoute
+  '/pods': typeof AppPodsRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -149,7 +156,7 @@ export interface FileRoutesByFullPath {
   '/goals/$id': typeof AppGoalsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
   '/goals/$id/preview': typeof GoalsIdPreviewRoute
-  '/goals': typeof AppGoalsIndexRoute
+  '/goals/': typeof AppGoalsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
   '/milestones': typeof AppMilestonesRouteRoute
+  '/pods': typeof AppPodsRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRouteRoute
   '/_app/messages': typeof AppMessagesRouteRoute
   '/_app/milestones': typeof AppMilestonesRouteRoute
+  '/_app/pods': typeof AppPodsRouteRoute
   '/_app/profile': typeof AppProfileRouteRoute
   '/_app/settings': typeof AppSettingsRouteRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/messages'
     | '/milestones'
+    | '/pods'
     | '/profile'
     | '/settings'
     | '/forgot-password'
@@ -214,7 +224,7 @@ export interface FileRouteTypes {
     | '/goals/$id'
     | '/users/$userId'
     | '/goals/$id/preview'
-    | '/goals'
+    | '/goals/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/messages'
     | '/milestones'
+    | '/pods'
     | '/profile'
     | '/settings'
     | '/forgot-password'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/messages'
     | '/_app/milestones'
+    | '/_app/pods'
     | '/_app/profile'
     | '/_app/settings'
     | '/_auth/forgot-password'
@@ -270,27 +282,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AppRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -298,60 +289,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/goal-invite/$token': {
-      id: '/goal-invite/$token'
-      path: '/goal-invite/$token'
-      fullPath: '/goal-invite/$token'
-      preLoaderRoute: typeof GoalInviteTokenRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/signup': {
-      id: '/_auth/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof AuthSignupRouteRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_auth/signin': {
-      id: '/_auth/signin'
-      path: '/signin'
-      fullPath: '/signin'
-      preLoaderRoute: typeof AuthSigninRouteRouteImport
-      parentRoute: typeof AuthRouteRoute
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_auth/forgot-password': {
-      id: '/_auth/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof AuthForgotPasswordRouteRouteImport
-      parentRoute: typeof AuthRouteRoute
-    }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/profile': {
-      id: '/_app/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AppProfileRouteRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/milestones': {
-      id: '/_app/milestones'
-      path: '/milestones'
-      fullPath: '/milestones'
-      preLoaderRoute: typeof AppMilestonesRouteRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/_app/messages': {
-      id: '/_app/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof AppMessagesRouteRouteImport
+    '/_app/buddy-finder': {
+      id: '/_app/buddy-finder'
+      path: '/buddy-finder'
+      fullPath: '/buddy-finder'
+      preLoaderRoute: typeof AppBuddyFinderRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/dashboard': {
@@ -361,32 +324,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_app/buddy-finder': {
-      id: '/_app/buddy-finder'
-      path: '/buddy-finder'
-      fullPath: '/buddy-finder'
-      preLoaderRoute: typeof AppBuddyFinderRouteRouteImport
+    '/_app/messages': {
+      id: '/_app/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AppMessagesRouteRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/_app/milestones': {
+      id: '/_app/milestones'
+      path: '/milestones'
+      fullPath: '/milestones'
+      preLoaderRoute: typeof AppMilestonesRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/pods': {
+      id: '/_app/pods'
+      path: '/pods'
+      fullPath: '/pods'
+      preLoaderRoute: typeof AppPodsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_auth/forgot-password': {
+      id: '/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/signin': {
+      id: '/_auth/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof AuthSigninRouteRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/signup': {
+      id: '/_auth/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof AuthSignupRouteRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/goal-invite/$token': {
+      id: '/goal-invite/$token'
+      path: '/goal-invite/$token'
+      fullPath: '/goal-invite/$token'
+      preLoaderRoute: typeof GoalInviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/goals/': {
       id: '/_app/goals/'
       path: '/goals'
-      fullPath: '/goals'
+      fullPath: '/goals/'
       preLoaderRoute: typeof AppGoalsIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/goals/$id/preview': {
-      id: '/goals/$id/preview'
-      path: '/goals/$id/preview'
-      fullPath: '/goals/$id/preview'
-      preLoaderRoute: typeof GoalsIdPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/users/$userId': {
-      id: '/_app/users/$userId'
-      path: '/users/$userId'
-      fullPath: '/users/$userId'
-      preLoaderRoute: typeof AppUsersUserIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/goals/$id': {
@@ -396,12 +401,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_auth/forgot-password/verify-otp': {
-      id: '/_auth/forgot-password/verify-otp'
-      path: '/verify-otp'
-      fullPath: '/forgot-password/verify-otp'
-      preLoaderRoute: typeof AuthForgotPasswordVerifyOtpRouteRouteImport
-      parentRoute: typeof AuthForgotPasswordRouteRoute
+    '/_app/users/$userId': {
+      id: '/_app/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AppUsersUserIdRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_auth/forgot-password/reset-password': {
       id: '/_auth/forgot-password/reset-password'
@@ -409,6 +414,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/forgot-password/reset-password'
       preLoaderRoute: typeof AuthForgotPasswordResetPasswordRouteRouteImport
       parentRoute: typeof AuthForgotPasswordRouteRoute
+    }
+    '/_auth/forgot-password/verify-otp': {
+      id: '/_auth/forgot-password/verify-otp'
+      path: '/verify-otp'
+      fullPath: '/forgot-password/verify-otp'
+      preLoaderRoute: typeof AuthForgotPasswordVerifyOtpRouteRouteImport
+      parentRoute: typeof AuthForgotPasswordRouteRoute
+    }
+    '/goals/$id/preview': {
+      id: '/goals/$id/preview'
+      path: '/goals/$id/preview'
+      fullPath: '/goals/$id/preview'
+      preLoaderRoute: typeof GoalsIdPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -418,6 +437,7 @@ interface AppRouteRouteChildren {
   AppDashboardRouteRoute: typeof AppDashboardRouteRoute
   AppMessagesRouteRoute: typeof AppMessagesRouteRoute
   AppMilestonesRouteRoute: typeof AppMilestonesRouteRoute
+  AppPodsRouteRoute: typeof AppPodsRouteRoute
   AppProfileRouteRoute: typeof AppProfileRouteRoute
   AppSettingsRouteRoute: typeof AppSettingsRouteRoute
   AppGoalsIdRoute: typeof AppGoalsIdRoute
@@ -430,6 +450,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppDashboardRouteRoute: AppDashboardRouteRoute,
   AppMessagesRouteRoute: AppMessagesRouteRoute,
   AppMilestonesRouteRoute: AppMilestonesRouteRoute,
+  AppPodsRouteRoute: AppPodsRouteRoute,
   AppProfileRouteRoute: AppProfileRouteRoute,
   AppSettingsRouteRoute: AppSettingsRouteRoute,
   AppGoalsIdRoute: AppGoalsIdRoute,

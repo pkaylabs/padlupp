@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   format,
   startOfMonth,
-  endOfMonth,
   eachDayOfInterval,
   getDay,
   isSameDay,
@@ -36,8 +35,6 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
   const today = startOfToday();
 
   const firstDayOfMonth = startOfMonth(displayMonth);
-  const lastDayOfMonth = endOfMonth(displayMonth);
-
   // Get Monday of the first week
   const firstDayOfWeek = (getDay(firstDayOfMonth) + 6) % 7;
   const startOfCalendar = subDays(firstDayOfMonth, firstDayOfWeek);

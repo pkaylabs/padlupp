@@ -1,44 +1,11 @@
 import React, { useState, useRef } from "react";
-import { Edit2, ChevronRight, X, Plus, Image as ImageIcon } from "lucide-react";
+import { Edit2, ChevronRight, X } from "lucide-react";
 import { cn } from "@/utils/cs";
-import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import { QuoteDown } from "iconsax-reactjs";
 import { PiTagSimpleDuotone } from "react-icons/pi";
-
-const INTERESTS_LIST = [
-  "Painting",
-  "Sculpting",
-  "Writing",
-  "Drawing",
-  "Journaling",
-  "Filmmaking",
-  "Photography",
-  "Sewing",
-  "Animation",
-  "Hiking",
-  "Pottery",
-  "Scrapbooking",
-  "Running",
-  "Stargazing",
-  "Cycling",
-  "Weightlifting",
-  "Pilates",
-  "Soccer",
-  "CrossFit",
-  "Tennis",
-  "Boxing",
-  "Coding/Programming",
-  "Yoga",
-  "Swimming",
-  "3D Printing",
-  "Web Development",
-  "Theater",
-  "Basketball",
-  "Singing",
-  "Dancing",
-];
+import { INTERESTS_LIST } from "@/constants";
 
 const PROMPTS_LIST = [
   "A goal I'm working on right now is...",

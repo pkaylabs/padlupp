@@ -1,22 +1,16 @@
-import {
-  BUDDY_FINDER,
-  DASHBOARD,
-  GOALS,
-  MESSAGES,
-} from "@/constants/page-path";
+import { BUDDY_FINDER, GOALS, MESSAGES, PADDIE_PODS } from "@/constants/page-path";
 import { CiFacebook } from "react-icons/ci";
 import { FaXTwitter } from "react-icons/fa6";
 import { FaInstagram } from "react-icons/fa6";
 import { AiOutlineYoutube } from "react-icons/ai";
 import { CiLinkedin } from "react-icons/ci";
-import { MdOutlineDashboard } from "react-icons/md";
-import { ListTodo, Mail } from "lucide-react";
+import { ListTodo, Mail, UsersRound } from "lucide-react";
 import { PiUsersThree } from "react-icons/pi";
 
 export const navigation = [
-  // { name: "Dashboard", href: DASHBOARD, icon: MdOutlineDashboard },
   { name: "Goals", href: GOALS, icon: ListTodo },
   { name: "Messages", href: MESSAGES, icon: Mail },
+	{ name: "Paddie Pods", href: PADDIE_PODS, icon: UsersRound },
   { name: "Buddy Finder", href: BUDDY_FINDER, icon: PiUsersThree },
   // { name: "Profile", href: PROFILE, icon: LuStethoscope },
 ];
@@ -40,7 +34,16 @@ export const userNavigation = [
   { name: "Sign out", href: "#" },
 ];
 
-export const BASE_URL = "https://api.padlupp.com/api-v1";
+const withoutTrailingSlash = (value: string) => value.replace(/\/+$/, "");
+
+export const BASE_URL = withoutTrailingSlash(
+  import.meta.env.VITE_API_BASE_URL || "https://api.padlupp.com/api-v1",
+);
+
+export const WS_BASE_URL = withoutTrailingSlash(
+  import.meta.env.VITE_WS_BASE_URL ||
+    BASE_URL.replace(/\/api-v1$/, "").replace(/^http/, "ws"),
+);
 
 export const LANGUAGES = [
   "English",
@@ -55,38 +58,55 @@ export const LANGUAGES = [
   "Italian",
 ];
 
-export const INTERESTS_LIST = [
-  "Painting",
-  "Sculpting",
-  "Writing",
-  "Drawing",
-  "Journaling",
-  "Filmmaking",
-  "Photography",
-  "Sewing",
-  "Animation",
-  "Hiking",
-  "Pottery",
-  "Scrapbooking",
-  "Running",
-  "Stargazing",
-  "Cycling",
-  "Weightlifting",
-  "Pilates",
-  "Soccer",
-  "CrossFit",
-  "Tennis",
-  "Boxing",
-  "Coding/Programming",
-  "Yoga",
-  "Swimming",
-  "3D Printing",
-  "Web Development",
-  "Theater",
-  "Basketball",
-  "Singing",
-  "Dancing",
-];
+export const INTEREST_GROUPS = [
+  {
+    name: "Career & Business",
+    interests: [
+      "Job Search", "Career Growth", "Entrepreneurship", "Startup Building",
+      "Freelancing", "Networking", "Public Speaking", "Project / Product Management",
+      "Marketing / Digital Marketing", "Leadership",
+    ],
+  },
+  {
+    name: "Study & Learning",
+    interests: [
+      "Studying", "Reading", "Writing", "Language Learning", "Coding",
+      "Web Development", "Data Science", "Artificial Intelligence", "Research",
+      "Professional Certifications",
+    ],
+  },
+  {
+    name: "Health & Fitness",
+    interests: [
+      "Gym", "Running", "Walking", "Weight Loss", "Weightlifting", "Yoga",
+      "Healthy Eating", "Meal Planning", "Meditation", "Sleep Improvement",
+    ],
+  },
+  {
+    name: "Personal Development",
+    interests: [
+      "Productivity", "Time Management", "Habit Building", "Goal Setting",
+      "Journaling", "Self-Improvement", "Morning Routine", "Confidence Building",
+      "Mindfulness", "Digital Detox",
+    ],
+  },
+  {
+    name: "Creative & Content",
+    interests: [
+      "Content Creation", "Photography", "Videography", "Graphic Design",
+      "UI/UX Design", "Writing", "Podcasting", "Music", "Painting", "Animation",
+    ],
+  },
+  {
+    name: "Finance & Lifestyle",
+    interests: [
+      "Budgeting", "Saving Money", "Investing", "Side Hustles", "Financial Planning",
+      "Cooking", "Home Organisation", "Travel Planning", "Volunteering", "Sustainability",
+    ],
+  },
+] as const;
+
+export const INTERESTS_LIST = INTEREST_GROUPS.flatMap((group) => group.interests);
 
 export const PROMPTS_LIST = [
   "A goal I'm working on right now is...",
