@@ -24,9 +24,9 @@ export const socials = [
 ];
 
 export const legals = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms and Condition", href: "#" },
-  { label: "Contact", href: "#" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms and Conditions", href: "/terms" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export const userNavigation = [

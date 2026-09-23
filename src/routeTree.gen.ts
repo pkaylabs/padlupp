@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
 import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
 import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
@@ -44,9 +47,24 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRouteRoute = OnboardingRouteRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppBuddyFinderRouteRoute = AppBuddyFinderRouteRouteImport.update({
@@ -140,6 +158,9 @@ const GoalsIdPreviewRoute = GoalsIdPreviewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRouteRoute
+  '/contact': typeof ContactRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/buddy-finder': typeof AppBuddyFinderRouteRoute
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
@@ -161,6 +182,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRouteRoute
+  '/contact': typeof ContactRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/buddy-finder': typeof AppBuddyFinderRouteRoute
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
@@ -185,6 +209,9 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteRouteWithChildren
   '/_auth': typeof AuthRouteRouteWithChildren
   '/onboarding': typeof OnboardingRouteRoute
+  '/contact': typeof ContactRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/_app/buddy-finder': typeof AppBuddyFinderRouteRoute
   '/_app/dashboard': typeof AppDashboardRouteRoute
   '/_app/messages': typeof AppMessagesRouteRoute
@@ -208,6 +235,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/contact'
+    | '/privacy'
+    | '/terms'
     | '/buddy-finder'
     | '/dashboard'
     | '/messages'
@@ -229,6 +259,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/onboarding'
+    | '/contact'
+    | '/privacy'
+    | '/terms'
     | '/buddy-finder'
     | '/dashboard'
     | '/messages'
@@ -252,6 +285,9 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/onboarding'
+    | '/contact'
+    | '/privacy'
+    | '/terms'
     | '/_app/buddy-finder'
     | '/_app/dashboard'
     | '/_app/messages'
@@ -276,6 +312,9 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   OnboardingRouteRoute: typeof OnboardingRouteRoute
+  ContactRoute: typeof ContactRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   GoalInviteTokenRoute: typeof GoalInviteTokenRoute
   GoalsIdPreviewRoute: typeof GoalsIdPreviewRoute
 }
@@ -303,11 +342,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/buddy-finder': {
@@ -501,6 +561,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
   OnboardingRouteRoute: OnboardingRouteRoute,
+  ContactRoute: ContactRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   GoalInviteTokenRoute: GoalInviteTokenRoute,
   GoalsIdPreviewRoute: GoalsIdPreviewRoute,
 }
