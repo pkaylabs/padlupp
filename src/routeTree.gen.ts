@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
+import { Route as AccountDeletionRouteImport } from './routes/account-deletion'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -45,6 +46,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
 } as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountDeletionRoute = AccountDeletionRouteImport.update({
+  id: '/account-deletion',
+  path: '/account-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -158,6 +164,7 @@ const GoalsIdPreviewRoute = GoalsIdPreviewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRouteRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRouteRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteRouteWithChildren
   '/_auth': typeof AuthRouteRouteWithChildren
   '/onboarding': typeof OnboardingRouteRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/contact': typeof ContactRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/account-deletion'
     | '/contact'
     | '/privacy'
     | '/terms'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/onboarding'
+    | '/account-deletion'
     | '/contact'
     | '/privacy'
     | '/terms'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/onboarding'
+    | '/account-deletion'
     | '/contact'
     | '/privacy'
     | '/terms'
@@ -312,6 +324,7 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   OnboardingRouteRoute: typeof OnboardingRouteRoute
+  AccountDeletionRoute: typeof AccountDeletionRoute
   ContactRoute: typeof ContactRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
@@ -340,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account-deletion': {
+      id: '/account-deletion'
+      path: '/account-deletion'
+      fullPath: '/account-deletion'
+      preLoaderRoute: typeof AccountDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -561,6 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
   OnboardingRouteRoute: OnboardingRouteRoute,
+  AccountDeletionRoute: AccountDeletionRoute,
   ContactRoute: ContactRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,

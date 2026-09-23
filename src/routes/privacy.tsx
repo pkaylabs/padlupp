@@ -85,9 +85,8 @@ function PrivacyPolicy() {
       <section>
         <h2>Children</h2>
         <p>
-          Padlupp is not directed to children under 13. Users must meet the minimum
-          age required to consent to online services in their country. Contact us if
-          you believe a child has provided information without appropriate consent.
+          Padlupp Mobile is intended for adults aged 18 and over. Contact us if you
+          believe a minor has provided information without appropriate consent.
         </p>
       </section>
 
