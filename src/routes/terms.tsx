@@ -28,6 +28,12 @@ function Terms() {
           Padlupp to violate another person&apos;s rights. We may restrict or remove
           accounts and content that create risk or violate these terms.
         </p>
+        <p>
+          Use the in-app report and block controls when another user or message
+          violates these rules. Reports are reviewed for appropriate action, and
+          blocking prevents further direct discovery, invitations, and messages
+          between the affected accounts.
+        </p>
       </section>
       <section>
         <h2>Your content</h2>
