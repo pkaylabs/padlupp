@@ -32,8 +32,8 @@ export const StreaksView: React.FC<StreaksViewProps> = ({
         {currentStreakCount}-{currentLabel} Streak!
       </h2>
       <p className="text-gray-500 dark:text-slate-400 mt-2 text-center text-sm sm:text-base max-w-[340px] sm:max-w-none">
-        Complete your daily goals to start a streak. <br /> Skip a day and it
-        resets.
+        Be active on Padlupp each day to build your streak. <br /> A day without
+        activity resets the current streak.
       </p>
 
       <div className="w-full max-w-md bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 mt-6 sm:mt-8">

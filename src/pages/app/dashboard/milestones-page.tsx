@@ -7,15 +7,11 @@ import { AwardsView } from "./components/awards-view";
 import { cn } from "@/utils/cs";
 import { GOALS } from "@/constants/page-path";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-
-interface StreakStatsResponse {
-  current_streak_count?: number;
-  longest_streak_count?: number;
-  longest_streak?: number;
-  streak?: number;
-  days?: number;
-}
+import {
+  getStreakStats,
+  milestoneQueryKeys,
+  type StreakStatsResponse,
+} from "./api/milestones";
 
 const getCurrentStreakCount = (payload?: StreakStatsResponse) => {
   const value = payload?.current_streak_count ?? 0;
@@ -23,12 +19,7 @@ const getCurrentStreakCount = (payload?: StreakStatsResponse) => {
 };
 
 const getLongestStreakCount = (payload?: StreakStatsResponse) => {
-  const value =
-    payload?.longest_streak_count ??
-    payload?.longest_streak ??
-    payload?.streak ??
-    payload?.days ??
-    0;
+  const value = payload?.longest_streak_count ?? 0;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
 
@@ -38,13 +29,8 @@ export const MilestonesPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<MilestoneTab>("streaks");
   const { data: streakResponse } = useQuery({
-    queryKey: ["streak-stats"],
-    queryFn: async () => {
-      const { data } = await api.get<StreakStatsResponse>(
-        "/stats/longest-streak/",
-      );
-      return data;
-    },
+    queryKey: milestoneQueryKeys.streak,
+    queryFn: getStreakStats,
     staleTime: 1000 * 60 * 5,
   });
 

@@ -7,8 +7,26 @@ import s1 from "@/assets/images/s1.png";
 import s2 from "@/assets/images/s2.png";
 import s3 from "@/assets/images/s3.png";
 import s4 from "@/assets/images/s4.png";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getAwards,
+  milestoneQueryKeys,
+} from "../api/milestones";
+
+const categoryImages: Record<string, string> = {
+  goals: s1,
+  streak: s2,
+  referrals: s3,
+  team_player: s4,
+};
 
 export const AwardsView: React.FC = () => {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: milestoneQueryKeys.awards,
+    queryFn: getAwards,
+    staleTime: 1000 * 60,
+  });
+
   return (
     <motion.div
       className="flex flex-col items-center w-full max-w-md space-y-4 mt-6 sm:mt-8"
@@ -17,33 +35,58 @@ export const AwardsView: React.FC = () => {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <AwardCategory title="Goals">
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <Badge label="Started a goal" imageUrl={s1} unlocked={false} />
-          <Badge label="Completed a goal" imageUrl={s1} unlocked={false} />
-          <Badge label="Completed 1/5" imageUrl={s1} unlocked={false} />
+      {isLoading && (
+        <div className="w-full space-y-4" aria-label="Loading awards">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-36 animate-pulse rounded-xl border border-gray-100 bg-white dark:border-slate-700 dark:bg-slate-900"
+            />
+          ))}
         </div>
-      </AwardCategory>
+      )}
 
-      <AwardCategory title="Streak">
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <Badge label="3-day streak" imageUrl={s2} unlocked={false} />
-          <Badge label="7-day streak" imageUrl={s2} unlocked={false} />
-          <Badge label="14-day streak" imageUrl={s2} unlocked={false} />
+      {isError && (
+        <div className="w-full rounded-xl border border-red-200 bg-white p-6 text-center dark:border-red-900 dark:bg-slate-900">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            We couldn&apos;t load your awards.
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-3 text-sm font-semibold text-primary-500 hover:text-primary-600"
+          >
+            Try again
+          </button>
         </div>
-      </AwardCategory>
+      )}
 
-      <AwardCategory title="Referrals">
-        <div className="grid grid-cols-3 gap-4">
-          <Badge label="Referral Badge" imageUrl={s3} unlocked={false} />
+      {data && (
+        <div className="w-full rounded-xl bg-primary-50 px-4 py-3 text-center dark:bg-slate-800">
+          <span className="text-sm font-semibold text-primary-700 dark:text-primary-300">
+            {data.unlocked_count} of {data.total_count} awards unlocked
+          </span>
         </div>
-      </AwardCategory>
+      )}
 
-      <AwardCategory title="Team Player">
-        <div className="grid grid-cols-3 gap-4">
-          <Badge label="Collaborated on goal" imageUrl={s4} unlocked={false} />
-        </div>
-      </AwardCategory>
+      {data?.categories.map((category) => (
+        <AwardCategory key={category.key} title={category.title}>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            {category.awards.map((award) => (
+              <Badge
+                key={award.key}
+                label={award.title}
+                description={award.description}
+                imageUrl={categoryImages[category.key] ?? s1}
+                unlocked={award.unlocked}
+                unlockedAt={award.unlocked_at}
+                current={award.current}
+                target={award.target}
+              />
+            ))}
+          </div>
+        </AwardCategory>
+      ))}
     </motion.div>
   );
 };

@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { sanitizeNameInput } from "@/utils/name-validation";
 import { getApiErrorMessage } from "@/utils/api-error";
 
-export function useGoogleAuth() {
+export function useGoogleAuth(referralToken?: string) {
   const router = useRouter();
   const loginToStore = useAuthStore((state) => state.login);
 
@@ -60,6 +60,7 @@ export function useGoogleAuth() {
         id_token: response.credential,
         name: sanitizedName,
         phone: "",
+        ...(referralToken ? { referral_token: referralToken } : {}),
       });
     } catch (err) {
       console.error("Token Decode Failed", err);

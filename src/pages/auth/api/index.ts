@@ -5,6 +5,7 @@ export interface RegisterCredentials {
   name: string;
   email: string;
   password: string;
+  referral_token?: string;
 }
 
 export interface LoginCredentials {
@@ -16,6 +17,7 @@ export interface GoogleAuthPayload {
   id_token: string;
   name?: string;
   phone?: string;
+  referral_token?: string;
 }
 
 export interface ForgotPasswordOtpRequestPayload {

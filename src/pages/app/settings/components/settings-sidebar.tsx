@@ -51,6 +51,7 @@ export const SettingsSidebar: React.FC = () => {
     autoWatch: false,
     newMessages: false,
     newMatches: false,
+    milestones: false,
   });
 
   const [pushSettings, setPushSettings] = useState({
@@ -74,6 +75,7 @@ export const SettingsSidebar: React.FC = () => {
         autoWatch: userProfile.user.notify_on_reminders ?? false,
         newMessages: userProfile.user.notify_on_new_message ?? false,
         newMatches: userProfile.user.notify_on_new_match ?? false,
+        milestones: userProfile.user.notify_on_milestones ?? true,
       });
     }
   }, [userProfile]);
@@ -351,6 +353,14 @@ export const SettingsSidebar: React.FC = () => {
                 onChange={(v) => {
                   setEmailSettings((s) => ({ ...s, newMatches: v }));
                   updateNotifPrefs({ notify_on_new_match: v });
+                }}
+              />
+              <SwitchItem
+                label="Milestone Awards"
+                checked={emailSettings.milestones}
+                onChange={(v) => {
+                  setEmailSettings((s) => ({ ...s, milestones: v }));
+                  updateNotifPrefs({ notify_on_milestones: v });
                 }}
               />
             </div>

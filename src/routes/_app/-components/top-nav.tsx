@@ -5,7 +5,6 @@ import { Modal } from "@/components/core/modal";
 import { ThemeToggle } from "./toggle-theme";
 import { useUserProfile } from "@/pages/auth/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Link } from "@tanstack/react-router";
 import {
   AppTheme,
@@ -14,14 +13,11 @@ import {
   setThemePreference,
 } from "@/utils/theme";
 import { MILESTONES } from "@/constants/page-path";
-
-interface StreakStatsResponse {
-  current_streak_count?: number;
-  longest_streak_count?: number;
-  longest_streak?: number;
-  streak?: number;
-  days?: number;
-}
+import {
+  getStreakStats,
+  milestoneQueryKeys,
+  type StreakStatsResponse,
+} from "@/pages/app/dashboard/api/milestones";
 
 const resolveCurrentStreak = (payload?: StreakStatsResponse): number => {
   if (!payload) return 0;
@@ -36,13 +32,8 @@ export const TopNav: React.FC = () => {
   );
   const { data: userProfile } = useUserProfile();
   const { data: streakResponse } = useQuery({
-    queryKey: ["longest-streak"],
-    queryFn: async () => {
-      const { data } = await api.get<StreakStatsResponse>(
-        "/stats/longest-streak/",
-      );
-      return data;
-    },
+    queryKey: milestoneQueryKeys.streak,
+    queryFn: getStreakStats,
     staleTime: 1000 * 60 * 5,
   });
   const currentStreak = resolveCurrentStreak(streakResponse);

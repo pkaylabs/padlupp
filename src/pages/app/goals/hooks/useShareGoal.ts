@@ -13,6 +13,7 @@ import {
   type GoalPreview,
   type ShareGoalInvitePayload,
 } from "../api";
+import { milestoneQueryKeys } from "@/pages/app/dashboard/api/milestones";
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   const maybeError = error as {
@@ -46,6 +47,7 @@ export function useShareGoalInvites() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["goals"] });
       queryClient.invalidateQueries({ queryKey: ["goal"] });
+      queryClient.invalidateQueries({ queryKey: milestoneQueryKeys.awards });
       toast.success(
         data?.detail ||
           `Invites sent${typeof data?.invited_count === "number" ? ` to ${data.invited_count} people` : ""}.`,
@@ -110,6 +112,7 @@ export function useJoinGoal() {
     }) => joinGoal(goalId, sharedId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals"] });
+      queryClient.invalidateQueries({ queryKey: milestoneQueryKeys.awards });
       toast.success("You have joined the goal successfully.");
     },
     onError: (error) => {

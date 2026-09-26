@@ -17,7 +17,9 @@ export const AwardCategory: React.FC<AwardCategoryProps> = ({
     <div className="w-full bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
       {/* Header */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
         className="flex w-full items-center justify-between p-3 sm:p-4 bg-primary-100 dark:bg-slate-800 rounded-t-xl"
       >
         <span className="text-sm sm:text-base text-black dark:text-slate-100">

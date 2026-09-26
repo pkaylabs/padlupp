@@ -15,6 +15,7 @@ export interface User {
   notify_on_new_message: boolean;
   notify_on_new_match: boolean;
   notify_on_reminders: boolean;
+  notify_on_milestones: boolean;
 }
 
 export interface UserProfile {
@@ -74,6 +75,7 @@ export interface NotificationPreferencesPayload {
   notify_on_new_message?: boolean;
   notify_on_new_match?: boolean;
   notify_on_reminders?: boolean;
+  notify_on_milestones?: boolean;
 }
 
 // --- API Functions ---

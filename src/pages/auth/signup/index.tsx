@@ -57,12 +57,16 @@ const validationSchema = Yup.object({
 });
 
 export const SignUp: React.FC = () => {
+  const referralToken =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("ref") || undefined
+      : undefined;
   const { mutate: register, isPending: isEmailLoading } = useRegister();
   const {
     handleGoogleSuccess,
     handleGoogleError,
     isPending: isGoogleLoading,
-  } = useGoogleAuth();
+  } = useGoogleAuth(referralToken);
 
   const isGlobalLoading = isEmailLoading || isGoogleLoading;
   const [passwordFocused, setPasswordFocused] = React.useState(false);
@@ -80,6 +84,7 @@ export const SignUp: React.FC = () => {
         email: values.email,
         password: values.password,
         name: sanitizedName,
+        ...(referralToken ? { referral_token: referralToken } : {}),
       });
     },
   });
