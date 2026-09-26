@@ -36,13 +36,20 @@ export const userNavigation = [
 
 const withoutTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
+const PRODUCTION_API_BASE_URL = "https://api.padlupp.com/api-v1";
+const PRODUCTION_WS_BASE_URL = "wss://api.padlupp.com";
+
 export const BASE_URL = withoutTrailingSlash(
-  import.meta.env.VITE_API_BASE_URL || "https://api.padlupp.com/api-v1",
+  import.meta.env.DEV
+    ? import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api-v1"
+    : PRODUCTION_API_BASE_URL,
 );
 
 export const WS_BASE_URL = withoutTrailingSlash(
-  import.meta.env.VITE_WS_BASE_URL ||
-    BASE_URL.replace(/\/api-v1$/, "").replace(/^http/, "ws"),
+  import.meta.env.DEV
+    ? import.meta.env.VITE_WS_BASE_URL ||
+        BASE_URL.replace(/\/api-v1$/, "").replace(/^http/, "ws")
+    : PRODUCTION_WS_BASE_URL,
 );
 
 export const LANGUAGES = [
