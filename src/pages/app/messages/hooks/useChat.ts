@@ -127,7 +127,8 @@ const hasConversationListChanged = (
 
 export const useChat = (): UseChatState => {
   const token = useAuthStore((state) => state.token);
-  const authUserId = useAuthStore((state) => state.user?.id ?? null);
+  const authUser = useAuthStore((state) => state.user);
+  const authUserId = authUser?.id ?? null;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
 	const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([]);
@@ -173,14 +174,14 @@ export const useChat = (): UseChatState => {
       id: userId,
       email: "",
       phone: "",
-      name: "Me",
-      avatar: "",
+      name: authUser?.name || "Me",
+      avatar: authUser?.avatar || "",
       phone_verified: false,
       email_verified: false,
       preferred_notification_email: "",
       preferred_notification_phone: "",
     }),
-    [],
+    [authUser?.avatar, authUser?.name],
   );
 
   const upsertConversation = useCallback((conversation: Conversation) => {

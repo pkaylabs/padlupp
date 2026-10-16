@@ -2,14 +2,18 @@ import { api } from "@/lib/api";
 
 export interface ChatUser {
   id: number;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   name: string;
-  avatar: string;
-  phone_verified: boolean;
-  email_verified: boolean;
-  preferred_notification_email: string;
-  preferred_notification_phone: string;
+  avatar: string | null;
+  phone_verified?: boolean;
+  email_verified?: boolean;
+  preferred_notification_email?: string;
+  preferred_notification_phone?: string;
+	role?: "member" | "admin";
+	is_owner?: boolean;
+	is_admin?: boolean;
+	created_at?: string;
 }
 
 export interface ReplyToInfo {

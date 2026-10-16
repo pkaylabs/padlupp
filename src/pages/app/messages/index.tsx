@@ -10,6 +10,7 @@ import {
   Circle,
   Clock3,
   CornerDownLeft,
+  Ellipsis,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -50,6 +51,9 @@ import {
 import type { BuddyConnection } from "@/pages/app/buddy-finder/api";
 import { PROMPTS_LIST } from "@/constants";
 import { openGoalCheckinEvidence } from "@/pages/app/goals/api";
+import { useUserProfile } from "@/pages/auth/hooks/useProfile";
+import { Avatar } from "@/components/core/avatar";
+import { resolveMediaUrl } from "@/utils/media";
 
 type ActiveModal = "none" | "report";
 type ComingSoonFeature = "none" | "voice_call" | "video_call";
@@ -124,6 +128,24 @@ const formatMessageTime = (isoString?: string) => {
   });
 };
 
+const canRecallMessage = (message: ChatMessageUI, currentUserId?: number) => {
+  if (
+    typeof message.id !== "number" ||
+    !currentUserId ||
+    message.sender?.id !== currentUserId ||
+    (message.kind && message.kind !== "user") ||
+    message.is_recalled ||
+    message.recalled_at
+  ) {
+    return false;
+  }
+
+  if (message.can_recall) return true;
+
+  const createdAt = parseApiDate(message.created_at).getTime();
+  return Number.isFinite(createdAt) && Date.now() - createdAt <= 15 * 60 * 1000;
+};
+
 const formatMessageDateTime = (isoString?: string) => {
   if (!isoString) return "";
   const date = parseApiDate(isoString);
@@ -166,7 +188,7 @@ const getConversationName = (conversation: Conversation) =>
   `Conversation #${conversation.id}`;
 
 const getConversationAvatar = (conversation: Conversation) =>
-  toDisplayText(conversation.partner_avatar);
+  resolveMediaUrl(toDisplayText(conversation.partner_avatar));
 
 const getInitials = (name: string) =>
   name
@@ -336,6 +358,7 @@ export const MessagesPage = () => {
   } = useChat();
 
   const authUser = useAuthStore((state) => state.user);
+  const { data: userProfile } = useUserProfile();
   const { data: connections = [] } = useConnections();
   const { data: finderProfiles = [] } = useBuddyFinder();
 
@@ -492,14 +515,16 @@ export const MessagesPage = () => {
 
       if (!conversationAvatar) return true;
       return (
-        (connection.user?.avatar || "").trim() === conversationAvatar.trim()
+        resolveMediaUrl(connection.user?.avatar) === conversationAvatar
       );
     });
 
     return {
       id: String(activeConversation.id),
       name: conversationName,
-      avatarUrl: conversationAvatar,
+      avatarUrl: resolveMediaUrl(
+        conversationAvatar || matchedConnection?.user?.avatar,
+      ),
       userId: matchedConnection?.user?.id,
       compatibility:
         typeof matchedConnection?.compatibility_score === "number"
@@ -540,16 +565,32 @@ export const MessagesPage = () => {
 			return activeConversation.members.map((member) => ({
 				id: member.id,
 				name: toDisplayText(member.name) || "Unknown",
-				avatar: toDisplayText(member.avatar) || "",
+				avatar: resolveMediaUrl(toDisplayText(member.avatar)),
+				role: member.role,
+				isOwner: Boolean(member.is_owner),
+				isAdmin: Boolean(member.is_admin),
 			}));
 		}
-    const seen = new Map<number, { id: number; name: string; avatar: string }>();
+    const seen = new Map<
+      number,
+      {
+        id: number;
+        name: string;
+        avatar: string;
+        role?: "member" | "admin";
+        isOwner: boolean;
+        isAdmin: boolean;
+      }
+    >();
     messages.forEach((msg) => {
       if (msg.sender?.id && !seen.has(msg.sender.id)) {
         seen.set(msg.sender.id, {
           id: msg.sender.id,
           name: toDisplayText(msg.sender.name) || "Unknown",
-          avatar: toDisplayText(msg.sender.avatar) || "",
+          avatar: resolveMediaUrl(toDisplayText(msg.sender.avatar)),
+          role: msg.sender.role,
+          isOwner: Boolean(msg.sender.is_owner),
+          isAdmin: Boolean(msg.sender.is_admin),
         });
       }
     });
@@ -936,17 +977,34 @@ export const MessagesPage = () => {
     }
   }, [activeConversation]);
 
+  const openMessageMenu = (
+    x: number,
+    y: number,
+    message: ChatMessageUI,
+  ) => {
+    const padding = 8;
+    const menuWidth = 176;
+    const menuHeight = canRecallMessage(message, authUser?.id) ? 104 : 56;
+    setContextMenu({
+      x: Math.max(
+        padding,
+        Math.min(x, window.innerWidth - menuWidth - padding),
+      ),
+      y: Math.max(
+        padding,
+        Math.min(y, window.innerHeight - menuHeight - padding),
+      ),
+      message,
+    });
+  };
+
   const handleMessageClick = (
     event: React.MouseEvent,
     message: ChatMessageUI,
   ) => {
     event.preventDefault();
     event.stopPropagation();
-    setContextMenu({
-      x: event.clientX ?? event.nativeEvent.offsetX,
-      y: event.clientY ?? event.nativeEvent.offsetY,
-      message,
-    });
+    openMessageMenu(event.clientX, event.clientY, message);
   };
 
   const handleContextMenu = (
@@ -955,11 +1013,21 @@ export const MessagesPage = () => {
   ) => {
     event.preventDefault();
     event.stopPropagation();
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      message,
-    });
+    openMessageMenu(event.clientX, event.clientY, message);
+  };
+
+  const handleMessageActionsClick = (
+    event: React.MouseEvent,
+    message: ChatMessageUI,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const trigger = event.currentTarget.getBoundingClientRect();
+    const preferredX =
+      message.sender?.id === authUser?.id
+        ? trigger.right - 176
+        : trigger.left;
+    openMessageMenu(preferredX, trigger.bottom + 6, message);
   };
 
   const handleReplyTo = (message: ChatMessageUI) => {
@@ -1092,25 +1160,26 @@ export const MessagesPage = () => {
                     )}
                   >
                     <div className="relative mr-3 shrink-0">
-                      {avatarUrl ? (
-                        <img
+                      <button
+                        type="button"
+                        className="h-12 w-12 rounded-full"
+                        aria-label={`Open ${name}'s avatar`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!avatarUrl) return;
+                          setAttachmentViewer({
+                            url: avatarUrl,
+                            mime: "image/*",
+                            name,
+                          });
+                        }}
+                      >
+                        <Avatar
                           src={avatarUrl}
-                          alt={name}
-                          className="w-12 h-12 rounded-full object-cover"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setAttachmentViewer({
-                              url: avatarUrl,
-                              mime: "image/*",
-                              name,
-                            });
-                          }}
+                          name={name}
+                          className="h-12 w-12 text-sm"
                         />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-sm">
-                          {getInitials(name)}
-                        </div>
-                      )}
+                      </button>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -1211,35 +1280,30 @@ export const MessagesPage = () => {
                   <ArrowLeft2 size="24" color="#636363" />
                 </button>
 
-                <div
+                <button
+                  type="button"
+                  aria-label={`Open ${getConversationName(activeConversation!)}'s avatar`}
                   className={cn(
-                    "w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center font-semibold text-xs mr-2 md:mr-3 shrink-0",
+                    "h-9 w-9 shrink-0 rounded-full mr-2 md:mr-3 md:h-10 md:w-10",
                     hasActiveConversation ? "" : "opacity-60",
                   )}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const avatar = getConversationAvatar(activeConversation!);
+                    if (!avatar) return;
+                    setAttachmentViewer({
+                      url: avatar,
+                      mime: "image/*",
+                      name: getConversationName(activeConversation!),
+                    });
+                  }}
                 >
-                  {activeConversation &&
-                  getConversationAvatar(activeConversation) ? (
-                    <img
-                      src={getConversationAvatar(activeConversation)}
-                      alt={getConversationName(activeConversation)}
-                      className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setAttachmentViewer({
-                          url: getConversationAvatar(activeConversation),
-                          mime: "image/*",
-                          name: getConversationName(activeConversation),
-                        });
-                      }}
-                    />
-                  ) : (
-                    getInitials(
-                      activeConversation
-                        ? getConversationName(activeConversation)
-                        : "Chat",
-                    )
-                  )}
-                </div>
+                  <Avatar
+                    src={getConversationAvatar(activeConversation!)}
+                    name={getConversationName(activeConversation!)}
+                    className="h-9 w-9 text-xs md:h-10 md:w-10"
+                  />
+                </button>
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -1430,7 +1494,13 @@ export const MessagesPage = () => {
                     key={message.id}
                     text={message.text}
                     senderName={message.sender?.name || "User"}
-                    senderAvatar={message.sender?.avatar || ""}
+                    senderAvatar={resolveMediaUrl(
+                      message.sender?.id === authUser?.id
+                        ? userProfile?.user?.avatar ||
+                            authUser?.avatar ||
+                            message.sender?.avatar
+                        : message.sender?.avatar,
+                    )}
                     isMe={message.sender?.id === authUser?.id}
                     myName={currentUserName}
                     timestamp={formatMessageDateTime(message.created_at)}
@@ -1445,6 +1515,9 @@ export const MessagesPage = () => {
                     replyTo={message.reply_to ?? null}
                     onClick={(event) => handleMessageClick(event, message)}
                     onContextMenu={(event) => handleContextMenu(event, message)}
+                    onActionsClick={(event) =>
+                      handleMessageActionsClick(event, message)
+                    }
                     onAttachmentClick={(payload) =>
                       setAttachmentViewer(payload)
                     }
@@ -1732,24 +1805,25 @@ export const MessagesPage = () => {
       >
         {activePartnerProfile && (
           <div className="flex flex-col items-center text-center">
-            {activePartnerProfile.avatarUrl ? (
-              <img
-                src={activePartnerProfile.avatarUrl}
-                alt={activePartnerProfile.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-sm cursor-zoom-in"
-                onClick={() =>
+            <button
+              type="button"
+              className="h-24 w-24 rounded-full"
+              aria-label={`Open ${activePartnerProfile.name}'s avatar`}
+              onClick={() => {
+                if (!activePartnerProfile.avatarUrl) return;
                   setAttachmentViewer({
                     url: activePartnerProfile.avatarUrl,
                     mime: "image/*",
                     name: activePartnerProfile.name,
-                  })
-                }
+                  });
+              }}
+            >
+              <Avatar
+                src={activePartnerProfile.avatarUrl}
+                name={activePartnerProfile.name}
+                className="h-24 w-24 border-4 border-white text-2xl shadow-sm"
               />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-2xl font-semibold">
-                {getInitials(activePartnerProfile.name)}
-              </div>
-            )}
+            </button>
             <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
               {activePartnerProfile.name}
             </h3>
@@ -1933,7 +2007,7 @@ export const MessagesPage = () => {
               <Reply size={15} className="shrink-0" />
               Reply
             </button>
-			{contextMenu.message.can_recall && typeof contextMenu.message.id === "number" && (
+			{canRecallMessage(contextMenu.message, authUser?.id) && (
 				<button
 					type="button"
 					onClick={() => void handleRecallMessage(contextMenu.message)}
@@ -1982,19 +2056,18 @@ export const MessagesPage = () => {
                         key={member.id}
                         className="flex items-center gap-3 py-1"
                       >
-                        {member.avatar ? (
-                          <img
-                            src={member.avatar}
-                            alt={member.name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold">
-                            {getInitials(member.name)}
-                          </div>
-                        )}
+                        <Avatar
+                          src={member.avatar}
+                          name={member.name}
+                          className="h-8 w-8 text-xs"
+                        />
                         <span className="text-sm text-gray-700 dark:text-slate-200 flex-1 text-left">
                           {member.name}
+                          {(member.isOwner || member.isAdmin) && (
+                            <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                              {member.isOwner ? "Creator" : "Moderator"}
+                            </span>
+                          )}
                         </span>
                         <span
                           className={cn(
@@ -2103,6 +2176,7 @@ const MessageBubble = ({
   replyTo,
   onClick,
   onContextMenu,
+  onActionsClick,
   onAttachmentClick,
 }: {
   text: string | null;
@@ -2126,6 +2200,7 @@ const MessageBubble = ({
   replyTo?: ReplyToInfo | null;
   onClick?: (event: React.MouseEvent) => void;
   onContextMenu?: (event: React.MouseEvent) => void;
+  onActionsClick?: (event: React.MouseEvent) => void;
   onAttachmentClick?: (payload: {
     url: string;
     mime: string;
@@ -2134,6 +2209,7 @@ const MessageBubble = ({
 }) => {
   const navigate = useNavigate();
   const displayName = isMe ? myName : senderName;
+  const normalizedSenderAvatar = resolveMediaUrl(senderAvatar);
   const isImage = Boolean(attachment && attachmentMime?.startsWith("image/"));
   const isVideo = Boolean(attachment && attachmentMime?.startsWith("video/"));
   const isAudio = Boolean(attachment && attachmentMime?.startsWith("audio/"));
@@ -2199,7 +2275,10 @@ const MessageBubble = ({
 
   return (
     <div
-      className={cn("flex w-full mb-1", isMe ? "justify-end" : "justify-start")}
+      className={cn(
+        "group flex w-full items-start gap-1 mb-1",
+        isMe ? "justify-end" : "justify-start",
+      )}
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
@@ -2209,24 +2288,26 @@ const MessageBubble = ({
           isMe ? "flex-row-reverse" : "flex-row",
         )}
       >
-        {senderAvatar ? (
-          <img
-            src={senderAvatar}
-            alt={displayName}
-            className="w-8 h-8 rounded-full object-cover shrink-0 mt-1 cursor-zoom-in"
-            onClick={() =>
-              onAttachmentClick?.({
-                url: senderAvatar,
-                mime: "image/*",
-                name: displayName,
-              })
-            }
+        <button
+          type="button"
+          className="mt-1 h-8 w-8 shrink-0 rounded-full"
+          aria-label={`Open ${displayName}'s avatar`}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!normalizedSenderAvatar) return;
+            onAttachmentClick?.({
+              url: normalizedSenderAvatar,
+              mime: "image/*",
+              name: displayName,
+            });
+          }}
+        >
+          <Avatar
+            src={normalizedSenderAvatar}
+            name={displayName}
+            className="h-8 w-8 text-xs"
           />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-[#E6F0FD] text-[#1F2937] flex items-center justify-center text-xs font-semibold shrink-0 mt-1">
-            {getInitials(displayName)}
-          </div>
-        )}
+        </button>
         <div
           className={cn("flex flex-col", isMe ? "items-end" : "items-start")}
         >
@@ -2367,6 +2448,20 @@ const MessageBubble = ({
           </div>
         </div>
       </div>
+      <button
+        type="button"
+        aria-label="Message actions"
+        title="Message actions"
+        onClick={onActionsClick}
+        className={cn(
+          "mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 hover:opacity-100 focus-visible:opacity-100 dark:hover:bg-slate-800 dark:hover:text-slate-200",
+          isMe
+            ? "order-first opacity-70"
+            : "order-last sm:opacity-0 sm:group-hover:opacity-100",
+        )}
+      >
+        <Ellipsis size={17} />
+      </button>
     </div>
   );
 };
