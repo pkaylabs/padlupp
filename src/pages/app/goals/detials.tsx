@@ -32,6 +32,7 @@ import {
 import { useUpdateGoal } from "./hooks/useUpdateGoal";
 import { useDeleteGoal } from "./hooks/useDeleteGoal";
 import { Modal } from "@/components/core/modal";
+import { Avatar } from "@/components/core/avatar";
 import { toast } from "sonner";
 import { CORE_CATEGORIES, normalizeCategory } from "@/constants/categories";
 import { GoalActionsMenu } from "./components/goal-actions-menu";
@@ -515,17 +516,11 @@ export function GoalDetailsPage() {
                 aria-label={`Open ${creatorIndicator.name}'s profile`}
                 className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
               >
-                {creatorIndicator.avatar ? (
-                  <img
-                    src={creatorIndicator.avatar}
-                    alt={creatorIndicator.name}
-                    className="w-8 h-8 rounded-full border border-white dark:border-slate-700 object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-white dark:border-slate-700 flex items-center justify-center text-[11px] font-semibold">
-                    {getInitials(creatorIndicator.name)}
-                  </div>
-                )}
+                <Avatar
+                  src={creatorIndicator.avatar}
+                  name={creatorIndicator.name}
+                  className="h-8 w-8 border border-white text-[11px] dark:border-slate-700"
+                />
               </button>
               {partnerIndicator && (
                 <button
@@ -536,17 +531,11 @@ export function GoalDetailsPage() {
                   className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={!partnerIndicator.id}
                 >
-                  {partnerIndicator.avatar ? (
-                    <img
-                      src={partnerIndicator.avatar}
-                      alt={partnerIndicator.name}
-                      className="w-8 h-8 rounded-full border border-white dark:border-slate-700 object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-white dark:border-slate-700 flex items-center justify-center text-[11px] font-semibold">
-                      {getInitials(partnerIndicator.name)}
-                    </div>
-                  )}
+                  <Avatar
+                    src={partnerIndicator.avatar}
+                    name={partnerIndicator.name}
+                    className="h-8 w-8 border border-white text-[11px] dark:border-slate-700"
+                  />
                 </button>
               )}
             </div>

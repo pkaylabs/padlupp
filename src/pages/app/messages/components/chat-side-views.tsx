@@ -6,6 +6,7 @@ import {
   PlaySquare,
 } from "lucide-react";
 import { cn } from "@/utils/cs";
+import { AuthenticatedMedia, ProtectedDownload } from "./protected-media";
 
 type SharedMediaFilter = "all" | "image" | "video" | "audio" | "file";
 
@@ -166,7 +167,7 @@ export const SharedFilesView = ({
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                     {type === "image" ? (
-                      <img
+                      <AuthenticatedMedia kind="image"
                         src={item.url}
                         alt={item.name}
                         className="w-full h-full object-cover cursor-zoom-in"
@@ -211,23 +212,21 @@ export const SharedFilesView = ({
                     </div>
                   </div>
 
-                  <a
-                    href={item.url}
-                    download={item.name}
-                    target="_blank"
-                    rel="noreferrer"
+                  <ProtectedDownload
+                    url={item.url}
+                    name={item.name}
                     className="shrink-0 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800"
                     aria-label={`Download ${item.name}`}
                   >
                     <Download size={16} className="text-gray-600 dark:text-slate-300" />
-                  </a>
+                  </ProtectedDownload>
                 </div>
 
                 {type === "audio" ? (
-                  <audio src={item.url} controls className="w-full mt-3" />
+                  <AuthenticatedMedia kind="audio" src={item.url} controls className="w-full mt-3" />
                 ) : null}
                 {type === "video" ? (
-                  <video src={item.url} controls className="w-full mt-3 rounded-md max-h-72" />
+                  <AuthenticatedMedia kind="video" src={item.url} controls className="w-full mt-3 rounded-md max-h-72" />
                 ) : null}
               </div>
             );

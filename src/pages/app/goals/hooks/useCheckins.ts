@@ -13,6 +13,7 @@ export const useGoalCheckins = (goalId?: string | number) =>
 		queryKey: ["goal-checkins", goalId],
 		queryFn: () => getGoalCheckins(goalId!),
 		enabled: Boolean(goalId),
+		refetchInterval: 30_000,
 	});
 
 export const useSubmitGoalCheckin = () => {
@@ -21,6 +22,9 @@ export const useSubmitGoalCheckin = () => {
 		mutationFn: (payload: SubmitGoalCheckinPayload) => submitGoalCheckin(payload),
 		onSuccess: (checkin) => {
 			queryClient.invalidateQueries({ queryKey: ["goal-checkins", checkin.goal] });
+			queryClient.invalidateQueries({ queryKey: ["goal", String(checkin.goal)] });
+			queryClient.invalidateQueries({ queryKey: ["goals"] });
+			queryClient.invalidateQueries({ queryKey: ["community"] });
 			toast.success("Check-in shared with your Paddie Pod.");
 		},
 		onError: (error) => toast.error(getApiErrorMessage(error, "Could not submit check-in.")),

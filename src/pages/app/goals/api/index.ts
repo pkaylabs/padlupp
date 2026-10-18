@@ -22,8 +22,11 @@ export interface Goal {
   id: number;
   user: User;
   partnership?: number | null;
-	members?: User[];
+	members?: GoalMember[];
+	conversation_id?: number | null;
 	member_count?: number;
+	can_manage_members?: boolean;
+	can_manage_roles?: boolean;
   partner?: GoalPartner | null;
   partner_name?: string | null;
   partner_avatar?: string | null;
@@ -42,6 +45,12 @@ export interface Goal {
   is_public?: boolean;
   is_shared?: boolean;
   can_edit?: boolean;
+  community_task_id?: number | null;
+  source_group_id?: number | null;
+  can_checkin?: boolean;
+  can_write?: boolean;
+  progress?: number;
+  task_status?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -59,7 +68,10 @@ export interface GoalMember {
     name?: string | null;
     avatar?: string | null;
   } | null;
-  role?: string | null;
+  role?: "member" | "admin";
+  is_owner?: boolean;
+  is_admin?: boolean;
+  created_at?: string | null;
   joined_at?: string | null;
 }
 
@@ -75,6 +87,7 @@ export interface PaginatedResponse<T> {
 
 export interface GetGoalsParams {
   page?: number;
+  scope?: "pods";
   search?: string;
   ordering?: string; // e.g. "created_at" or "-created_at"
 }
@@ -141,6 +154,7 @@ export interface GetTasksParams {
   page?: number;
   search?: string;
   ordering?: string;
+  goal?: number;
 }
 
 export interface CreateTaskPayload {
@@ -324,8 +338,54 @@ export const getGoalMembers = async (
 export const removeGoalMember = async (
   goalId: string | number,
   userId: string | number,
+  reason?: string,
 ): Promise<void> => {
-  await api.delete(`/goals/${goalId}/members/${userId}/`);
+  await api.delete(`/goals/${goalId}/members/${userId}/`, { data: { reason } });
+};
+
+export const updateGoalMemberRole = async (
+  goalId: string | number,
+  userId: string | number,
+  role: "member" | "admin",
+): Promise<GoalMember> => {
+  const { data } = await api.patch<GoalMember>(
+    `/goals/${goalId}/members/${userId}/role/`,
+    { role },
+  );
+  return data;
+};
+
+export const leaveGoal = async (
+  goalId: string | number,
+  payload: { reason: string; details?: string; transfer_to?: number },
+): Promise<{ detail?: string }> => {
+  const { data } = await api.post<{ detail?: string }>(
+    `/goals/${goalId}/leave/`,
+    payload,
+  );
+  return data;
+};
+
+export const reportGoal = async (
+  goalId: string | number,
+  payload: { reason: string; details?: string },
+): Promise<{ detail?: string }> => {
+  const { data } = await api.post<{ detail?: string }>(
+    `/goals/${goalId}/report/`,
+    payload,
+  );
+  return data;
+};
+
+export const reportGoalMember = async (
+  userId: string | number,
+  payload: { reason: string; details?: string },
+): Promise<{ detail?: string }> => {
+  const { data } = await api.post<{ detail?: string }>(
+    `/users/report/${userId}/`,
+    payload,
+  );
+  return data;
 };
 
 export const joinGoal = async (
@@ -350,7 +410,15 @@ export interface GoalCheckin {
 	completion_percent: number;
 	update_text: string;
 	blocker: string;
+	mood?: string;
+	next_focus?: string;
+	review_status?: "pending" | "awaiting_confirmation" | "confirmed" | "clarification";
+	reviewer?: Pick<User, "id" | "name" | "avatar"> | null;
+	reviewed_at?: string | null;
+	can_review?: boolean;
 	evidence_url?: string | null;
+	evidence_name?: string;
+	evidence_mime?: string;
 	evidence_view_once: boolean;
 	evidence_expires_at?: string | null;
 	submitted_at?: string | null;
@@ -365,15 +433,39 @@ export interface SubmitGoalCheckinPayload {
 	completion_percent: number;
 	update_text?: string;
 	blocker?: string;
+	mood?: string;
+	next_focus?: string;
 	evidence?: File | null;
 	evidence_view_once?: boolean;
 }
 
 export const getGoalCheckins = async (goalId: string | number): Promise<GoalCheckin[]> => {
-	const { data } = await api.get<PaginatedResponse<GoalCheckin> | GoalCheckin[]>("/checkins/", {
-		params: { goal: goalId, ordering: "-scheduled_for" },
-	});
-	return Array.isArray(data) ? data : data.results;
+	const records: GoalCheckin[] = [];
+	let page = 1;
+	while (true) {
+		const { data } = await api.get<PaginatedResponse<GoalCheckin> | GoalCheckin[]>("/checkins/", {
+			params: { goal: goalId, ordering: "-scheduled_for", page },
+		});
+		if (Array.isArray(data)) return data;
+		records.push(...data.results);
+		if (!data.next) return records;
+		page += 1;
+	}
+};
+
+export const getGoalCheckin = async (id: number): Promise<GoalCheckin> => {
+	const { data } = await api.get<GoalCheckin>(`/checkins/${id}/`);
+	return data;
+};
+
+export const reviewGoalCheckin = async (id: number, approved: boolean): Promise<GoalCheckin> => {
+	const { data } = await api.post<GoalCheckin>(`/checkins/${id}/review/`, { approved });
+	return data;
+};
+
+export const getGoalCheckinEvidence = async (id: number): Promise<Blob> => {
+	const { data } = await api.get<Blob>(`/checkins/${id}/evidence/`, { responseType: "blob" });
+	return data;
 };
 
 export const submitGoalCheckin = async (payload: SubmitGoalCheckinPayload): Promise<GoalCheckin> => {

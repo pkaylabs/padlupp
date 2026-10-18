@@ -5,6 +5,7 @@ import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
 import { BuddyInvitation } from "../api";
 import { useAcceptInvitation, useRejectInvitation } from "../hooks/useBuddies";
+import { Avatar } from "@/components/core/avatar";
 
 interface ViewGoalModalProps {
   isOpen: boolean;
@@ -65,9 +66,10 @@ export const ViewGoalModal: React.FC<ViewGoalModalProps> = ({
     >
       <div className="p-4 sm:p-6 w-full max-w-xl max-h-[90vh] flex flex-col">
         <div className="flex items-center gap-3 mb-4">
-          <img
-            src={invitation?.from_user.avatar || "/default-avatar.png"}
-            className="w-10 h-10 rounded-full"
+          <Avatar
+            src={invitation?.from_user.avatar}
+            name={invitation?.from_user.name}
+            className="h-10 w-10 text-xs"
           />
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">

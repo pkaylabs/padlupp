@@ -50,7 +50,8 @@ import {
 } from "@/pages/app/buddy-finder/hooks/useBuddies";
 import type { BuddyConnection } from "@/pages/app/buddy-finder/api";
 import { PROMPTS_LIST } from "@/constants";
-import { openGoalCheckinEvidence } from "@/pages/app/goals/api";
+import { CheckinSummaryModal } from "@/pages/app/goals/components/checkin-panel";
+import { ProtectedDownload, useProtectedMediaUrl } from "./components/protected-media";
 import { useUserProfile } from "@/pages/auth/hooks/useProfile";
 import { Avatar } from "@/components/core/avatar";
 import { resolveMediaUrl } from "@/utils/media";
@@ -331,7 +332,7 @@ const getConversationLastSeenAt = (conversation: Conversation) => {
   return undefined;
 };
 
-export const MessagesPage = () => {
+export const MessagesPage = ({ initialConversationId }: { initialConversationId?: number }) => {
   const navigate = useNavigate();
   const {
     conversations,
@@ -368,6 +369,14 @@ export const MessagesPage = () => {
   const [searchValue, setSearchValue] = useState("");
 	const [showArchived, setShowArchived] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const openedInitialConversation = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (!initialConversationId || openedInitialConversation.current === initialConversationId || !hasReceivedConversationsSnapshot) return;
+    if (!conversations.some((conversation) => conversation.id === initialConversationId)) return;
+    openedInitialConversation.current = initialConversationId;
+    setActiveConversationId(initialConversationId);
+    setShowMobileChat(true);
+  }, [initialConversationId, conversations, hasReceivedConversationsSnapshot, setActiveConversationId]);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ActiveModal>("none");
@@ -381,6 +390,7 @@ export const MessagesPage = () => {
   >(null);
   const [attachmentViewer, setAttachmentViewer] =
     useState<AttachmentViewerState>(null);
+  const { url: viewerUrl, error: viewerError } = useProtectedMediaUrl(attachmentViewer?.url);
   const [replyingTo, setReplyingTo] = useState<ChatMessageUI | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -1507,6 +1517,7 @@ export const MessagesPage = () => {
                     pending={Boolean(message.optimistic)}
                     isRead={Boolean(message.is_read)}
 					isRecalled={Boolean(message.is_recalled || message.recalled_at)}
+					deletionKind={message.deletion_kind}
                     attachment={message.attachment}
                     attachmentName={message.attachment_name}
                     attachmentMime={message.attachment_mime}
@@ -1949,35 +1960,35 @@ export const MessagesPage = () => {
             <h3 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-3 truncate pr-6">
               {attachmentViewer.name}
             </h3>
+            {viewerError ? <p role="alert">This attachment is no longer available.</p> : !viewerUrl ? <p role="status">Opening attachment...</p> : null}
             {attachmentViewer.mime.startsWith("image/") ? (
               <img
-                src={attachmentViewer.url}
+                src={viewerUrl || undefined}
                 alt={attachmentViewer.name}
                 className="max-h-[70vh] w-full object-contain rounded-md"
               />
             ) : attachmentViewer.mime.startsWith("video/") ? (
               <video
-                src={attachmentViewer.url}
+                src={viewerUrl || undefined}
                 controls
                 autoPlay
                 className="max-h-[70vh] w-full rounded-md"
               />
             ) : attachmentViewer.mime.startsWith("audio/") ? (
               <audio
-                src={attachmentViewer.url}
+                src={viewerUrl || undefined}
                 controls
                 autoPlay
                 className="w-full"
               />
             ) : (
-              <a
-                href={attachmentViewer.url}
-                target="_blank"
-                rel="noreferrer"
+              <ProtectedDownload
+                url={attachmentViewer.url}
+                name={attachmentViewer.name}
                 className="text-blue-600 dark:text-blue-400 underline"
               >
-                Open file in new tab
-              </a>
+                Download file
+              </ProtectedDownload>
             )}
           </div>
         )}
@@ -2168,11 +2179,12 @@ const MessageBubble = ({
   pending,
   isRead,
 	isRecalled,
-  attachment,
+  attachment: attachmentSource,
   attachmentName,
   attachmentMime,
   goalEvent,
 	checkinEvent,
+  deletionKind,
   replyTo,
   onClick,
   onContextMenu,
@@ -2197,6 +2209,7 @@ const MessageBubble = ({
     creatorName: string;
   } | null;
 	checkinEvent?: Record<string, unknown> | null;
+  deletionKind?: string | null;
   replyTo?: ReplyToInfo | null;
   onClick?: (event: React.MouseEvent) => void;
   onContextMenu?: (event: React.MouseEvent) => void;
@@ -2208,8 +2221,10 @@ const MessageBubble = ({
   }) => void;
 }) => {
   const navigate = useNavigate();
+  const [isCheckinSummaryOpen, setIsCheckinSummaryOpen] = useState(false);
   const displayName = isMe ? myName : senderName;
   const normalizedSenderAvatar = resolveMediaUrl(senderAvatar);
+  const { url: attachment, error: attachmentError } = useProtectedMediaUrl(isRecalled ? null : attachmentSource);
   const isImage = Boolean(attachment && attachmentMime?.startsWith("image/"));
   const isVideo = Boolean(attachment && attachmentMime?.startsWith("video/"));
   const isAudio = Boolean(attachment && attachmentMime?.startsWith("audio/"));
@@ -2218,22 +2233,20 @@ const MessageBubble = ({
 	const checkinGoalTitle = typeof checkinEvent?.goal_title === "string" ? checkinEvent.goal_title : "Goal check-in";
 	const checkinPercent = typeof checkinEvent?.completion_percent === "number" ? checkinEvent.completion_percent : 0;
 	const checkinStatus = typeof checkinEvent?.status === "string" ? checkinEvent.status : "updated";
-	const checkinBlocker = typeof checkinEvent?.blocker === "string" ? checkinEvent.blocker : "";
-	const checkinHasEvidence = Boolean(checkinEvent?.has_evidence);
 
 	if (checkinId && checkinGoalId) {
 		return (
 			<div className="w-full py-1">
 				<div className="mx-auto max-w-[88%] rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:max-w-[72%]">
 					<div className="flex items-center justify-between gap-3">
-						<button type="button" onClick={() => void navigate({ to: "/goals/$id", params: { id: String(checkinGoalId) } })} className="truncate text-left text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">{checkinGoalTitle}</button>
+						<button type="button" onClick={() => setIsCheckinSummaryOpen(true)} className="truncate text-left text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">{checkinGoalTitle}</button>
 						<span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold capitalize text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{checkinStatus}</span>
 					</div>
 					<div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800"><div className="h-full bg-blue-500" style={{ width: `${checkinPercent}%` }} /></div>
 					<p className="mt-2 text-xs text-gray-600 dark:text-slate-300">{senderName} checked in at {checkinPercent}% complete.</p>
-					{checkinBlocker && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">Blocker: {checkinBlocker}</p>}
-					{checkinHasEvidence && <button type="button" onClick={() => void openGoalCheckinEvidence(checkinId)} className="mt-2 min-h-9 rounded-lg border border-gray-200 px-3 text-xs font-medium dark:border-slate-700">View evidence</button>}
+					<button type="button" onClick={() => setIsCheckinSummaryOpen(true)} className="mt-2 min-h-9 rounded-lg border border-gray-200 px-3 text-xs font-medium dark:border-slate-700">View check-in</button>
 				</div>
+				{isCheckinSummaryOpen && <CheckinSummaryModal checkinId={checkinId} onClose={() => setIsCheckinSummaryOpen(false)} />}
 			</div>
 		);
 	}
@@ -2242,7 +2255,7 @@ const MessageBubble = ({
 		return (
 			<div className={cn("flex w-full mb-1", isMe ? "justify-end" : "justify-start")}>
 				<div className="rounded-xl border border-dashed border-gray-300 px-3 py-2 text-xs italic text-gray-500 dark:border-slate-700 dark:text-slate-400">
-					Message recalled
+					{deletionKind === "moderator" ? "This message was removed by a moderator" : "This message was deleted"}
 				</div>
 			</div>
 		);
@@ -2352,6 +2365,7 @@ const MessageBubble = ({
               </div>
             )}
 
+            {attachmentError && <p role="status" className="text-xs">Attachment unavailable</p>}
             {attachment && (
               <div className={cn("mb-2", isMe ? "" : "")}>
                 {isImage ? (

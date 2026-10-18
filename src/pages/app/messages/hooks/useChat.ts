@@ -643,8 +643,18 @@ export const useChat = (): UseChatState => {
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         setConnectionState("closed");
+        if (event.code === 4003 || event.code === 4403) {
+          setMessagesByConversation((previous) => {
+            const next = { ...previous };
+            delete next[conversationId];
+            return next;
+          });
+          setConversations((previous) => previous.filter((item) => item.id !== conversationId));
+          setActiveConversationIdState((current) => current === conversationId ? null : current);
+          return;
+        }
 
         if (!token || activeConversationIdRef.current !== conversationId) {
           return;

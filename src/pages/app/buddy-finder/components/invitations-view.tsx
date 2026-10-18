@@ -5,6 +5,7 @@ import { formatDistanceToNow } from "date-fns";
 import { BuddyInvitation } from "../api";
 import { useInvitations } from "../hooks/useBuddies";
 import { Inbox } from "lucide-react";
+import { Avatar } from "@/components/core/avatar";
 
 interface InvitationsViewProps {
   onViewGoal: (invitation: BuddyInvitation) => void;
@@ -61,10 +62,10 @@ export const InvitationsView: React.FC<InvitationsViewProps> = ({
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-6 bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800"
         >
           <div className="flex items-center gap-3">
-            <img
-              src={invite.from_user.avatar || "/default-avatar.png"}
-              alt={invite.from_user.name}
-              className="w-14 h-14 rounded-full object-cover"
+            <Avatar
+              src={invite.from_user.avatar}
+              name={invite.from_user.name}
+              className="h-14 w-14 text-sm"
             />
             <div>
               <p className="text-base text-gray-700 dark:text-slate-200">

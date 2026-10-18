@@ -3,7 +3,8 @@ import ReactDOM from "react-dom/client";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import "./App.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client";
 import App from "./App";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { initializeTheme } from "./utils/theme";
@@ -25,8 +26,6 @@ declare module "@tanstack/react-router" {
 }
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_OAUTH2_CLIENT_ID;
-
-const queryClient = new QueryClient();
 
 const rootElement = document.getElementById("root")!;
 if (!rootElement.innerHTML) {

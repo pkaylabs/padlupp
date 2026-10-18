@@ -17,6 +17,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   return (
     <button
+      type="button"
+      aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
       onClick={onToggle}
       // Using the exact dimensions from your screenshot
       className="relative hidden sm:flex items-center w-17 h-9 rounded-full bg-gray-100 dark:bg-slate-800 p-1"

@@ -18,6 +18,7 @@ import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppBuddyFinderRouteRouteImport } from './routes/_app/buddy-finder/route'
+import { Route as AppCommunityRouteRouteImport } from './routes/_app/community/route'
 import { Route as AppDashboardRouteRouteImport } from './routes/_app/dashboard/route'
 import { Route as AppMessagesRouteRouteImport } from './routes/_app/messages/route'
 import { Route as AppMilestonesRouteRouteImport } from './routes/_app/milestones/route'
@@ -30,6 +31,8 @@ import { Route as AuthSignupRouteRouteImport } from './routes/_auth/signup/route
 import { Route as GoalInviteTokenRouteImport } from './routes/goal-invite/$token'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
 import { Route as AppGoalsIdRouteImport } from './routes/_app/goals/$id'
+import { Route as AppPodsIndexRouteImport } from './routes/_app/pods/index'
+import { Route as AppPodsIdRouteImport } from './routes/_app/pods/$id'
 import { Route as AppUsersUserIdRouteImport } from './routes/_app/users/$userId'
 import { Route as AuthForgotPasswordResetPasswordRouteRouteImport } from './routes/_auth/forgot-password/reset-password/route'
 import { Route as AuthForgotPasswordVerifyOtpRouteRouteImport } from './routes/_auth/forgot-password/verify-otp/route'
@@ -76,6 +79,11 @@ const TermsRoute = TermsRouteImport.update({
 const AppBuddyFinderRouteRoute = AppBuddyFinderRouteRouteImport.update({
   id: '/buddy-finder',
   path: '/buddy-finder',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCommunityRouteRoute = AppCommunityRouteRouteImport.update({
+  id: '/community',
+  path: '/community',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppDashboardRouteRoute = AppDashboardRouteRouteImport.update({
@@ -138,6 +146,16 @@ const AppGoalsIdRoute = AppGoalsIdRouteImport.update({
   path: '/goals/$id',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPodsIndexRoute = AppPodsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPodsRouteRoute,
+} as any)
+const AppPodsIdRoute = AppPodsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppPodsRouteRoute,
+} as any)
 const AppUsersUserIdRoute = AppUsersUserIdRouteImport.update({
   id: '/users/$userId',
   path: '/users/$userId',
@@ -169,10 +187,11 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/buddy-finder': typeof AppBuddyFinderRouteRoute
+  '/community': typeof AppCommunityRouteRoute
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
   '/milestones': typeof AppMilestonesRouteRoute
-  '/pods': typeof AppPodsRouteRoute
+  '/pods': typeof AppPodsRouteRouteWithChildren
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -182,9 +201,11 @@ export interface FileRoutesByFullPath {
   '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
+  '/pods/$id': typeof AppPodsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
   '/goals/$id/preview': typeof GoalsIdPreviewRoute
   '/goals/': typeof AppGoalsIndexRoute
+  '/pods/': typeof AppPodsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -194,10 +215,10 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/buddy-finder': typeof AppBuddyFinderRouteRoute
+  '/community': typeof AppCommunityRouteRoute
   '/dashboard': typeof AppDashboardRouteRoute
   '/messages': typeof AppMessagesRouteRoute
   '/milestones': typeof AppMilestonesRouteRoute
-  '/pods': typeof AppPodsRouteRoute
   '/profile': typeof AppProfileRouteRoute
   '/settings': typeof AppSettingsRouteRoute
   '/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -207,9 +228,11 @@ export interface FileRoutesByTo {
   '/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/goals/$id': typeof AppGoalsIdRoute
+  '/pods/$id': typeof AppPodsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
   '/goals/$id/preview': typeof GoalsIdPreviewRoute
   '/goals': typeof AppGoalsIndexRoute
+  '/pods': typeof AppPodsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -222,10 +245,11 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_app/buddy-finder': typeof AppBuddyFinderRouteRoute
+  '/_app/community': typeof AppCommunityRouteRoute
   '/_app/dashboard': typeof AppDashboardRouteRoute
   '/_app/messages': typeof AppMessagesRouteRoute
   '/_app/milestones': typeof AppMilestonesRouteRoute
-  '/_app/pods': typeof AppPodsRouteRoute
+  '/_app/pods': typeof AppPodsRouteRouteWithChildren
   '/_app/profile': typeof AppProfileRouteRoute
   '/_app/settings': typeof AppSettingsRouteRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRouteRouteWithChildren
@@ -235,9 +259,11 @@ export interface FileRoutesById {
   '/_auth/forgot-password/reset-password': typeof AuthForgotPasswordResetPasswordRouteRoute
   '/_auth/forgot-password/verify-otp': typeof AuthForgotPasswordVerifyOtpRouteRoute
   '/_app/goals/$id': typeof AppGoalsIdRoute
+  '/_app/pods/$id': typeof AppPodsIdRoute
   '/_app/users/$userId': typeof AppUsersUserIdRoute
   '/goals/$id/preview': typeof GoalsIdPreviewRoute
   '/_app/goals/': typeof AppGoalsIndexRoute
+  '/_app/pods/': typeof AppPodsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -249,6 +275,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/buddy-finder'
+    | '/community'
     | '/dashboard'
     | '/messages'
     | '/milestones'
@@ -262,9 +289,11 @@ export interface FileRouteTypes {
     | '/forgot-password/reset-password'
     | '/forgot-password/verify-otp'
     | '/goals/$id'
+    | '/pods/$id'
     | '/users/$userId'
     | '/goals/$id/preview'
     | '/goals/'
+    | '/pods/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -274,10 +303,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/buddy-finder'
+    | '/community'
     | '/dashboard'
     | '/messages'
     | '/milestones'
-    | '/pods'
     | '/profile'
     | '/settings'
     | '/forgot-password'
@@ -287,9 +316,11 @@ export interface FileRouteTypes {
     | '/forgot-password/reset-password'
     | '/forgot-password/verify-otp'
     | '/goals/$id'
+    | '/pods/$id'
     | '/users/$userId'
     | '/goals/$id/preview'
     | '/goals'
+    | '/pods'
   id:
     | '__root__'
     | '/'
@@ -301,6 +332,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/_app/buddy-finder'
+    | '/_app/community'
     | '/_app/dashboard'
     | '/_app/messages'
     | '/_app/milestones'
@@ -314,9 +346,11 @@ export interface FileRouteTypes {
     | '/_auth/forgot-password/reset-password'
     | '/_auth/forgot-password/verify-otp'
     | '/_app/goals/$id'
+    | '/_app/pods/$id'
     | '/_app/users/$userId'
     | '/goals/$id/preview'
     | '/_app/goals/'
+    | '/_app/pods/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -395,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/buddy-finder'
       fullPath: '/buddy-finder'
       preLoaderRoute: typeof AppBuddyFinderRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/community': {
+      id: '/_app/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof AppCommunityRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/dashboard': {
@@ -481,6 +522,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/pods/': {
+      id: '/_app/pods/'
+      path: '/'
+      fullPath: '/pods/'
+      preLoaderRoute: typeof AppPodsIndexRouteImport
+      parentRoute: typeof AppPodsRouteRoute
+    }
+    '/_app/pods/$id': {
+      id: '/_app/pods/$id'
+      path: '/$id'
+      fullPath: '/pods/$id'
+      preLoaderRoute: typeof AppPodsIdRouteImport
+      parentRoute: typeof AppPodsRouteRoute
+    }
     '/_app/users/$userId': {
       id: '/_app/users/$userId'
       path: '/users/$userId'
@@ -512,12 +567,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppPodsRouteRouteChildren {
+  AppPodsIdRoute: typeof AppPodsIdRoute
+  AppPodsIndexRoute: typeof AppPodsIndexRoute
+}
+
+const AppPodsRouteRouteChildren: AppPodsRouteRouteChildren = {
+  AppPodsIdRoute: AppPodsIdRoute,
+  AppPodsIndexRoute: AppPodsIndexRoute,
+}
+
+const AppPodsRouteRouteWithChildren = AppPodsRouteRoute._addFileChildren(
+  AppPodsRouteRouteChildren,
+)
+
 interface AppRouteRouteChildren {
   AppBuddyFinderRouteRoute: typeof AppBuddyFinderRouteRoute
+  AppCommunityRouteRoute: typeof AppCommunityRouteRoute
   AppDashboardRouteRoute: typeof AppDashboardRouteRoute
   AppMessagesRouteRoute: typeof AppMessagesRouteRoute
   AppMilestonesRouteRoute: typeof AppMilestonesRouteRoute
-  AppPodsRouteRoute: typeof AppPodsRouteRoute
+  AppPodsRouteRoute: typeof AppPodsRouteRouteWithChildren
   AppProfileRouteRoute: typeof AppProfileRouteRoute
   AppSettingsRouteRoute: typeof AppSettingsRouteRoute
   AppGoalsIdRoute: typeof AppGoalsIdRoute
@@ -527,10 +597,11 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppBuddyFinderRouteRoute: AppBuddyFinderRouteRoute,
+  AppCommunityRouteRoute: AppCommunityRouteRoute,
   AppDashboardRouteRoute: AppDashboardRouteRoute,
   AppMessagesRouteRoute: AppMessagesRouteRoute,
   AppMilestonesRouteRoute: AppMilestonesRouteRoute,
-  AppPodsRouteRoute: AppPodsRouteRoute,
+  AppPodsRouteRoute: AppPodsRouteRouteWithChildren,
   AppProfileRouteRoute: AppProfileRouteRoute,
   AppSettingsRouteRoute: AppSettingsRouteRoute,
   AppGoalsIdRoute: AppGoalsIdRoute,

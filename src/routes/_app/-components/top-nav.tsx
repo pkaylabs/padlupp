@@ -1,8 +1,12 @@
 // src/components/layout/TopNav.tsx
 import React, { useEffect, useState } from "react";
-import { Bell, ChevronRight, User } from "lucide-react";
+import { Bell, ChevronRight } from "lucide-react";
 import { Modal } from "@/components/core/modal";
+import { Avatar } from "@/components/core/avatar";
 import { ThemeToggle } from "./toggle-theme";
+import { CommunityNotifications } from "./community-notifications";
+import { TimerModal } from "./timer-modal";
+import Button from "@/components/core/buttons";
 import { useUserProfile } from "@/pages/auth/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -25,8 +29,9 @@ const resolveCurrentStreak = (payload?: StreakStatsResponse): number => {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
 
-export const TopNav: React.FC = () => {
+export const TopNav: React.FC<{ communityLayout?: boolean }> = ({ communityLayout = false }) => {
   const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
+  const [isTimerOpen, setIsTimerOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     getResolvedTheme(getStoredThemePreference()),
   );
@@ -76,17 +81,11 @@ export const TopNav: React.FC = () => {
             className="shrink-0"
             onClick={() => setIsAvatarViewerOpen(true)}
           >
-            {userProfile?.user?.avatar ? (
-              <img
-                src={userProfile.user.avatar}
-                alt="User"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-700 flex items-center justify-center">
-                <User size={18} />
-              </div>
-            )}
+            <Avatar
+              src={userProfile?.user?.avatar}
+              name={userProfile?.user?.name}
+              className="h-9 w-9 border border-gray-200 text-xs dark:border-slate-700 sm:h-10 sm:w-10"
+            />
           </button>
 
           <Link
@@ -104,10 +103,11 @@ export const TopNav: React.FC = () => {
           {/* Theme Toggle */}
           <ThemeToggle theme={theme} onToggle={handleToggleTheme} />
 
-          <button className="relative w-10 h-10 hidden sm:flex items-center justify-center rounded-full bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+          {communityLayout ? <CommunityNotifications /> : <button aria-label="Notifications" className="relative w-10 h-10 hidden sm:flex items-center justify-center rounded-full bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700">
             <div className="absolute size-2 rounded-full bg-primary-500 top-2 right-3"></div>
             <Bell className="text-gray-300 dark:text-slate-500" size={24} />
-          </button>
+          </button>}
+          {communityLayout && <Button variant="primary" size="sm" onClick={() => setIsTimerOpen(true)} className="w-auto gap-2 font-medium"><span>Set timer</span><img src="/pod-assets/timer.svg" alt="" /></Button>}
 
           {/* Set Timer Button */}
           {/* <div className="flex-1 w-full ">
@@ -141,21 +141,23 @@ export const TopNav: React.FC = () => {
         className="max-w-2xl w-[92vw] p-4 md:p-6 top-1/2 -translate-y-1/2"
       >
         <div>
-          <img
-            src={
-              userProfile?.user?.avatar ||
-              "https://placehold.co/500x500/333/FFF?text=User"
-            }
-            alt={userProfile?.user?.name || "Profile image"}
-            className="max-h-[75vh] w-full object-contain rounded-md"
+          <Avatar
+            src={userProfile?.user?.avatar}
+            name={userProfile?.user?.name}
+            className="mx-auto h-[min(70vh,28rem)] w-[min(70vh,28rem)] text-6xl"
           />
           <div className="mt-4 flex justify-end">
-            <Link to="/settings" className="text-sm text-blue-600">
+            <Link
+              to="/settings"
+              onClick={() => setIsAvatarViewerOpen(false)}
+              className="text-sm text-blue-600"
+            >
               Open profile settings
             </Link>
           </div>
         </div>
       </Modal>
+      {communityLayout && <Modal isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} className="top-1/2 max-w-xl -translate-y-1/2"><TimerModal onClose={() => setIsTimerOpen(false)} /></Modal>}
     </>
   );
 };

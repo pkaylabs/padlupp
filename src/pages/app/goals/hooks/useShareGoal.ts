@@ -8,6 +8,10 @@ import {
   joinGoal,
   getGoalMembers,
   removeGoalMember,
+  updateGoalMemberRole,
+  leaveGoal,
+  reportGoal,
+  reportGoalMember,
   type GoalMember,
   type GoalInvitePreview,
   type GoalPreview,
@@ -136,10 +140,12 @@ export function useRemoveGoalMember() {
     mutationFn: ({
       goalId,
       userId,
+      reason,
     }: {
       goalId: string | number;
       userId: string | number;
-    }) => removeGoalMember(goalId, userId),
+      reason?: string;
+    }) => removeGoalMember(goalId, userId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goal-members"] });
       queryClient.invalidateQueries({ queryKey: ["goal"] });
@@ -147,6 +153,93 @@ export function useRemoveGoalMember() {
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Failed to remove member."));
+    },
+  });
+}
+
+export function useUpdateGoalMemberRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      userId,
+      role,
+    }: {
+      goalId: string | number;
+      userId: string | number;
+      role: "member" | "admin";
+    }) => updateGoalMemberRole(goalId, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goal-members"] });
+      queryClient.invalidateQueries({ queryKey: ["goal"] });
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+      toast.success("Pod role updated.");
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to update the member role."));
+    },
+  });
+}
+
+export function useLeaveGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      reason,
+      details,
+      transfer_to,
+    }: {
+      goalId: string | number;
+      reason: string;
+      details?: string;
+      transfer_to?: number;
+    }) => leaveGoal(goalId, { reason, details, transfer_to }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("You have left the pod.");
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Could not leave the pod."));
+    },
+  });
+}
+
+export function useReportGoal() {
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      reason,
+      details,
+    }: {
+      goalId: string | number;
+      reason: string;
+      details?: string;
+    }) => reportGoal(goalId, { reason, details }),
+    onSuccess: () => toast.success("Pod report submitted."),
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Could not submit the report."));
+    },
+  });
+}
+
+export function useReportGoalMember() {
+  return useMutation({
+    mutationFn: ({
+      userId,
+      reason,
+      details,
+    }: {
+      userId: string | number;
+      reason: string;
+      details?: string;
+    }) => reportGoalMember(userId, { reason, details }),
+    onSuccess: () => toast.success("Member report submitted."),
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Could not submit the report."));
     },
   });
 }

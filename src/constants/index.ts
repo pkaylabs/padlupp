@@ -1,4 +1,4 @@
-import { BUDDY_FINDER, GOALS, MESSAGES, PADDIE_PODS } from "@/constants/page-path";
+import { BUDDY_FINDER, COMMUNITY, GOALS, MESSAGES, PADDIE_PODS } from "@/constants/page-path";
 import { CiFacebook } from "react-icons/ci";
 import { FaXTwitter } from "react-icons/fa6";
 import { FaInstagram } from "react-icons/fa6";
@@ -10,8 +10,9 @@ import { PiUsersThree } from "react-icons/pi";
 export const navigation = [
   { name: "Goals", href: GOALS, icon: ListTodo },
   { name: "Messages", href: MESSAGES, icon: Mail },
-	{ name: "Paddie Pods", href: PADDIE_PODS, icon: UsersRound },
   { name: "Buddy Finder", href: BUDDY_FINDER, icon: PiUsersThree },
+  { name: "Community", href: COMMUNITY, icon: UsersRound },
+  { name: "Paddie Pods", href: PADDIE_PODS, icon: UsersRound },
   // { name: "Profile", href: PROFILE, icon: LuStethoscope },
 ];
 

@@ -5,6 +5,7 @@ import {
   createFileRoute,
   redirect,
   useMatchRoute,
+  useLocation,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import {
@@ -20,10 +21,12 @@ import {
 } from "@heroicons/react/24/outline";
 import classNames from "@/utils/classnames";
 import logo from "@/assets/images/logo.png";
-import { MESSAGES, SETTINGS } from "@/constants/page-path";
+import { COMMUNITY, MESSAGES, PADDIE_PODS, SETTINGS } from "@/constants/page-path";
 import { TopNav } from "./-components/top-nav";
 import { useAuthStore } from "@/features/auth/authStore";
 import { useAppPresence } from "@/hooks/useAppPresence";
+import "./-components/community-shell.css";
+import { CommunityNavGroups, CommunityNavPods } from "./-components/community-nav-groups";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: ({ location }) => {
@@ -44,12 +47,14 @@ function AppLayout() {
   useAppPresence();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const matchRoute = useMatchRoute();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const isCommunityLayout = pathname.startsWith("/community") || /^\/pods\/.+/.test(pathname);
   const usesFullWidthLayout = Boolean(
-    matchRoute({ to: MESSAGES }) || matchRoute({ to: SETTINGS }),
+    matchRoute({ to: MESSAGES }) || matchRoute({ to: SETTINGS }) || isCommunityLayout,
   );
   return (
     <>
-      <div className="bg-bg-gray dark:bg-bg-gray dark:text-gray-100">
+      <div className={classNames("bg-bg-gray dark:bg-bg-gray dark:text-gray-100", isCommunityLayout ? "community-shell" : "")}>
         <Dialog
           open={sidebarOpen}
           onClose={setSidebarOpen}
@@ -159,7 +164,7 @@ function AppLayout() {
         </Dialog>
 
         {/* Static sidebar for desktop */}
-        <div className="font-monts hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+        <div className="app-sidebar font-monts hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
           {/* Sidebar component*/}
           <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-slate-900 px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center mt-4 rounded-md">
@@ -175,7 +180,7 @@ function AppLayout() {
                   <ul role="list" className="-mx-2 space-y-1">
                     {navigation.map((item, index) => (
                       <li key={index}>
-                        <Link to={item.href}>
+                        {isCommunityLayout && item.href === PADDIE_PODS ? <CommunityNavPods /> : <Link to={item.href}>
                           {({ isActive }) => {
                             return (
                               <div
@@ -199,7 +204,8 @@ function AppLayout() {
                               </div>
                             );
                           }}
-                        </Link>
+                        </Link>}
+                        {isCommunityLayout && item.href === COMMUNITY && <CommunityNavGroups />}
                       </li>
                     ))}
                   </ul>
@@ -238,8 +244,8 @@ function AppLayout() {
           </div>
         </div>
 
-        <div className="lg:pl-64 flex flex-col min-h-screen">
-          <div className="sticky top-0 z-40 border-b border-gray-200 dark:border-slate-800 flex h-16 shrink-0 items-center gap-x-4 bg-white dark:bg-slate-900 sm:gap-x-6 ">
+        <div className="app-workspace lg:pl-64 flex flex-col min-h-screen">
+          <div className="app-topbar sticky top-0 z-40 border-b border-gray-200 dark:border-slate-800 flex h-16 shrink-0 items-center gap-x-4 bg-white dark:bg-slate-900 sm:gap-x-6 ">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -249,7 +255,7 @@ function AppLayout() {
               <Bars3Icon aria-hidden="true" className="size-6" />
             </button>
 
-            <TopNav />
+            <TopNav communityLayout={isCommunityLayout} />
           </div>
 
           <main className="flex-1 h-full bg-bg-gray dark:bg-slate-950">

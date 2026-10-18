@@ -39,6 +39,7 @@ export interface ChatMessage {
 	recalled_at?: string | null;
 	is_recalled?: boolean;
 	can_recall?: boolean;
+  deletion_kind?: string | null;
   reply_to_message_id: number | null;
   reply_to: ReplyToInfo | null;
   created_at: string;
