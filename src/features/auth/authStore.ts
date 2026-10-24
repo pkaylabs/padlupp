@@ -16,7 +16,11 @@ export interface AuthState {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  sessionId: string | null;
+  bioPromptDismissed: boolean;
   login: (token: string, user: User) => void;
+  updateUser: (user: User) => void;
+  dismissBioPrompt: () => void;
   logout: () => void;
 }
 
@@ -26,15 +30,25 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
+      sessionId: null,
+      bioPromptDismissed: false,
 
       login: (token, user) => {
-        if (get().user?.id !== user.id) queryClient.clear();
+        queryClient.clear();
         set({
           token,
           user,
           isAuthenticated: true,
+          sessionId: crypto.randomUUID(),
+          bioPromptDismissed: false,
         });
       },
+
+      updateUser: (user) => {
+        if (get().user?.id === user.id) set({ user });
+      },
+
+      dismissBioPrompt: () => set({ bioPromptDismissed: true }),
 
       logout: () => {
         queryClient.clear();
@@ -42,6 +56,8 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           user: null,
           isAuthenticated: false,
+          sessionId: null,
+          bioPromptDismissed: false,
         });
         localStorage.removeItem("auth-storage");
       },

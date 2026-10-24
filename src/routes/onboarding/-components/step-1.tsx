@@ -18,6 +18,7 @@ interface Step1Props {
   onBack: () => void;
   isPending: boolean;
   initialSelected?: string[];
+  onChange?: (interests: string[]) => void;
 }
 
 const groupIcons = [Briefcase, Book, HeartPulse, CheckSquare, Palette, BarChart];
@@ -27,6 +28,7 @@ export const Step1Interests: React.FC<Step1Props> = ({
   onBack,
   isPending,
   initialSelected = [],
+  onChange,
 }) => {
   const [selected, setSelected] = useState<string[]>(initialSelected);
 
@@ -35,11 +37,12 @@ export const Step1Interests: React.FC<Step1Props> = ({
   }, [initialSelected]);
 
   const toggleInterest = (label: string) => {
-    setSelected((prev) =>
-      prev.includes(label)
-        ? prev.filter((item) => item !== label)
-        : [...prev, label],
-    );
+    if (isPending) return;
+    const next = selected.includes(label)
+      ? selected.filter((item) => item !== label)
+      : [...selected, label];
+    setSelected(next);
+    onChange?.(next);
   };
 
   return (

@@ -46,6 +46,7 @@ import { CHECKIN_FREQUENCIES } from "./api";
 import type { CheckinFrequency } from "./api";
 import { useAuthStore } from "@/features/auth/authStore";
 import { CheckinPanel } from "./components/checkin-panel";
+import { fromDatetimeLocal, toDatetimeLocal } from "@/utils/datetime";
 
 export function GoalDetailsPage() {
   const { id } = useParams({ from: "/_app/goals/$id" });
@@ -84,6 +85,8 @@ export function GoalDetailsPage() {
   const [isShareGoalModalOpen, setIsShareGoalModalOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState("");
+  const [editingTaskDueAt, setEditingTaskDueAt] = useState("");
+  const [initialTaskDueAt, setInitialTaskDueAt] = useState("");
   const [pendingTaskIds, setPendingTaskIds] = useState<number[]>([]);
 
   const [editTitle, setEditTitle] = useState("");
@@ -109,6 +112,7 @@ export function GoalDetailsPage() {
   const { data: goalMembers = [], isLoading: isLoadingGoalMembers } =
     useGoalMembers(id);
   const { data: tasksData, isLoading: loadingTasks } = useTasks({
+    goal: Number(id),
     ordering: "created_at",
   });
   // Mutations
@@ -343,14 +347,23 @@ export function GoalDetailsPage() {
     }
   };
 
-  const handleStartTaskEdit = (task: { id: number; title: string }) => {
+  const handleStartTaskEdit = (task: {
+    id: number;
+    title: string;
+    due_at?: string | null;
+  }) => {
     setEditingTaskId(task.id);
     setEditingTaskTitle(task.title || "");
+    const dueAt = toDatetimeLocal(task.due_at);
+    setEditingTaskDueAt(dueAt);
+    setInitialTaskDueAt(dueAt);
   };
 
   const handleCancelTaskEdit = () => {
     setEditingTaskId(null);
     setEditingTaskTitle("");
+    setEditingTaskDueAt("");
+    setInitialTaskDueAt("");
   };
 
   const handleSaveTaskEdit = async (taskId: number) => {
@@ -361,14 +374,26 @@ export function GoalDetailsPage() {
     }
     if (pendingTaskIds.includes(taskId)) return;
 
+    let dueAt: string | null;
+    try {
+      dueAt = fromDatetimeLocal(editingTaskDueAt);
+    } catch {
+      toast.error("Enter a valid local date and time.");
+      return;
+    }
+
     setTaskPending(taskId, true);
     try {
       await updateTask({
         id: taskId,
-        data: { title },
+        data: {
+          title,
+          ...(editingTaskDueAt !== initialTaskDueAt ? { due_at: dueAt } : {}),
+        },
       });
-      setEditingTaskId(null);
-      setEditingTaskTitle("");
+      handleCancelTaskEdit();
+    } catch {
+      // The mutation displays the API error; keep the editor and draft intact.
     } finally {
       setTaskPending(taskId, false);
     }
@@ -816,13 +841,15 @@ export function GoalDetailsPage() {
                         <Circle size={20} />
                       )}
                     </button>
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       {editingTaskId === task.id ? (
                         <div className="space-y-2">
                           <input
+                            aria-label="Subtask title"
                             type="text"
                             autoFocus
                             value={editingTaskTitle}
+                            disabled={pendingTaskIds.includes(task.id)}
                             onChange={(event) =>
                               setEditingTaskTitle(event.target.value)
                             }
@@ -838,6 +865,28 @@ export function GoalDetailsPage() {
                             }}
                             className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
                           />
+                          <div>
+                            <label
+                              htmlFor={`edit-subtask-due-${task.id}`}
+                              className="text-xs font-medium text-gray-600 dark:text-slate-300"
+                            >
+                              Due date and time (optional)
+                            </label>
+                            <input
+                              id={`edit-subtask-due-${task.id}`}
+                              type="datetime-local"
+                              value={editingTaskDueAt}
+                              disabled={pendingTaskIds.includes(task.id)}
+                              onChange={(event) => setEditingTaskDueAt(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Escape") handleCancelTaskEdit();
+                              }}
+                              className="mt-1 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            />
+                            <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500">
+                              Uses your local time. Clear the field to remove the deadline.
+                            </p>
+                          </div>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
@@ -848,7 +897,7 @@ export function GoalDetailsPage() {
                               }
                               className="px-2.5 py-1 text-xs font-semibold rounded-md bg-primary-500 text-white disabled:opacity-60"
                             >
-                              Save
+                              {pendingTaskIds.includes(task.id) ? "Saving..." : "Save"}
                             </button>
                             <button
                               type="button"
@@ -880,12 +929,12 @@ export function GoalDetailsPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    {editingTaskId !== task.id && <div className="flex items-center gap-1">
                       <button
                         type="button"
                         aria-label="Edit subtask"
                         onClick={() => handleStartTaskEdit(task)}
-                        disabled={pendingTaskIds.includes(task.id)}
+                        disabled={pendingTaskIds.includes(task.id) || (editingTaskId !== null && pendingTaskIds.includes(editingTaskId))}
                         className="p-1.5 rounded-md text-gray-400 dark:text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 disabled:opacity-50"
                       >
                         <Pencil size={14} />
@@ -899,7 +948,7 @@ export function GoalDetailsPage() {
                       >
                         <Trash2 size={14} />
                       </button>
-                    </div>
+                    </div>}
                   </motion.div>
                 ))
               )}

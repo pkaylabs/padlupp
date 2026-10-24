@@ -1,266 +1,343 @@
-// src/pages/BuddyFinderPage.tsx
-import { useState, useMemo, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import {
+  Clock3,
+  Mail,
   Search,
+  SearchX,
   SlidersHorizontal,
-  User,
-  Users,
-  ArrowLeft,
-  Check,
   UserPlus,
+  Users,
+  X,
 } from "lucide-react";
 import { useClickAway } from "react-use";
 import { Breadcrumb } from "@/components/core/breadcrump";
 import { SegmentedControl } from "@/components/system/segment-control";
-import { CategoryGridView } from "./components/category-gridview";
-import { DetailsView } from "./components/details-view";
+import { CORE_CATEGORIES } from "@/constants/categories";
 import { InvitationsView } from "./components/invitations-view";
 import { InviteModal } from "./components/invite-modal";
 import { ViewGoalModal } from "./components/view-goal-modal";
 import { PlatformInviteModal } from "./components/platform-invite-modal";
-import { cn } from "@/utils/cs";
-import {
-  CATEGORIES_MOCK,
-  COMMUNITY_MOCK,
-  type Person,
-} from "@/constants/goals-data";
-import { BuddyInvitation } from "./api";
+import { PeopleGrid } from "./components/people-grid";
+import { useBuddyDirectory } from "./hooks/useBuddies";
+import type { BuddyInvitation, PotentialBuddy } from "./api";
 
 type MainTab = "explore" | "invitations";
-type ExploreView = "categories" | "details";
-type DetailsTab = "People" | "Community";
 
-export const BuddyFinderPage = () => {
+export function BuddyFinderPage() {
   const [mainTab, setMainTab] = useState<MainTab>("explore");
-  const [exploreView, setExploreView] = useState<ExploreView>("categories");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [detailsTab, setDetailsTab] = useState<DetailsTab>("People");
+  const [category, setCategory] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-
-  // --- Modal States ---
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [personToInvite, setPersonToInvite] = useState<PotentialBuddy | null>(
+    null,
+  );
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [viewGoalModalOpen, setViewGoalModalOpen] = useState(false);
-  const [platformInviteModalOpen, setPlatformInviteModalOpen] = useState(false);
-
-  // Data to pass to modals
-  const [personToInvite, setPersonToInvite] = useState<Person | null>(null);
   const [selectedInvitation, setSelectedInvitation] =
     useState<BuddyInvitation | null>(null);
-
-  const handleSelectCategory = (category: string) => {
-    setSelectedCategory(category);
-    setExploreView("details");
-  };
-
-  const handleBackToCategories = () => {
-    setSelectedCategory(null);
-    setExploreView("categories");
-  };
-
-  // Open Invite Modal (Explore Tab)
-  const handleOpenInviteModal = (person: Person | null) => {
-    setPersonToInvite(person);
-    setInviteModalOpen(true);
-  };
-
-  // Open Goal Modal (Invitations Tab)
-  const handleOpenViewGoalModal = (invitation: BuddyInvitation) => {
-    setSelectedInvitation(invitation);
-    setViewGoalModalOpen(true);
-  };
-
-  const handleDetailsTabChange = (tab: DetailsTab) => {
-    setDetailsTab(tab);
-    setIsFilterOpen(false);
-  };
-
-  const filterPopoverRef = useRef(null);
-  useClickAway(filterPopoverRef, () => {
-    setIsFilterOpen(false);
-  });
-
-  const breadcrumbPath = useMemo(() => {
-    const path = ["Goals"];
-    if (mainTab === "invitations") {
-      path.push("Invitations");
-    } else {
-      if (selectedCategory) {
-        path.push("Categories", selectedCategory);
-      }
-    }
-    return path;
-  }, [mainTab, selectedCategory]);
+  const [platformInviteOpen, setPlatformInviteOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const categoryRef = useRef<HTMLSelectElement>(null);
+  useClickAway(filterRef, () => setIsFilterOpen(false));
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 280);
-
-    return () => window.clearTimeout(timeout);
+    const timer = window.setTimeout(
+      () => setDebouncedSearch(searchQuery.trim()),
+      280,
+    );
+    return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (mainTab !== "explore") {
-      return;
-    }
+    if (isFilterOpen) categoryRef.current?.focus();
+  }, [isFilterOpen]);
 
-    if (debouncedSearchQuery.trim().length > 0) {
-      setExploreView("details");
-      setDetailsTab("People");
+  const directory = useBuddyDirectory(debouncedSearch, category);
+  const uniquePeople = new Map<number, PotentialBuddy>();
+  for (const page of directory.data?.pages || []) {
+    for (const person of page.results) {
+      if (!uniquePeople.has(person.user.id))
+        uniquePeople.set(person.user.id, person);
     }
-  }, [debouncedSearchQuery, mainTab]);
+  }
+  const people = [...uniquePeople.values()];
+  const count = directory.data?.pages[0]?.count;
+  const hasFilters = Boolean(category || searchQuery);
+  const clearFilters = () => {
+    setCategory("");
+    setSearchQuery("");
+  };
 
   return (
-    <>
-      <div className="font-monts w-full flex flex-col text-gray-900 dark:text-slate-100">
-        <header className="sm:sticky sm:top-22 w-full flex items-center justify-between mb-6">
-          <Breadcrumb path={breadcrumbPath} />
-        </header>
-
-        <main className="w-full sm:max-w-2xl mx-auto ">
+    <div className="w-full font-monts text-gray-900 dark:text-slate-100">
+      <header className="mb-6">
+        <Breadcrumb
+          path={[
+            "Buddy Finder",
+            ...(mainTab === "invitations" ? ["Invitations"] : []),
+          ]}
+        />
+      </header>
+      <main className="mx-auto w-full max-w-6xl pb-10">
+        <div className="mb-7 flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Find your people
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Meet buddies across Padlupp and make progress together.
+            </p>
+          </div>
           <SegmentedControl
             tabs={["Explore", "Invitations"]}
             activeTab={mainTab === "explore" ? "Explore" : "Invitations"}
-            onTabChange={(tab) => setMainTab(tab.toLowerCase() as MainTab)}
-            icons={[<User size={16} />, <Users size={16} />]}
-            className="w-fit mx-auto"
+            onTabChange={(tab) => {
+              setMainTab(tab.toLowerCase() as MainTab);
+              setIsFilterOpen(false);
+            }}
+            icons={[<Users size={16} />, <Mail size={16} />]}
+            className="w-fit"
           />
+        </div>
 
-          {/* Search and Filters */}
-          <div className="flex items-center gap-4 my-6 ">
-            <div className="relative flex-1">
+        <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
+          {mainTab === "explore" && (
+            <div className="relative min-w-0 basis-full sm:min-w-48 sm:basis-auto sm:flex-1">
               <Search
-                size={20}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
               />
               <input
-                type="text"
-                placeholder="Search"
+                type="search"
+                aria-label="Search people"
+                placeholder="Search people by name"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 text-gray-800 dark:text-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:focus:ring-blue-950"
               />
             </div>
-
-            <button
-              onClick={() => setPlatformInviteModalOpen(true)}
-              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+          )}
+          <button
+            type="button"
+            onClick={() => setPlatformInviteOpen(true)}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+          >
+            <UserPlus size={17} aria-hidden="true" />
+            Invite
+          </button>
+          {mainTab === "explore" && (
+            <div
+              className="relative"
+              ref={filterRef}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setIsFilterOpen(false);
+                  filterButtonRef.current?.focus();
+                }
+              }}
             >
-              <UserPlus size={16} />
-              Invite
-            </button>
-
-            <div className="relative" ref={filterPopoverRef}>
               <button
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="shrink-0 p-3 bg-white dark:bg-slate-900 rounded-xl border border-[#CDDAE9] dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800"
+                type="button"
+                ref={filterButtonRef}
+                aria-expanded={isFilterOpen}
+                aria-controls="buddy-category-filters"
+                onClick={() => setIsFilterOpen((open) => !open)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
               >
-                <SlidersHorizontal size={20} className="text-gray-600 dark:text-slate-300" />
+                <SlidersHorizontal size={17} aria-hidden="true" />
+                Filters
+                {category && (
+                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                    1
+                  </span>
+                )}
               </button>
-
-              <AnimatePresence>
-                {isFilterOpen &&
-                  exploreView === "details" &&
-                  mainTab === "explore" && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute right-0 top-13 w-48 bg-white dark:bg-slate-900 rounded-lg shadow border border-gray-100/50 dark:border-slate-700 py-4 pb-2 px-2 z-20"
-                    >
-                      <button
-                        onClick={() => handleDetailsTabChange("People")}
-                        className={cn(
-                          "flex items-center justify-between w-full px-3 py-2 mb-1 text-sm rounded-md",
-                          detailsTab === "People"
-                            ? "font-semibold text-primary-500 bg-blue-50"
-                            : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        People
-                        {detailsTab === "People" && <Check size={16} />}
-                      </button>
-                      <button
-                        onClick={() => handleDetailsTabChange("Community")}
-                        className={cn(
-                          "flex items-center justify-between w-full px-3 py-2 text-sm rounded-md",
-                          detailsTab === "Community"
-                            ? "font-semibold text-blue-600 bg-blue-50"
-                            : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        Community
-                        {detailsTab === "Community" && <Check size={16} />}
-                      </button>
-                    </motion.div>
-                  )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <AnimatePresence mode="wait">
-            <div className="mb-7">
-              {exploreView === "details" && mainTab === "explore" && (
-                <button
-                  onClick={handleBackToCategories}
-                  className="flex gap-1.5 items-center text-sm font-medium text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100"
+              {isFilterOpen && (
+                <div
+                  id="buddy-category-filters"
+                  className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-700 dark:bg-slate-900"
                 >
-                  <ArrowLeft size={20} />
-                  Categories
-                </button>
+                  <label
+                    htmlFor="buddy-category"
+                    className="mb-2 block text-sm font-semibold"
+                  >
+                    Goal category
+                  </label>
+                  <select
+                    id="buddy-category"
+                    ref={categoryRef}
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value)}
+                    className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <option value="">All categories</option>
+                    {CORE_CATEGORIES.map((item) => (
+                      <option key={item.label} value={item.label}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                Find people with public goals in this category.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategory("");
+                      setIsFilterOpen(false);
+                      filterButtonRef.current?.focus();
+                    }}
+                    className="mt-3 text-xs font-semibold text-blue-600 dark:text-blue-400"
+                  >
+                    Clear category
+                  </button>
+                </div>
               )}
             </div>
+          )}
+        </div>
 
-            {mainTab === "explore" ? (
-              exploreView === "categories" ? (
-                <CategoryGridView
-                  key="categories"
-                  categories={CATEGORIES_MOCK}
-                  onSelectCategory={handleSelectCategory}
+        {mainTab === "invitations" ? (
+          <InvitationsView
+            onViewGoal={(invitation) => setSelectedInvitation(invitation)}
+          />
+        ) : (
+          <>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-3">
+                <span aria-live="polite">
+                  {count === undefined
+                    ? "People on Padlupp"
+                    : count + (count === 1 ? " person" : " people")}
+                </span>
+                {category && (
+                  <button
+                    type="button"
+                    onClick={() => setCategory("")}
+                    aria-label={"Remove " + category + " filter"}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                  >
+                    {category}
+                    <X size={12} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock3 size={14} aria-hidden="true" />
+                Most recently active
+              </span>
+            </div>
+            {directory.isPending ? (
+              <div
+                role="status"
+                aria-label="Loading people"
+                className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
+              >
+                {Array.from({ length: 6 }, (_, index) => (
+                  <div
+                    key={index}
+                    className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900"
+                  />
+                ))}
+              </div>
+            ) : directory.isError ? (
+              <div
+                role="alert"
+                className="rounded-2xl border border-red-100 bg-white p-10 text-center dark:border-red-950 dark:bg-slate-900"
+              >
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  We couldn't load people. Please try again.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void directory.refetch()}
+                  className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : people.length ? (
+              <>
+                <PeopleGrid
+                  people={people}
+                  onConnect={(person) => {
+                    setPersonToInvite(person);
+                    setInviteModalOpen(true);
+                  }}
+                  onReviewInvitation={() => setMainTab("invitations")}
                 />
-              ) : (
-                <DetailsView
-                  key="details"
-                  activeTab={detailsTab}
-                  searchQuery={debouncedSearchQuery}
-                  // We don't pass static people mock anymore, the component fetches it
-                  communityGoals={COMMUNITY_MOCK}
-                  onInvite={handleOpenInviteModal}
-                  category={selectedCategory}
-                />
-              )
+                {directory.hasNextPage && (
+                  <div className="mt-8 text-center">
+                    <button
+                      type="button"
+                      disabled={directory.isFetchingNextPage}
+                      onClick={() => void directory.fetchNextPage()}
+                      className="min-h-11 rounded-xl border border-slate-200 bg-white px-6 text-sm font-medium hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                    >
+                      {directory.isFetchingNextPage
+                        ? "Loading more people..."
+                        : "Load more people"}
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
-              <InvitationsView
-                key="invitations"
-                onViewGoal={handleOpenViewGoalModal}
-              />
+              <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
+                <SearchX
+                  size={32}
+                  aria-hidden="true"
+                  className="mb-4 text-slate-400"
+                />
+                <h2 className="text-base font-semibold">
+                  {hasFilters
+                    ? "No people match these filters"
+                    : "You're early!"}
+                </h2>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+                  {hasFilters
+                  ? "Try a different name or category to find your next buddy."
+                    : "Invite someone to join Padlupp and start making progress together."}
+                </p>
+                <button
+                  type="button"
+                  onClick={
+                    hasFilters
+                      ? clearFilters
+                      : () => setPlatformInviteOpen(true)
+                  }
+                  className="mt-5 text-sm font-semibold text-blue-600 dark:text-blue-400"
+                >
+                  {hasFilters ? "Clear filters" : "Invite a friend"}
+                </button>
+              </div>
             )}
-          </AnimatePresence>
-        </main>
-      </div>
-
-      {/* Modals */}
+          </>
+        )}
+      </main>
       <InviteModal
+        key={personToInvite?.user.id}
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
-        person={personToInvite}
+        person={
+          personToInvite
+            ? {
+                id: String(personToInvite.user.id),
+                name: personToInvite.user.name,
+              }
+            : null
+        }
       />
-
       <ViewGoalModal
-        isOpen={viewGoalModalOpen}
-        onClose={() => setViewGoalModalOpen(false)}
+        isOpen={Boolean(selectedInvitation)}
+        onClose={() => setSelectedInvitation(null)}
         invitation={selectedInvitation}
       />
-
       <PlatformInviteModal
-        isOpen={platformInviteModalOpen}
-        onClose={() => setPlatformInviteModalOpen(false)}
+        isOpen={platformInviteOpen}
+        onClose={() => setPlatformInviteOpen(false)}
       />
-    </>
+    </div>
   );
-};
+}

@@ -1,5 +1,5 @@
 // src/components/onboarding/Step3ProfileImage.tsx
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import Button from "@/components/core/buttons";
@@ -19,14 +19,22 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
   onFileSelect,
   onBack,
   onFinish,
+  onSkip,
   isPending,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
+    if (!["image/png", "image/jpeg"].includes(selectedFile.type)) {
+      setError("Choose a PNG or JPEG image.");
+      e.target.value = "";
+      return;
+    }
+    setError(null);
     const previewUrl = URL.createObjectURL(selectedFile);
     onFileSelect(selectedFile, previewUrl);
   };
@@ -41,7 +49,7 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
       <h1 className="text-3xl font-bold text-gray-900 mb-3">
         customize your experience
       </h1>
-      <p className="text-gray-500 mb-8">Add profile image</p>
+      <p className="text-gray-500 mb-8">Add a profile image (optional)</p>
 
       {/* The Image Uploader */}
       <div className="mb-8">
@@ -50,6 +58,8 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
           ref={inputRef}
           onChange={handleFileChange}
           accept="image/png, image/jpeg"
+          aria-label="Choose profile image"
+          disabled={isPending}
           className="hidden"
         />
 
@@ -57,6 +67,9 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
         {!preview ? (
           // Empty State (Screenshot 3)
           <motion.button
+            type="button"
+            aria-label="Add profile image"
+            disabled={isPending}
             onClick={triggerFileInput}
             className="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-all"
             whileTap={{ scale: 0.98 }}
@@ -65,7 +78,10 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
           </motion.button>
         ) : (
           // Preview State (Screenshot 4)
-          <motion.div
+          <motion.button
+            type="button"
+            aria-label="Change profile image"
+            disabled={isPending}
             onClick={triggerFileInput}
             className="w-40 h-40 rounded-lg overflow-hidden shadow-lg cursor-pointer"
             initial={{ opacity: 0, scale: 0.8 }}
@@ -76,9 +92,11 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
               alt="Profile preview"
               className="w-full h-full object-cover"
             />
-          </motion.div>
+          </motion.button>
         )}
       </div>
+
+      {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
 
       <Button
         variant="primary"
@@ -96,16 +114,14 @@ export const Step3ProfileImage: React.FC<Step3Props> = ({
       >
         Back
       </Button>
-      {/* <button
-        onClick={() => {
-          onSkip();
-          onFileSelect(null, null);
-          navigate({ to: DASHBOARD });
-        }}
-        className="mt-4 text-sm text-gray-500 hover:text-gray-700"
+      <button
+        type="button"
+        onClick={onSkip}
+        disabled={isPending}
+        className="mt-4 rounded text-sm text-gray-500 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-[#4E92F4] disabled:opacity-50"
       >
-        Skip for now.
-      </button> */}
+        Skip image for now
+      </button>
     </div>
   );
 };

@@ -1,6 +1,11 @@
 import { BASE_URL } from "@/constants";
 import { useAuthStore } from "@/features/auth/authStore";
-import axios, { AxiosHeaders } from "axios";
+import axios, { AxiosHeaders, type InternalAxiosRequestConfig } from "axios";
+import { isCurrentAuthRequest } from "@/utils/auth-session";
+
+interface SessionRequestConfig extends InternalAxiosRequestConfig {
+  authSessionId?: string | null;
+}
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -17,7 +22,8 @@ api.interceptors.request.use((config) => {
     headers.set("Content-Type", "application/json");
   }
 
-  const token = useAuthStore.getState().token;
+  const { token, sessionId } = useAuthStore.getState();
+  (config as SessionRequestConfig).authSessionId = sessionId;
 
   if (token) {
     headers.set("Authorization", `Token ${token}`);
@@ -30,7 +36,15 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const request = error.config as SessionRequestConfig | undefined;
+    if (
+      error.response?.status === 401 &&
+      isCurrentAuthRequest(
+        AxiosHeaders.from(request?.headers).get("Authorization"),
+        request?.authSessionId,
+        useAuthStore.getState(),
+      )
+    ) {
       useAuthStore.getState().logout();
 
       window.location.href = "/signin";

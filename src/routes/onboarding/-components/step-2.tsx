@@ -2,10 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { SelectableCard } from "./select-card";
 import Button from "@/components/core/buttons";
+import ButtonLoader from "@/components/loaders/button";
 
 interface Step2Props {
   onContinue: (goal: string) => void;
   initialGoal?: string;
+  isPending?: boolean;
+  onChange?: (goal: string) => void;
 }
 
 const goalOptions = [
@@ -29,6 +32,8 @@ const goalOptions = [
 export const Step2Goal: React.FC<Step2Props> = ({
   onContinue,
   initialGoal = "",
+  isPending = false,
+  onChange,
 }) => {
   const [selected, setSelected] = useState(initialGoal);
 
@@ -50,9 +55,12 @@ export const Step2Goal: React.FC<Step2Props> = ({
             title={item.title}
             description={item.description}
             isSelected={selected === item.title}
-            onClick={() =>
-              setSelected((prev) => (prev === item.title ? "" : item.title))
-            }
+            onClick={() => {
+              if (isPending) return;
+              const next = selected === item.title ? "" : item.title;
+              setSelected(next);
+              onChange?.(next);
+            }}
           />
         ))}
       </div>
@@ -60,10 +68,10 @@ export const Step2Goal: React.FC<Step2Props> = ({
       <Button
         variant="primary"
         onClick={() => onContinue(selected)}
-        disabled={!selected}
+        disabled={!selected || isPending}
         className="w-full"
       >
-        Continue
+        {isPending ? <ButtonLoader title="Saving..." /> : "Continue"}
       </Button>
     </div>
   );

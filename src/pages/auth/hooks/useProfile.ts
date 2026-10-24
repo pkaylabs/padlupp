@@ -47,8 +47,7 @@ export function useUpdateExperience() {
 export function useUpdateUserAccount() {
   const queryClient = useQueryClient();
   // We might also need to update the Auth Store if the user's name changes there
-  const setAuthUser = useAuthStore((state) => state.login);
-  const token = useAuthStore((state) => state.token);
+  const setAuthUser = useAuthStore((state) => state.updateUser);
 
   return useMutation({
     mutationFn: (payload: UpdateUserPayload) => updateUserAccount(payload),
@@ -57,9 +56,7 @@ export function useUpdateUserAccount() {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
 
       // 2. Update Global Auth Store (so sidebar name updates immediately)
-      if (token) {
-        setAuthUser(token, updatedUser);
-      }
+      setAuthUser(updatedUser);
 
       toast.success("Account details saved");
     },

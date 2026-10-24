@@ -7,6 +7,7 @@ interface ProgressBarProps {
   totalSteps: number;
   maxAccessibleStep?: number;
   onStepSelect?: (step: number) => void;
+  disabled?: boolean;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -14,6 +15,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   totalSteps,
   maxAccessibleStep = totalSteps,
   onStepSelect,
+  disabled = false,
 }) => {
   const progress = (step / totalSteps) * 100;
 
@@ -38,7 +40,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             <button
               key={itemStep}
               type="button"
-              disabled={isLocked}
+              disabled={isLocked || disabled}
+              aria-label={`Step ${itemStep}: ${["Goal", "Interests", "Bio", "Profile image"][index] ?? itemStep}`}
+              aria-current={isActive ? "step" : undefined}
               onClick={() => onStepSelect?.(itemStep)}
               className={`size-8 rounded-full text-xs font-semibold transition-colors ${
                 isActive

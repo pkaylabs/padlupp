@@ -1,19 +1,28 @@
 import { api } from "@/lib/api";
+import type { User, UserProfile } from "@/pages/auth/api/profile";
 
 export interface OnboardingPayload {
   experience?: string;
   interests?: string[];
+  bio?: string;
   avatar?: File | null;
 }
 
 export const setOnboardingExperience = async (data: OnboardingPayload) => {
-  const payload = {
-    experience: data.experience ?? "",
-    interests: data.interests ?? [],
-  };
+  const payload: Omit<OnboardingPayload, "avatar"> = {};
+  if (data.experience !== undefined) payload.experience = data.experience;
+  if (data.interests !== undefined) payload.interests = data.interests;
+  if (data.bio !== undefined) payload.bio = data.bio.trim();
 
-  const response = await api.post("/onboarding/set-experience/", payload);
+  const response = await api.post<UserProfile>("/onboarding/set-experience/", payload);
   return response.data;
+};
+
+export const completeOnboarding = async () => {
+  const { data } = await api.post<{ user: User; profile: UserProfile }>(
+    "/onboarding/complete/",
+  );
+  return data;
 };
 
 export const setOnboardingAvatar = async (data: OnboardingPayload) => {

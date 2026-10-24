@@ -17,7 +17,7 @@ interface User {
 
 // 1. Established Connection
 export interface BuddyConnection {
-  id: number;
+  id: number | null;
   user: User;
   compatibility_score?: number | null;
   rating?: number | null;
@@ -38,7 +38,36 @@ export interface BuddyConnection {
 export interface PotentialBuddy extends BuddyConnection {
   connection_status: "none" | "pending" | "connected"; // Adjust based on actual values
   buddy_request_id: number | null;
+  last_active_at?: string | null;
+  pending_direction?: "incoming" | "outgoing" | null;
 }
+
+export interface BuddyDirectoryPage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: PotentialBuddy[];
+}
+
+export const getBuddyDirectory = async ({
+  page = 1,
+  query = "",
+  category = "",
+}: {
+  page?: number;
+  query?: string;
+  category?: string;
+}) => {
+  const { data } = await api.get<BuddyDirectoryPage>("/buddies/finder/", {
+    params: {
+      page,
+      page_size: 12,
+      ...(query.trim() ? { query: query.trim() } : {}),
+      ...(category ? { category: normalizeCategory(category) } : {}),
+    },
+  });
+  return data;
+};
 
 // 3. Invitation
 export interface BuddyInvitation {
@@ -123,6 +152,9 @@ export const rejectInvitation = async (invitationId: string | number) => {
 
 // POST: Invite user to platform
 export const inviteUserToPlatform = async (payload: PlatformInvitePayload) => {
-  const { data } = await api.post<PlatformInviteResponse>("/auth/invite/", payload);
+  const { data } = await api.post<PlatformInviteResponse>(
+    "/auth/invite/",
+    payload,
+  );
   return data;
 };

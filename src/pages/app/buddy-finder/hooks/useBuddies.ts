@@ -1,7 +1,13 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   acceptInvitation,
   getBuddyFinder,
+  getBuddyDirectory,
   getConnections,
   getInvitations,
   inviteUserToPlatform,
@@ -25,6 +31,19 @@ export function useBuddyFinder(category?: string) {
   return useQuery({
     queryKey: ["buddies", "finder", category],
     queryFn: () => getBuddyFinder(category),
+  });
+}
+
+export function useBuddyDirectory(query: string, category: string) {
+  return useInfiniteQuery({
+    queryKey: ["buddies", "finder", "directory", query.trim(), category],
+    queryFn: ({ pageParam }) =>
+      getBuddyDirectory({ page: pageParam, query, category }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _pages, lastPageParam) =>
+      lastPage.next ? lastPageParam + 1 : undefined,
+    staleTime: 15_000,
+    refetchInterval: 60_000,
   });
 }
 
@@ -94,6 +113,7 @@ export function useRejectInvitation() {
     onSuccess: () => {
       // Remove from invitations list
       queryClient.invalidateQueries({ queryKey: ["buddies", "invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["buddies", "finder"] });
       toast.success("Request ignored.");
     },
     onError: () => toast.error("Failed to reject request."),

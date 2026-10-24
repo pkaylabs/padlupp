@@ -141,7 +141,7 @@ export interface Task {
   owner: number;
   title: string;
   description: string;
-  due_at: string;
+  due_at: string | null;
   status: "planned" | "in-progress" | "completed"; // Adjust based on strict backend types
   is_shared: boolean;
   is_overdue: boolean;
@@ -172,7 +172,7 @@ export interface UpdateTaskPayload {
   data: Partial<{
     title: string;
     description: string;
-    due_at: string;
+    due_at: string | null;
     status: string;
     is_shared: boolean;
     completed: boolean;

@@ -27,6 +27,7 @@ import { useAuthStore } from "@/features/auth/authStore";
 import { useAppPresence } from "@/hooks/useAppPresence";
 import "./-components/community-shell.css";
 import { CommunityNavGroups, CommunityNavPods } from "./-components/community-nav-groups";
+import { BioPrompt } from "./-components/bio-prompt";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: ({ location }) => {
@@ -54,6 +55,7 @@ function AppLayout() {
   );
   return (
     <>
+      <BioPrompt />
       <div className={classNames("bg-bg-gray dark:bg-bg-gray dark:text-gray-100", isCommunityLayout ? "community-shell" : "")}>
         <Dialog
           open={sidebarOpen}

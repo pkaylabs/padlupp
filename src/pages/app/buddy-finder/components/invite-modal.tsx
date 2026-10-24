@@ -2,13 +2,12 @@
 import React, { useState } from "react";
 import Button from "@/components/core/buttons";
 import { Modal } from "@/components/core/modal";
-import { type Person } from "@/constants/goals-data";
 import { useSendRequest } from "../hooks/useBuddies";
 
 interface InviteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  person: Person | null;
+  person: { id: string; name: string } | null;
 }
 
 export const InviteModal: React.FC<InviteModalProps> = ({
@@ -39,10 +38,12 @@ export const InviteModal: React.FC<InviteModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       showCloseButton
-      className="w-md top-1/2 -translate-y-1/2"
+      className="w-[92vw] max-w-md top-1/2 -translate-y-1/2"
     >
       <div className="p-6 w-full ">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Note</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">
+          Note
+        </h3>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
