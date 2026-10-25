@@ -7,6 +7,11 @@ export interface Person { id: number; name: string; avatar: string | null; title
 export interface HQUser extends Person { group_creation_approved: boolean }
 export interface Category { id: number; name: string }
 export interface Member { id: number; user: Person; role: string; state: string; joined_at: string; muted_until?: string | null; inactivity_review?: { id: number; last_login_at: string } | null }
+export interface GroupInvitation {
+  id: number; user: Person | null; invited_by: Person | null; role: string;
+  status: "pending" | "revoked"; created_at: string; expires_at: string; is_link: boolean; url: string | null;
+}
+export interface GroupInviteLink { id: number; url: string; token: string; expires_at: string }
 export type PostType = "text" | "link" | "image" | "video" | "document" | "poll" | "task";
 export interface Group {
   id: number; name: string; description: string; category: Category; image: string | null;
