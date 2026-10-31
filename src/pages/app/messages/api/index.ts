@@ -24,6 +24,11 @@ export interface ReplyToInfo {
   attachment_mime?: string | null;
 }
 
+export interface ChatReaction {
+  emoji: string;
+  user: ChatUser;
+}
+
 export interface ChatMessage {
   id: number;
   conversation: number;
@@ -36,6 +41,8 @@ export interface ChatMessage {
   attachment_mime: string | null;
   attachment_size: number | null;
   is_read: boolean;
+  reactions?: ChatReaction[];
+  can_react?: boolean;
 	recalled_at?: string | null;
 	is_recalled?: boolean;
 	can_recall?: boolean;
@@ -184,6 +191,11 @@ export const deleteMessage = async (id: string | number): Promise<void> => {
 export const recallMessage = async (id: string | number): Promise<ChatMessage> => {
 	const { data } = await api.post<ChatMessage>(`/messages/${id}/recall/`);
 	return data;
+};
+
+export const reactToMessage = async (id: number, emoji: string): Promise<ChatMessage> => {
+  const { data } = await api.post<ChatMessage>(`/community/messages/${id}/react/`, { emoji });
+  return data;
 };
 
 export const archiveConversation = async (id: number): Promise<void> => {

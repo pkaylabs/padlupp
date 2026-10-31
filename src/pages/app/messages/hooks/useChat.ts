@@ -9,9 +9,11 @@ import {
 	getArchivedConversations,
   getMessages,
 	recallMessage as recallMessageRequest,
+  reactToMessage as reactToMessageRequest,
   renameGroupConversation,
 	restoreConversation as restoreConversationRequest,
 } from "../api";
+import { markCachedMessagesRead, matchesPendingMessage, mergeMessageUpdate, updateCachedMessage, updateConversationMessage } from "../utils/message-updates";
 
 const MAX_RETRIES = 8;
 const MAX_BACKOFF_MS = 20_000;
@@ -37,6 +39,7 @@ interface UseChatState {
   markAllRead: () => void;
   renameGroup: (conversationId: number, name: string) => Promise<void>;
 	recallMessage: (messageId: number) => Promise<void>;
+  reactToMessage: (messageId: number, emoji: string) => Promise<void>;
 	archiveConversation: (conversationId: number) => Promise<void>;
 	restoreConversation: (conversationId: number) => Promise<void>;
 	loadArchivedConversations: () => Promise<void>;
@@ -84,9 +87,6 @@ const dedupeMessages = (messages: ChatMessageUI[]) => {
     return true;
   });
 };
-
-const normalizeOptionalText = (value: string | null | undefined) =>
-  (value ?? "").trim();
 
 const sortConversations = (items: Conversation[]) =>
   [...items].sort((a, b) => {
@@ -252,6 +252,16 @@ export const useChat = (): UseChatState => {
     [clearFallbackTimer],
   );
 
+  const applyMessageUpdate = useCallback((message: ChatMessage) => {
+    setMessagesByConversation((previous) => {
+      const current = previous[message.conversation];
+      if (!current?.some((item) => item.id === message.id)) return previous;
+      return { ...previous, [message.conversation]: updateCachedMessage(current, message) };
+    });
+    setConversations((previous) => updateConversationMessage(previous, message));
+    setArchivedConversations((previous) => updateConversationMessage(previous, message));
+  }, []);
+
   const appendMessage = useCallback(
     (message: ChatMessage) => {
       const conversationId = message.conversation;
@@ -261,7 +271,7 @@ export const useChat = (): UseChatState => {
 
         const existingRealMessage = current.find((item) => item.id === message.id);
         if (existingRealMessage) {
-          const nextMessage = { ...existingRealMessage, ...message, optimistic: false };
+          const nextMessage = { ...mergeMessageUpdate(existingRealMessage, message), optimistic: false };
           const didChange =
             existingRealMessage.updated_at !== nextMessage.updated_at ||
             existingRealMessage.is_read !== nextMessage.is_read ||
@@ -269,7 +279,8 @@ export const useChat = (): UseChatState => {
             existingRealMessage.attachment !== nextMessage.attachment ||
             existingRealMessage.attachment_name !== nextMessage.attachment_name ||
 			existingRealMessage.attachment_mime !== nextMessage.attachment_mime ||
-			existingRealMessage.recalled_at !== nextMessage.recalled_at;
+			existingRealMessage.recalled_at !== nextMessage.recalled_at ||
+            JSON.stringify(existingRealMessage.reactions) !== JSON.stringify(nextMessage.reactions);
 
           if (!didChange) return prev;
 
@@ -283,24 +294,7 @@ export const useChat = (): UseChatState => {
 
         let matchedTempId: string | null = null;
         const withPossibleReplacement = current.map((item) => {
-          const senderMatches =
-            item.sender.id === message.sender.id || item.sender.id === 0;
-          const textMatches =
-            normalizeOptionalText(item.text) ===
-            normalizeOptionalText(message.text);
-          const attachmentMatches =
-            !item.attachment_name ||
-            !message.attachment_name ||
-            item.attachment_name === message.attachment_name;
-
-          const isPotentialMatch =
-            typeof item.id === "string" &&
-            item.optimistic &&
-            senderMatches &&
-            textMatches &&
-            attachmentMatches;
-
-          if (!isPotentialMatch || matchedTempId) {
+          if (!matchesPendingMessage(item, message) || matchedTempId) {
             return item;
           }
 
@@ -351,15 +345,8 @@ export const useChat = (): UseChatState => {
     (conversationId: number, shouldMark: (message: ChatMessageUI) => boolean) => {
       setMessagesByConversation((prev) => {
         const current = prev[conversationId] ?? [];
-        let changed = false;
-        const next = current.map((message) => {
-          if (message.is_read) return message;
-          if (!shouldMark(message)) return message;
-          changed = true;
-          return { ...message, is_read: true, optimistic: false };
-        });
-
-        if (!changed) return prev;
+        const next = markCachedMessagesRead(current, shouldMark);
+        if (next === current) return prev;
         return { ...prev, [conversationId]: next };
       });
     },
@@ -595,7 +582,7 @@ export const useChat = (): UseChatState => {
 		}
 
 		if (data.type === "message_updated" && isChatMessage(data.message)) {
-			appendMessage(data.message);
+			applyMessageUpdate(data.message);
 			return;
 		}
 
@@ -670,7 +657,7 @@ export const useChat = (): UseChatState => {
         ws.close();
       };
     },
-    [appendMessage, authUserId, flushQueue, markMessagesAsRead, token],
+    [appendMessage, applyMessageUpdate, authUserId, flushQueue, markMessagesAsRead, token],
   );
 
   useEffect(() => {
@@ -927,8 +914,15 @@ export const useChat = (): UseChatState => {
 
 	const recallMessage = useCallback(async (messageId: number) => {
 		const updated = await recallMessageRequest(messageId);
-		appendMessage(updated);
-	}, [appendMessage]);
+		applyMessageUpdate(updated);
+	}, [applyMessageUpdate]);
+
+  const reactToMessage = useCallback(async (messageId: number, emoji: string) => {
+    const session = useAuthStore.getState().sessionId;
+    const updated = await reactToMessageRequest(messageId, emoji);
+    if (session !== useAuthStore.getState().sessionId) return;
+    applyMessageUpdate(updated);
+  }, [applyMessageUpdate]);
 
 	const archiveConversation = useCallback(async (conversationId: number) => {
 		await archiveConversationRequest(conversationId);
@@ -964,6 +958,7 @@ export const useChat = (): UseChatState => {
     markAllRead,
     renameGroup,
 		recallMessage,
+    reactToMessage,
 		archiveConversation,
 		restoreConversation,
 		loadArchivedConversations,

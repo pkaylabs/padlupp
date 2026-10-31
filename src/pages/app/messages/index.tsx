@@ -21,6 +21,7 @@ import {
   Reply,
   Search,
   Send,
+  SmilePlus,
   Square,
   Trash2,
   Video,
@@ -36,6 +37,7 @@ import {
   getConversationMedia,
   type Conversation,
   type ReplyToInfo,
+  type ChatReaction,
 } from "./api";
 import type { ChatMessageUI } from "./hooks/useChat";
 import { useNavigate } from "@tanstack/react-router";
@@ -55,6 +57,7 @@ import { ProtectedDownload, useProtectedMediaUrl } from "./components/protected-
 import { useUserProfile } from "@/pages/auth/hooks/useProfile";
 import { Avatar } from "@/components/core/avatar";
 import { resolveMediaUrl } from "@/utils/media";
+import { MessageReactionBadges, MessageReactionDetails, MessageReactionPicker } from "./components/message-reactions";
 
 type ActiveModal = "none" | "report";
 type ComingSoonFeature = "none" | "voice_call" | "video_call";
@@ -347,6 +350,7 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
     markAllRead,
     renameGroup,
 		recallMessage,
+    reactToMessage,
 		archiveConversation,
 		restoreConversation,
 		loadArchivedConversations,
@@ -397,6 +401,19 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
     y: number;
     message: ChatMessageUI;
   } | null>(null);
+  const [reactionPicker, setReactionPicker] = useState<{
+    messageId: number;
+    anchor: { left: number; top: number; bottom: number };
+  } | null>(null);
+  const [reactionDetailsId, setReactionDetailsId] = useState<number | null>(null);
+  const [recentReactions, setRecentReactions] = useState<string[]>([]);
+  const [reactingIds, setReactingIds] = useState<Set<number>>(new Set());
+  const reactingRef = useRef(new Set<number>());
+  const pickerMessage = messages.find((message) => message.id === reactionPicker?.messageId);
+  const detailsMessage = messages.find((message) => message.id === reactionDetailsId);
+  const menuMessage = messages.find((message) => message.id === contextMenu?.message.id);
+  const canReact = (message?: ChatMessageUI) => Boolean(message && typeof message.id === "number" && !message.optimistic && !message.is_recalled && !message.recalled_at && message.can_react !== false);
+  useEffect(() => { setRecentReactions([]); }, [authUser?.id]);
   const [isRenameGroupOpen, setIsRenameGroupOpen] = useState(false);
   const [renameGroupValue, setRenameGroupValue] = useState("");
   const [filePickerMode, setFilePickerMode] = useState<"media" | "voice">(
@@ -684,6 +701,8 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
   );
 
   useEffect(() => {
+    setReactionPicker(null);
+    setReactionDetailsId(null);
     if (!activeConversationId) return;
     markAllRead();
     setReplyingTo(null);
@@ -693,6 +712,12 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
+      if (reactionPicker || reactionDetailsId) {
+        setReactionPicker(null);
+        setReactionDetailsId(null);
+        return;
+      }
 
       setInputPopoverOpen(false);
       setIsProfileModalOpen(false);
@@ -707,7 +732,7 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
 
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [setActiveConversationId]);
+  }, [reactionPicker, reactionDetailsId, setActiveConversationId]);
 
   const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
     const container = messagesScrollRef.current;
@@ -994,7 +1019,7 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
   ) => {
     const padding = 8;
     const menuWidth = 176;
-    const menuHeight = canRecallMessage(message, authUser?.id) ? 104 : 56;
+    const menuHeight = (canRecallMessage(message, authUser?.id) ? 104 : 56) + (canReact(message) ? 44 : 0);
     setContextMenu({
       x: Math.max(
         padding,
@@ -1044,6 +1069,30 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
     setReplyingTo(message);
     setContextMenu(null);
     messageInputRef.current?.focus();
+  };
+
+  const openReactionPicker = (message: ChatMessageUI, anchor: { left: number; top: number; bottom: number }) => {
+    if (!canReact(message) || typeof message.id !== "number" || reactingRef.current.has(message.id)) return;
+    setContextMenu(null);
+    setReactionDetailsId(null);
+    setReactionPicker({ messageId: message.id, anchor });
+  };
+
+  const handleReaction = async (message: ChatMessageUI, emoji: string) => {
+    if (!canReact(message) || typeof message.id !== "number" || reactingRef.current.has(message.id)) return;
+    const id = message.id;
+    reactingRef.current.add(id);
+    setReactingIds(new Set(reactingRef.current));
+    setReactionPicker(null);
+    try {
+      await reactToMessage(id, emoji);
+      setRecentReactions((previous) => [emoji, ...previous.filter((item) => item !== emoji)].slice(0, 32));
+    } catch {
+      toast.error("Could not update the reaction. This message may no longer be available or this chat is read-only.");
+    } finally {
+      reactingRef.current.delete(id);
+      setReactingIds(new Set(reactingRef.current));
+    }
   };
 
 	const handleRecallMessage = async (message: ChatMessageUI) => {
@@ -1524,6 +1573,17 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
                     goalEvent={parseGoalCreatedEvent(message.text)}
 					checkinEvent={message.kind === "checkin" ? message.metadata : null}
                     replyTo={message.reply_to ?? null}
+                    reactions={message.reactions}
+                    currentUserId={authUser?.id}
+                    canReact={canReact(message)}
+                    reactionBusy={typeof message.id === "number" && reactingIds.has(message.id)}
+                    onReact={(event) => {
+                      event.stopPropagation();
+                      const bubble = event.currentTarget.closest("[data-message-id]")?.querySelector("[data-message-bubble]");
+                      openReactionPicker(message, (bubble ?? event.currentTarget).getBoundingClientRect());
+                    }}
+                    onInspectReactions={() => typeof message.id === "number" && setReactionDetailsId(message.id)}
+                    messageId={message.id}
                     onClick={(event) => handleMessageClick(event, message)}
                     onContextMenu={(event) => handleContextMenu(event, message)}
                     onActionsClick={(event) =>
@@ -1995,7 +2055,7 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
       </Modal>
 
       <AnimatePresence>
-        {contextMenu && (
+        {contextMenu && menuMessage && (
           <motion.div
             ref={contextMenuRef}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -2010,18 +2070,24 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
             }}
             className="min-w-[140px] rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl py-1.5"
           >
+            {canReact(menuMessage) && <button
+              type="button"
+              disabled={reactingIds.has(Number(menuMessage.id))}
+              onClick={() => openReactionPicker(menuMessage, { left: contextMenu.x, top: contextMenu.y, bottom: contextMenu.y })}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-800"
+            ><SmilePlus size={15} />React</button>}
             <button
               type="button"
-              onClick={() => handleReplyTo(contextMenu.message)}
+              onClick={() => handleReplyTo(menuMessage)}
               className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-2"
             >
               <Reply size={15} className="shrink-0" />
               Reply
             </button>
-			{canRecallMessage(contextMenu.message, authUser?.id) && (
+			{canRecallMessage(menuMessage, authUser?.id) && (
 				<button
 					type="button"
-					onClick={() => void handleRecallMessage(contextMenu.message)}
+					onClick={() => void handleRecallMessage(menuMessage)}
 					className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800"
 				>
 					<Trash2 size={15} className="shrink-0" />
@@ -2031,6 +2097,22 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
           </motion.div>
         )}
       </AnimatePresence>
+
+      {reactionPicker && canReact(pickerMessage) && <MessageReactionPicker
+        anchor={reactionPicker.anchor}
+        reactions={pickerMessage?.reactions}
+        recent={recentReactions}
+        userId={authUser?.id}
+        onChoose={(emoji) => pickerMessage && void handleReaction(pickerMessage, emoji)}
+        onClose={() => setReactionPicker(null)}
+      />}
+      {detailsMessage && !detailsMessage.is_recalled && !detailsMessage.recalled_at && <MessageReactionDetails
+        reactions={detailsMessage.reactions}
+        userId={authUser?.id}
+        busy={!canReact(detailsMessage) || reactingIds.has(Number(detailsMessage.id))}
+        onRemove={(emoji) => void handleReaction(detailsMessage, emoji)}
+        onClose={() => setReactionDetailsId(null)}
+      />}
 
       <Modal
         isOpen={isGroupInfoOpen}
@@ -2190,6 +2272,13 @@ const MessageBubble = ({
   onContextMenu,
   onActionsClick,
   onAttachmentClick,
+  messageId,
+  reactions,
+  currentUserId,
+  canReact,
+  reactionBusy,
+  onReact,
+  onInspectReactions,
 }: {
   text: string | null;
   senderName: string;
@@ -2211,6 +2300,13 @@ const MessageBubble = ({
 	checkinEvent?: Record<string, unknown> | null;
   deletionKind?: string | null;
   replyTo?: ReplyToInfo | null;
+  messageId: number | string;
+  reactions?: ChatReaction[];
+  currentUserId?: number;
+  canReact: boolean;
+  reactionBusy: boolean;
+  onReact: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onInspectReactions: () => void;
   onClick?: (event: React.MouseEvent) => void;
   onContextMenu?: (event: React.MouseEvent) => void;
   onActionsClick?: (event: React.MouseEvent) => void;
@@ -2288,6 +2384,7 @@ const MessageBubble = ({
 
   return (
     <div
+      data-message-id={messageId}
       className={cn(
         "group flex w-full items-start gap-1 mb-1",
         isMe ? "justify-end" : "justify-start",
@@ -2322,16 +2419,18 @@ const MessageBubble = ({
           />
         </button>
         <div
-          className={cn("flex flex-col", isMe ? "items-end" : "items-start")}
+          className={cn("relative min-w-0 flex flex-col", isMe ? "items-end" : "items-start")}
         >
           <div
+            data-message-bubble
             className={cn(
-              "rounded-2xl px-3.5 py-2.5 shadow-sm",
+              "relative rounded-2xl px-3.5 py-2.5 shadow-sm",
               isMe
                 ? "bg-blue-500 text-white rounded-tr-md"
                 : "bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700 rounded-tl-md",
             )}
           >
+            <MessageReactionBadges reactions={reactions} userId={currentUserId} onInspect={onInspectReactions} />
             {!isMe && (
               <span className="font-semibold text-xs text-gray-500 dark:text-slate-400 block mb-1">
                 {displayName}
@@ -2462,6 +2561,15 @@ const MessageBubble = ({
           </div>
         </div>
       </div>
+      <div className={cn("mt-1 flex shrink-0 flex-col items-center", isMe ? "order-first" : "order-last")}>
+      {canReact && <button
+        type="button"
+        aria-label="React to message"
+        title="React to message"
+        disabled={reactionBusy}
+        onClick={onReact}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:opacity-100 disabled:opacity-50 dark:hover:bg-slate-800 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+      ><SmilePlus size={17} /></button>}
       <button
         type="button"
         aria-label="Message actions"
@@ -2476,6 +2584,7 @@ const MessageBubble = ({
       >
         <Ellipsis size={17} />
       </button>
+      </div>
     </div>
   );
 };
