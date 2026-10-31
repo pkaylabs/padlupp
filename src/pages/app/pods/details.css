@@ -1,4 +1,4 @@
-.pod-details-shell { display: flex; width: 100%; min-height: calc(100dvh - 80px); font-family: Montserrat, sans-serif; color: #636363; background: #fafafa; }
+.pod-details-shell { display: flex; width: 100%; min-height: calc(100dvh - var(--app-topbar-height, 64px)); font-family: Montserrat, sans-serif; color: #636363; background: #fafafa; }
 .pod-directory { width: 37.66%; max-width: 479px; min-width: 300px; flex-shrink: 0; padding: 32px; background: white; }
 .pod-community-directory { width: 37.66%; max-width: 479px; min-width: 300px; flex-shrink: 0; }
 .pod-community-directory .co-sidebar { width: 100%; max-width: none; min-width: 0; }
@@ -15,7 +15,7 @@
 .pod-tabs[hidden], .pod-tab-content[hidden] { display: none; }
 .pod-description { min-height: 64px; margin: 0 var(--pod-gutter); padding: 12px 0; max-width: 420px; font-size: 12px; line-height: 1.5; color: #9d9d9d; white-space: pre-wrap; }
 .pod-conversation { display: flex; flex-direction: column; height: calc(100dvh - 230px); min-height: 400px; }
-.pod-show-chat .pod-conversation { height: calc(100dvh - 147px); min-height: 0; }
+.pod-show-chat .pod-conversation { height: calc(100dvh - var(--app-topbar-height, 64px) - 67px); min-height: 0; }
 .pod-tab-content { padding: 32px var(--pod-gutter); }
 .pod-settings { width: min(100%, 920px); margin: 0 auto; padding: 24px 68px 48px; }
 .pod-settings[hidden] { display: none; }
@@ -25,7 +25,7 @@
 .dark .pod-directory { background: #111827; }
 .dark .pod-directory a, .dark .pod-settings-row { border-color: #1e293b; }
 @media (max-width: 1023px) {
-  .pod-details-shell { min-height: 100dvh; background: #f3f5f9; }
+  .pod-details-shell { min-height: calc(100dvh - var(--app-topbar-height, 64px)); background: #f3f5f9; }
   .pod-details-header { padding: 16px 0 0; }
   .pod-details-header > div:first-child { padding: 8px 20px; }
   .pod-title-row { display: grid; grid-template-columns: 1fr auto; }
@@ -33,7 +33,7 @@
   .pod-header-actions { grid-column: 2; grid-row: 1; }
   .pod-show-chat .pod-title-row { display: flex; gap: 10px; }
   .pod-show-chat .pod-identity { margin-top: 0; }
-  .pod-show-chat .pod-conversation { height: calc(100dvh - 83px); }
+  .pod-show-chat .pod-conversation { height: calc(100dvh - var(--app-topbar-height, 64px) - 83px); }
   .pod-description { margin: 0 20px; }
   .pod-tab-content { padding: 24px 20px; }
   .pod-tabs { gap: 8px; margin: 12px 20px 0; scrollbar-width: none; }

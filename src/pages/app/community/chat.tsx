@@ -77,7 +77,7 @@ function CheckinPromptCard({ goalId, cycleDate, canPost, onOpenCheckin }: { goal
       <div className="co-checkin-avatars" aria-label="Members who checked in">{submitted.slice(0, 2).map(record => <Avatar key={record.user.id} src={record.user.avatar} name={record.user.name} className="co-checkin-avatar" />)}{submitted.length > 2 && <span className="co-checkin-avatar-count" title={submitted.slice(2).map(record => record.user.name).join(", ")}>+{submitted.length - 2}</span>}</div>
       <p className="co-checkin-participation" aria-live="polite">{activeIds.size ? `${submitted.length}/${activeIds.size} members checked in` : "No active participants available for this cycle"}</p>
     </>}
-    {canSubmit && !onOpenCheckin ? <Link to="/pods/$id" params={{ id: String(goalId) }} className="co-checkin-button">Check-in</Link> : <button className="co-checkin-button" disabled={!canSubmit} onClick={() => onOpenCheckin?.(goalId)}>{label}</button>}
+    {canSubmit && !onOpenCheckin ? <Link to="/pods/$id" params={{ id: String(goalId) }} search={{ tab: "checkin" }} className="co-checkin-button">Check-in</Link> : <button className="co-checkin-button" disabled={!canSubmit} onClick={() => onOpenCheckin?.(goalId)}>{label}</button>}
   </section>;
 }
 
@@ -166,7 +166,7 @@ export function ConversationChat({ conversationId, canPost, canModerate, postPer
             <div className={`co-message-body ${deleted ? "co-deleted" : ""}`}>
               {deleted ? m.deletion_kind === "moderator" ? "This message was removed by a moderator" : "This message was deleted" : <>
                 {m.reply_to && <blockquote><strong>{m.reply_to.sender_name}</strong><p>{m.reply_to.text || m.reply_to.attachment_name || "Message unavailable"}</p></blockquote>}
-                {taskId ? <TaskCard id={taskId} /> : podSubmission ? <button className="co-pod-checkin-button" aria-label={`View ${m.sender.name}'s check-in summary`} onClick={() => setSummary(checkinId)}><strong>{m.sender.name}</strong> just checked in</button> : m.kind === "checkin" ? <div className="co-checkin-summary"><SafeText text={m.text} />{checkinId ? <button className="co-link" onClick={() => setSummary(checkinId)}>View check-in summary</button> : goalId ? onOpenCheckin ? <button className="co-primary" onClick={() => onOpenCheckin(goalId)}>Check-in</button> : <Link to="/pods/$id" params={{ id: String(goalId) }} className="co-primary">Open pod check-ins</Link> : null}</div> : <SafeText text={m.text} />}
+                {taskId ? <TaskCard id={taskId} /> : podSubmission ? <button className="co-pod-checkin-button" aria-label={`View ${m.sender.name}'s check-in summary`} onClick={() => setSummary(checkinId)}><strong>{m.sender.name}</strong> just checked in</button> : m.kind === "checkin" ? <div className="co-checkin-summary"><SafeText text={m.text} />{checkinId ? <button className="co-link" onClick={() => setSummary(checkinId)}>View check-in summary</button> : goalId ? onOpenCheckin ? <button className="co-primary" onClick={() => onOpenCheckin(goalId)}>Check-in</button> : <Link to="/pods/$id" params={{ id: String(goalId) }} search={{ tab: "checkin" }} className="co-primary">Open pod check-ins</Link> : null}</div> : <SafeText text={m.text} />}
                 {m.attachment && <Attachment id={m.id} name={m.attachment_name || "Attachment"} mime={m.attachment_mime || "application/octet-stream"} preview />}
                 {m.poll && <MessagePoll message={m} canVote={canPost} />}
               </>}

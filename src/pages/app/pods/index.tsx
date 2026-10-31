@@ -1,7 +1,7 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { CalendarClock, MessageCircle, UsersRound } from "lucide-react";
+import { CalendarClock, UsersRound } from "lucide-react";
 import { getGoals } from "@/pages/app/goals/api";
 import { community, nextPage, type Task } from "@/pages/app/community/api";
 import { TaskCard } from "@/pages/app/community/chat";
@@ -47,7 +47,7 @@ export const PaddiePodsPage = () => {
 							<div className="flex items-start justify-between gap-3"><h2 className="font-semibold text-gray-900 dark:text-slate-100">{goal.title}</h2><span className="rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{goal.member_count || goal.members?.length || 1} members</span></div>
 							<p className="mt-2 line-clamp-2 text-sm text-gray-500 dark:text-slate-400">{goal.description || "A shared accountability goal."}</p>
 							<div className="mt-4 flex items-center gap-2 text-xs capitalize text-gray-500"><CalendarClock size={14} /> {frequencyLabel(goal.checkin_frequency)} check-ins</div>
-							<div className="mt-5 flex gap-2"><Link to="/pods/$id" params={{ id: String(goal.id) }} className="min-h-10 flex-1 rounded-lg bg-primary-500 px-3 py-2 text-center text-sm font-semibold text-white">Open Pod</Link>{goal.conversation_id && <Link to="/messages" search={{ conversation: goal.conversation_id }} className="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700" aria-label={`Open ${goal.title} messages`}><MessageCircle size={17} /></Link>}</div>
+							<Link to="/pods/$id" params={{ id: String(goal.id) }} className="mt-5 block min-h-10 w-full rounded-lg bg-primary-500 px-3 py-2 text-center text-sm font-semibold text-white">Open Pod</Link>
 						</article>
 					))}
 				</div>

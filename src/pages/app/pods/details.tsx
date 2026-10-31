@@ -142,14 +142,15 @@ export const PodDetailsPage = () => {
   const [settingsDescription, setSettingsDescription] = useState("");
   const [settingsPublic, setSettingsPublic] = useState(false);
   const [transferTo, setTransferTo] = useState<number | undefined>();
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(!search.tab);
   const [searchRequested, setSearchRequested] = useState(0);
   const settingsAction = useAction();
   const profileAction = useAction();
   const safetyAction = useAction();
   useEffect(() => {
-    if (search.tab) { setActiveTab(search.tab); setShowChat(false); }
-  }, [search.tab, search.checkin]);
+    setActiveTab(search.tab || "details");
+    setShowChat(!search.tab);
+  }, [id, search.tab, search.checkin]);
 
   useEffect(() => {
     if (!goal) return;
@@ -266,6 +267,7 @@ export const PodDetailsPage = () => {
         </header>
 
         {showChat && conversationId && <div className="co pod-conversation"><ConversationChat conversationId={conversationId} podTitle={goal.title} canPost={!podReadOnly} canModerate={canManageMembers} searchRequested={searchRequested} onOpenDetails={() => { setShowChat(false); setActiveTab("details"); }} onOpenCheckin={() => { setShowChat(false); setActiveTab("checkin"); }} /></div>}
+        {showChat && !conversationId && <p role="status" className="p-6 text-sm text-gray-500">Pod chat is unavailable. Open task details from the pod name above.</p>}
         <div className="pod-tab-content" hidden={showChat}>
           {podReadOnly && <p role="status" className="mb-5 rounded bg-blue-50 p-3 text-xs text-gray-500 dark:bg-slate-800">This pod is read-only. Eligible history and resources remain available.</p>}
           {activeTab === "details" && (

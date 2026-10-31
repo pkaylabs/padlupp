@@ -1,6 +1,6 @@
 // src/components/layout/TopNav.tsx
 import React, { useEffect, useState } from "react";
-import { Bell, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Modal } from "@/components/core/modal";
 import { Avatar } from "@/components/core/avatar";
 import { ThemeToggle } from "./toggle-theme";
@@ -29,7 +29,7 @@ const resolveCurrentStreak = (payload?: StreakStatsResponse): number => {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
 
-export const TopNav: React.FC<{ communityLayout?: boolean }> = ({ communityLayout = false }) => {
+export const TopNav: React.FC = () => {
   const [isAvatarViewerOpen, setIsAvatarViewerOpen] = useState(false);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
@@ -74,7 +74,7 @@ export const TopNav: React.FC<{ communityLayout?: boolean }> = ({ communityLayou
 
   return (
     <>
-      <nav className="w-full h-full flex items-center justify-between gap-3 px-2 sm:px-6 bg-white dark:bg-slate-900">
+      <nav aria-label="Account navigation" className="min-w-0 flex-1 h-full flex items-center justify-between gap-3 px-2 sm:px-6 bg-white dark:bg-slate-900">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -103,11 +103,8 @@ export const TopNav: React.FC<{ communityLayout?: boolean }> = ({ communityLayou
           {/* Theme Toggle */}
           <ThemeToggle theme={theme} onToggle={handleToggleTheme} />
 
-          {communityLayout ? <CommunityNotifications /> : <button aria-label="Notifications" className="relative w-10 h-10 hidden sm:flex items-center justify-center rounded-full bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700">
-            <div className="absolute size-2 rounded-full bg-primary-500 top-2 right-3"></div>
-            <Bell className="text-gray-300 dark:text-slate-500" size={24} />
-          </button>}
-          {communityLayout && <Button variant="primary" size="sm" onClick={() => setIsTimerOpen(true)} className="w-auto gap-2 font-medium"><span>Set timer</span><img src="/pod-assets/timer.svg" alt="" /></Button>}
+          <CommunityNotifications />
+          <Button variant="primary" size="sm" aria-label="Set timer" onClick={() => setIsTimerOpen(true)} className="w-10 px-2 sm:w-auto sm:px-3 gap-2 font-medium"><span className="sr-only sm:not-sr-only">Set timer</span><img src="/pod-assets/timer.svg" alt="" /></Button>
 
           {/* Set Timer Button */}
           {/* <div className="flex-1 w-full ">
@@ -157,7 +154,7 @@ export const TopNav: React.FC<{ communityLayout?: boolean }> = ({ communityLayou
           </div>
         </div>
       </Modal>
-      {communityLayout && <Modal isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} className="top-1/2 max-w-xl -translate-y-1/2"><TimerModal onClose={() => setIsTimerOpen(false)} /></Modal>}
+      <Modal isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} className="top-1/2 max-w-xl -translate-y-1/2"><TimerModal onClose={() => setIsTimerOpen(false)} /></Modal>
     </>
   );
 };

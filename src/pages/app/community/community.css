@@ -1,14 +1,14 @@
 .co, .co-root, .co-modal, .co-sidebar { --co-bg: #fafafa; --co-panel: #fff; --co-field: #f6f6f6; --co-ink: #3d3d3d; --co-muted: #8a8a8a; --co-border: #ececec; --co-blue: #4e92f4; color: var(--co-ink); font-family: Montserrat, sans-serif; font-size: 14px; line-height: 1.5; }
 .dark .co, .dark .co-root, .dark .co-modal, .dark .co-sidebar { --co-bg: #0f172a; --co-panel: #111b2e; --co-field: #172237; --co-ink: #e2e8f0; --co-muted: #94a3b8; --co-border: #263348; color: var(--co-ink); }
 .co-root *, .co-modal * { box-sizing: border-box; }
-.co-root { background: var(--co-bg); min-height: calc(100dvh - 80px); }
+.co-root { background: var(--co-bg); min-height: calc(100dvh - var(--app-topbar-height, 64px)); }
 .co-root button, .co-modal button, .co-sidebar button { cursor: pointer; }
 .co-root button:disabled, .co-modal button:disabled, .co-sidebar button:disabled { cursor: default; opacity: .45; }
 .co-root button:focus-visible, .co-modal button:focus-visible, .co-root a:focus-visible, .co-modal a:focus-visible, .co-sidebar button:focus-visible { outline: 2px solid var(--co-blue); outline-offset: 3px; }
 .co-root h1, .co-root h2, .co-root h3, .co-modal h2, .co-modal h3 { margin: 0; font-size: inherit; font-weight: 500; }
 .co-root p, .co-modal p { margin: 0; }
 .co-root a, .co-modal a { color: var(--co-blue); overflow-wrap: anywhere; }
-.co-layout { display: flex; height: calc(100dvh - 80px); overflow: hidden; }
+.co-layout { display: flex; height: calc(100dvh - var(--app-topbar-height, 64px)); overflow: hidden; }
 .co-sidebar { width: 37.7%; max-width: 480px; min-width: 280px; flex-shrink: 0; background: var(--co-panel); padding: 32px 32px 24px; overflow-y: auto; }
 .co-sidebar > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; min-height: 36px; }
 .co-sidebar h1 { font-size: 16px; font-weight: 600; }
@@ -289,8 +289,8 @@
 @media (max-width: 1023px) {
   .co-root, .co-modal { --co-bg: #f3f5f9; }
   .dark .co-root, .dark .co-modal { --co-bg: #0f172a; }
-  .co-root { min-height: 100dvh; }
-  .co-layout { height: 100dvh; }
+  .co-root { min-height: calc(100dvh - var(--app-topbar-height, 64px)); }
+  .co-layout { height: calc(100dvh - var(--app-topbar-height, 64px)); }
   .co-sidebar { width: 100%; min-width: 0; max-width: none; padding: 20px 0; background: var(--co-bg); }
   .co-sidebar > header { padding: 0 24px; margin-bottom: 24px; }
   .co-sidebar > header h1 { font-size: 20px; }
