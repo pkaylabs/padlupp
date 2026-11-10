@@ -36,3 +36,14 @@ export function markCachedMessagesRead<T extends CachedMessage>(messages: T[], s
   });
   return changed ? next : messages;
 }
+
+export function markConversationMessagesRead(conversations: Conversation[], conversationId: number, shouldMark: (message: ChatMessage) => boolean): Conversation[] {
+  let changed = false;
+  const next = conversations.map((conversation) => {
+    const message = conversation.last_message;
+    if (conversation.id !== conversationId || !message || message.is_read || !shouldMark(message)) return conversation;
+    changed = true;
+    return { ...conversation, last_message: { ...message, is_read: true } };
+  });
+  return changed ? next : conversations;
+}

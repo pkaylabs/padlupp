@@ -1,8 +1,9 @@
 import { api } from "@/lib/api";
 import axios from "axios";
 import type { ChatMessage } from "@/pages/app/messages/api";
+import type { MemberAchievement } from "@/features/achievements/types";
 
-export interface Achievement { id: number; key: string; name: string }
+export type Achievement = MemberAchievement;
 export interface Person { id: number; name: string; avatar: string | null; title?: string; achievements?: Achievement[] }
 export interface HQUser extends Person { group_creation_approved: boolean }
 export interface Category { id: number; name: string }

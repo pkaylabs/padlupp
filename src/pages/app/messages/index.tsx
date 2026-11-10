@@ -44,8 +44,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Modal } from "@/components/core/modal";
 import logo from "@/assets/images/logo.png";
-import { useClickAway } from "react-use";
+import { useClickAway, useMedia } from "react-use";
 import { parseGoalCreatedEvent } from "./utils/goal-message";
+import { isMessagePaneVisible } from "./utils/read-receipts";
 import {
   useBuddyFinder,
   useConnections,
@@ -337,6 +338,9 @@ const getConversationLastSeenAt = (conversation: Conversation) => {
 
 export const MessagesPage = ({ initialConversationId }: { initialConversationId?: number }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"Activities" | "Shared">("Activities");
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const isWideLayout = useMedia("(min-width: 48rem)", false);
   const {
     conversations,
 		archivedConversations,
@@ -360,19 +364,15 @@ export const MessagesPage = ({ initialConversationId }: { initialConversationId?
     peerTypingName,
     onlineUserIds,
     lastSeenAtByUserId,
-  } = useChat();
+  } = useChat({ isChatPaneVisible: isMessagePaneVisible(activeTab, showMobileChat, isWideLayout) });
 
   const authUser = useAuthStore((state) => state.user);
   const { data: userProfile } = useUserProfile();
   const { data: connections = [] } = useConnections();
   const { data: finderProfiles = [] } = useBuddyFinder();
 
-  const [activeTab, setActiveTab] = useState<"Activities" | "Shared">(
-    "Activities",
-  );
   const [searchValue, setSearchValue] = useState("");
 	const [showArchived, setShowArchived] = useState(false);
-  const [showMobileChat, setShowMobileChat] = useState(false);
   const openedInitialConversation = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!initialConversationId || openedInitialConversation.current === initialConversationId || !hasReceivedConversationsSnapshot) return;

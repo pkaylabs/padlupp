@@ -239,10 +239,6 @@
 .co-profile-facts strong { display: block; margin-top: 8px; font-weight: 400; text-transform: capitalize; }
 .co-profile .co-choice { width: 100%; }
 .co-achievements { width: 100%; padding: 6px 0; }
-.co-achievements h3 { margin-bottom: 14px; }
-.co-achievements > div { display: flex; flex-wrap: wrap; gap: 8px; }
-.co-achievements > div span { background: #d8e8ff; border-radius: 7px; padding: 4px; display: inline-block; }
-.co-achievements img { width: 40px; height: 40px; object-fit: contain; }
 .co-message-actions { display: flex; flex-direction: column; gap: 4px; padding: 0 8px 8px; }
 .co-message-actions > button { display: flex; align-items: center; gap: 12px; padding: 10px; font-size: 13px; }
 .co-message-actions > button:hover { background: var(--co-field); border-radius: 6px; }

@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/features/auth/authStore";
 import { WS_BASE_URL } from "@/constants";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ChatMessage,
   Conversation,
@@ -13,7 +13,8 @@ import {
   renameGroupConversation,
 	restoreConversation as restoreConversationRequest,
 } from "../api";
-import { markCachedMessagesRead, matchesPendingMessage, mergeMessageUpdate, updateCachedMessage, updateConversationMessage } from "../utils/message-updates";
+import { markCachedMessagesRead, markConversationMessagesRead, matchesPendingMessage, mergeMessageUpdate, updateCachedMessage, updateConversationMessage } from "../utils/message-updates";
+import { getIncomingReadMessageIds, getReadReceiptMatcher, isActiveChatVisible } from "../utils/read-receipts";
 
 const MAX_RETRIES = 8;
 const MAX_BACKOFF_MS = 20_000;
@@ -116,6 +117,7 @@ const hasConversationListChanged = (
       prevItem.id !== nextItem.id ||
       prevItem.updated_at !== nextItem.updated_at ||
       prevItem.unread_count !== nextItem.unread_count ||
+      prevItem.last_message?.is_read !== nextItem.last_message?.is_read ||
       (prevItem.last_message?.id ?? null) !== (nextItem.last_message?.id ?? null)
     ) {
       return true;
@@ -125,7 +127,7 @@ const hasConversationListChanged = (
   return false;
 };
 
-export const useChat = (): UseChatState => {
+export const useChat = ({ isChatPaneVisible = true }: { isChatPaneVisible?: boolean } = {}): UseChatState => {
   const token = useAuthStore((state) => state.token);
   const authUser = useAuthStore((state) => state.user);
   const authUserId = authUser?.id ?? null;
@@ -155,12 +157,16 @@ export const useChat = (): UseChatState => {
 
   const conversationsWsRef = useRef<WebSocket | null>(null);
   const chatWsRef = useRef<WebSocket | null>(null);
+  const chatSocketConversationIdRef = useRef<number | null>(null);
+  const acknowledgedMessageIdsRef = useRef(new Set<number>());
   const conversationsRetryRef = useRef(0);
   const chatRetryRef = useRef(0);
   const pendingSendQueueRef = useRef<string[]>([]);
   const sendFallbackTimersRef = useRef<Record<string, number>>({});
 
   const activeConversationIdRef = useRef<number | null>(null);
+  const isChatPaneVisibleRef = useRef(false);
+  const messagesByConversationRef = useRef(messagesByConversation);
   const conversationsRef = useRef<Conversation[]>([]);
   useEffect(() => {
     activeConversationIdRef.current = activeConversationId;
@@ -168,6 +174,39 @@ export const useChat = (): UseChatState => {
   useEffect(() => {
     conversationsRef.current = conversations;
   }, [conversations]);
+
+  const isConversationVisible = useCallback((conversationId: number) =>
+    isChatPaneVisibleRef.current
+      && isActiveChatVisible(conversationId, activeConversationIdRef.current, document.visibilityState), []);
+
+  const markAllRead = useCallback(() => {
+    const conversationId = activeConversationIdRef.current;
+    const ws = chatWsRef.current;
+    const currentAuth = useAuthStore.getState();
+    if (!conversationId || !isConversationVisible(conversationId)
+      || !token || currentAuth.token !== token || currentAuth.user?.id !== authUserId
+      || chatSocketConversationIdRef.current !== conversationId
+      || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+    const messageIds = getIncomingReadMessageIds(
+      messagesByConversationRef.current[conversationId] ?? [], authUserId, conversationId,
+    ).filter((id) => !acknowledgedMessageIdsRef.current.has(id));
+    if (messageIds.length === 0) return;
+
+    // Never queue reads or acknowledge messages that have not reached the cache.
+    ws.send(JSON.stringify({ type: "read", message_ids: messageIds }));
+    messageIds.forEach((id) => acknowledgedMessageIdsRef.current.add(id));
+  }, [authUserId, isConversationVisible, token]);
+
+  useLayoutEffect(() => {
+    isChatPaneVisibleRef.current = isChatPaneVisible;
+    return () => { isChatPaneVisibleRef.current = false; };
+  }, [isChatPaneVisible]);
+
+  useEffect(() => {
+    messagesByConversationRef.current = messagesByConversation;
+    markAllRead();
+  }, [isChatPaneVisible, markAllRead, messagesByConversation]);
 
   const createOptimisticSender = useCallback(
     (userId: number) => ({
@@ -185,20 +224,15 @@ export const useChat = (): UseChatState => {
   );
 
   const upsertConversation = useCallback((conversation: Conversation) => {
-    const normalizedConversation =
-      activeConversationIdRef.current === conversation.id
-        ? { ...conversation, unread_count: 0 }
-        : conversation;
-
     setConversations((prev) => {
-      const exists = prev.some((item) => item.id === normalizedConversation.id);
+      const exists = prev.some((item) => item.id === conversation.id);
       if (!exists) {
-        return sortConversations([normalizedConversation, ...prev]);
+        return sortConversations([conversation, ...prev]);
       }
       return sortConversations(
         prev.map((item) =>
-          item.id === normalizedConversation.id
-            ? { ...item, ...normalizedConversation }
+          item.id === conversation.id
+            ? { ...item, ...conversation }
             : item,
         ),
       );
@@ -330,10 +364,7 @@ export const useChat = (): UseChatState => {
         partner_avatar: existingConversation?.partner_avatar ?? null,
         is_group: existingConversation?.is_group ?? false,
         last_message: message,
-        unread_count:
-          activeConversationIdRef.current === conversationId
-            ? 0
-            : (existingConversation?.unread_count ?? 0),
+        unread_count: existingConversation?.unread_count ?? 0,
         created_at: existingConversation?.created_at ?? message.created_at,
         updated_at: message.updated_at,
       });
@@ -349,6 +380,8 @@ export const useChat = (): UseChatState => {
         if (next === current) return prev;
         return { ...prev, [conversationId]: next };
       });
+      setConversations((previous) => markConversationMessagesRead(previous, conversationId, shouldMark));
+      setArchivedConversations((previous) => markConversationMessagesRead(previous, conversationId, shouldMark));
     },
     [],
   );
@@ -408,10 +441,6 @@ export const useChat = (): UseChatState => {
           data.conversations.filter(
             (item): item is Conversation => !!item && typeof item === "object",
           ),
-        ).map((conversation) =>
-          activeConversationIdRef.current === conversation.id
-            ? { ...conversation, unread_count: 0 }
-            : conversation,
         );
         setConversations((prev) =>
           hasConversationListChanged(prev, next) ? next : prev,
@@ -420,12 +449,7 @@ export const useChat = (): UseChatState => {
       }
 
       if (data.type === "conversation_update" && data.conversation) {
-        const nextConversationRaw = data.conversation as Conversation;
-        const nextConversation =
-          activeConversationIdRef.current === nextConversationRaw.id
-            ? { ...nextConversationRaw, unread_count: 0 }
-            : nextConversationRaw;
-        upsertConversation(nextConversation);
+        const nextConversation = data.conversation as Conversation;
 
         if (
           activeConversationIdRef.current === nextConversation.id &&
@@ -433,6 +457,7 @@ export const useChat = (): UseChatState => {
         ) {
           appendMessage(nextConversation.last_message);
         }
+        upsertConversation(nextConversation);
       }
     };
 
@@ -453,7 +478,7 @@ export const useChat = (): UseChatState => {
 
   const connectChatSocket = useCallback(
     (conversationId: number) => {
-      if (!token) return;
+      if (!token || activeConversationIdRef.current !== conversationId) return;
 
       chatWsRef.current?.close();
       setConnectionState("connecting");
@@ -462,14 +487,19 @@ export const useChat = (): UseChatState => {
         `${WS_BASE_URL}/ws/chat/${conversationId}/?token=${encodeURIComponent(token)}`,
       );
       chatWsRef.current = ws;
+      chatSocketConversationIdRef.current = conversationId;
+      acknowledgedMessageIdsRef.current = new Set();
 
       ws.onopen = () => {
+        if (chatWsRef.current !== ws) return;
         chatRetryRef.current = 0;
         setConnectionState("open");
         flushQueue();
+        markAllRead();
       };
 
       ws.onmessage = (event) => {
+        if (chatWsRef.current !== ws) return;
         const payload = safeParse(event.data);
         if (!payload || typeof payload !== "object") return;
 
@@ -586,51 +616,26 @@ export const useChat = (): UseChatState => {
 			return;
 		}
 
-        if (data.type === "read") {
-          const eventConversationId =
-            typeof data.conversation_id === "number"
-              ? data.conversation_id
-              : conversationId;
-          const messageId =
-            typeof data.message_id === "number" ? data.message_id : null;
-
-          if (messageId) {
-            markMessagesAsRead(
-              eventConversationId,
-              (message) => Number(message.id) === messageId,
-            );
-          }
-          return;
-        }
-
-        if (data.type === "read_all") {
-          const eventConversationId =
-            typeof data.conversation_id === "number"
-              ? data.conversation_id
-              : conversationId;
-          markMessagesAsRead(eventConversationId, (message) => {
-            if (!authUserId) return false;
-            return (
-              message.sender.id === authUserId || message.sender.name === "Me"
-            );
-          });
+        if (data.type === "read" || data.type === "read_all") {
+          const currentAuth = useAuthStore.getState();
+          if (currentAuth.token !== token || currentAuth.user?.id !== authUserId) return;
+          const shouldMark = getReadReceiptMatcher(data, currentAuth.user?.id, conversationId);
+          if (shouldMark) markMessagesAsRead(conversationId, shouldMark);
           return;
         }
 
         if (isChatMessage(data)) {
           appendMessage(data);
 
-          if (data.sender.id !== authUserId && ws.readyState === WebSocket.OPEN) {
+          if (data.conversation === conversationId && data.sender.id !== authUserId && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "delivered", message_id: data.id }));
-            if (activeConversationIdRef.current === conversationId) {
-              ws.send(JSON.stringify({ type: "read_all" }));
-            }
           }
           return;
         }
       };
 
       ws.onclose = (event) => {
+        if (chatWsRef.current !== ws) return;
         setConnectionState("closed");
         if (event.code === 4003 || event.code === 4403) {
           setMessagesByConversation((previous) => {
@@ -657,7 +662,7 @@ export const useChat = (): UseChatState => {
         ws.close();
       };
     },
-    [appendMessage, applyMessageUpdate, authUserId, flushQueue, markMessagesAsRead, token],
+    [appendMessage, applyMessageUpdate, authUserId, flushQueue, markAllRead, markMessagesAsRead, token],
   );
 
   useEffect(() => {
@@ -679,12 +684,21 @@ export const useChat = (): UseChatState => {
     fetchHistory(activeConversationId);
 
     return () => {
-      chatWsRef.current?.close();
+      const ws = chatWsRef.current;
+      chatWsRef.current = null;
+      chatSocketConversationIdRef.current = null;
+      ws?.close();
     };
   }, [activeConversationId, connectChatSocket, fetchHistory, token]);
 
+  useEffect(() => {
+    document.addEventListener("visibilitychange", markAllRead);
+    return () => document.removeEventListener("visibilitychange", markAllRead);
+  }, [markAllRead]);
+
   useEffect(
     () => () => {
+      activeConversationIdRef.current = null;
       Object.values(sendFallbackTimersRef.current).forEach((timerId) => {
         window.clearTimeout(timerId);
       });
@@ -694,6 +708,7 @@ export const useChat = (): UseChatState => {
   );
 
   const setActiveConversationId = useCallback((id: number | null) => {
+    activeConversationIdRef.current = id;
     setActiveConversationIdState(id);
   }, []);
 
@@ -896,10 +911,6 @@ export const useChat = (): UseChatState => {
     },
     [sendEvent],
   );
-
-  const markAllRead = useCallback(() => {
-    sendEvent({ type: "read_all" });
-  }, [sendEvent]);
 
   const renameGroup = useCallback(
     async (conversationId: number, name: string) => {

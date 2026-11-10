@@ -3,11 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { X, LoaderCircle } from "lucide-react";
 import { Avatar } from "@/components/core/avatar";
-import s1 from "@/assets/images/s1.png";
-import s2 from "@/assets/images/s2.png";
-import s3 from "@/assets/images/s3.png";
-import s4 from "@/assets/images/s4.png";
-import { community, errorText, type Achievement, type Person } from "./api";
+import { community, errorText, type Person } from "./api";
+export { MemberAchievements } from "@/features/achievements/member-achievements";
 
 export { Avatar };
 export type IconName = "search" | "tools" | "send" | "guidelines" | "archive" | "down" | "back" | "settings" | "link" | "pdf" | "file" | "download" | "share" | "requests" | "audit" | "report" | "pod" | "shield" | "users" | "muted" | "banned" | "rules" | "public" | "private" | "reply" | "copy" | "alert" | "pin" | "delete" | "select" | "photos" | "camera" | "document" | "poll" | "task" | "chevron";
@@ -42,14 +39,6 @@ export function useAction() {
 }
 export function PersonRow({ person, suffix, onClick }: { person: Person; suffix?: ReactNode; onClick?: () => void }) {
   return <div className="co-person-row"><button className="co-person" onClick={onClick} disabled={!onClick}><Avatar src={person.avatar} name={person.name} className="co-avatar-sm" /><span>{person.name}</span></button>{suffix}</div>;
-}
-const earnedBadgeImages: Record<string, string> = {
-  goal_started: s1, goal_completed: s1, five_goals_completed: s1,
-  streak_3: s2, streak_7: s2, streak_14: s2,
-  successful_referral: s3, team_player: s4, consistent_checkins: s4,
-};
-export function MemberAchievements({ achievements }: { achievements?: Achievement[] }) {
-  return <section className="co-achievements"><h3>Achievements</h3>{achievements?.length ? <div>{achievements.map(achievement => <span key={achievement.id} title={achievement.name}>{earnedBadgeImages[achievement.key] ? <img src={earnedBadgeImages[achievement.key]} alt={achievement.name} width={40} height={40} /> : achievement.name}</span>)}</div> : <p className="co-muted">No achievements to show.</p>}</section>;
 }
 export function dateLabel(value?: string | null) { if (!value) return ""; const d = new Date(value); return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
 export function timeLabel(value: string) { const d = new Date(value); return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); }
