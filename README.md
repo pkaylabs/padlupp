@@ -1,5 +1,22 @@
 # React + TypeScript + Vite
 
+## Production Deployment
+
+The canonical web application release source is `padlupp/main` at
+`https://github.com/padlup001/padlupp.git`, configured in `deployment-source.json`.
+The `origin` remote (`pkaylabs/padlupp`) remains a secondary synchronized copy.
+
+Build production releases with `yarn release:build`. The preflight fetches the
+configured source and requires a clean `main` checkout at exactly its latest
+commit. It rejects a differently configured remote, unpushed changes and stale
+checkouts. Set `VITE_API_BASE_URL=https://api.padlupp.com/api-v1` and
+`VITE_WS_BASE_URL=wss://api.padlupp.com` for production.
+
+Hosting remains a manual static-bundle deployment to `app.padlupp.com` through
+Nginx release directories under `/var/www/padlupp-releases`. A Git push alone
+does not deploy. Preserve the source repository, branch, commit and bundle hash
+with each release; do not change the backend or marketing deployment sources.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

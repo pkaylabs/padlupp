@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build && node scripts/verify-production-build.mjs",
+    "verify:deployment-source": "node scripts/verify-deployment-source.mjs",
+    "release:build": "yarn verify:deployment-source && yarn build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
