@@ -1,0 +1,157 @@
+name: Deploy Web Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: padlupp-web-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'padlup001/padlupp' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the triggering commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: true
+
+      - name: Configure the canonical release source
+        run: |
+          set -euo pipefail
+          git checkout -B main "$GITHUB_SHA"
+          git remote add padlupp https://github.com/padlup001/padlupp.git
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install locked dependencies with Yarn Classic
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+          test "$(yarn --version)" = '1.22.22'
+          yarn install --frozen-lockfile --non-interactive --production=false
+
+      - name: Run regression tests
+        run: node --experimental-strip-types --test --test-concurrency=1 scripts/*.test.mjs
+
+      - name: Build the source-verified production release
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VITE_API_BASE_URL: https://api.padlupp.com/api-v1
+          VITE_WS_BASE_URL: wss://api.padlupp.com
+          VITE_GOOGLE_OAUTH2_CLIENT_ID: ${{ vars.VITE_GOOGLE_OAUTH2_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const clientId = process.env.VITE_GOOGLE_OAUTH2_CLIENT_ID?.trim();
+          if (!clientId || !/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(clientId)) {
+            throw new Error('Set the public VITE_GOOGLE_OAUTH2_CLIENT_ID Actions variable before deploying.');
+          }
+          NODE
+
+          if yarn release:build; then
+            echo 'built=true' >> "$GITHUB_OUTPUT"
+          else
+            # A newer push can make the canonical source guard reject this run.
+            latest="$(gh api repos/padlup001/padlupp/git/ref/heads/main --jq '.object.sha')"
+            [[ "$latest" =~ ^[0-9a-f]{40}$ ]]
+            if [[ "$latest" != "$GITHUB_SHA" ]]; then
+              echo "Skipping stale release $GITHUB_SHA; canonical main is now $latest."
+              echo "Deployment skipped: a newer canonical main commit superseded $GITHUB_SHA during the release build. Regression tests passed." >> "$GITHUB_STEP_SUMMARY"
+              echo 'built=false' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo '::error::The production release build failed for the current canonical main commit.'
+            exit 1
+          fi
+
+      - name: Package the static release and source metadata
+        if: steps.build.outputs.built == 'true'
+        id: package
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          writeFileSync('dist/.deployment-source.json', JSON.stringify({
+            remote: 'padlupp',
+            repository: 'https://github.com/padlup001/padlupp.git',
+            branch: 'main',
+            commit: process.env.GITHUB_SHA,
+          }, null, 2) + '\n');
+          NODE
+          artifact="$RUNNER_TEMP/padlupp-web-$GITHUB_SHA.tar.gz"
+          tar -C dist -czf "$artifact" .
+          sha256="$(sha256sum "$artifact" | cut -d ' ' -f 1)"
+          echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy only the latest canonical main release
+        if: steps.build.outputs.built == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT: ${{ steps.package.outputs.artifact }}
+          SHA256: ${{ steps.package.outputs.sha256 }}
+          DEPLOY_HOST: ${{ secrets.PADLUPP_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.PADLUPP_DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.PADLUPP_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.PADLUPP_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          latest="$(gh api repos/padlup001/padlupp/git/ref/heads/main --jq '.object.sha')"
+          [[ "$latest" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "$latest" != "$GITHUB_SHA" ]]; then
+            echo "Skipping stale deployment $GITHUB_SHA; canonical main is now $latest."
+            echo "Deployment skipped: a newer canonical main commit superseded $GITHUB_SHA before SSH. Regression tests and release build passed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
+          test -f "$ARTIFACT"
+          for setting in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            if [[ -z "${!setting}" ]]; then
+              echo "::error::Missing production environment configuration: $setting."
+              exit 1
+            fi
+          done
+
+          umask 077
+          key_file=''
+          known_hosts_file=''
+          trap 'rm -f -- "$key_file" "$known_hosts_file"' EXIT
+          key_file="$(mktemp "$RUNNER_TEMP/padlupp-web-key.XXXXXX")"
+          known_hosts_file="$(mktemp "$RUNNER_TEMP/padlupp-web-known-hosts.XXXXXX")"
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > "$key_file"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" | tr -d '\r' > "$known_hosts_file"
+          chmod 600 "$key_file" "$known_hosts_file"
+
+          ssh -T -p 22 \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=20 \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$known_hosts_file" \
+            -i "$key_file" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "deploy ${GITHUB_SHA} ${SHA256}" < "$ARTIFACT"
+          echo "Production web deployment completed for canonical main commit $GITHUB_SHA (bundle SHA-256: $SHA256)." >> "$GITHUB_STEP_SUMMARY"
